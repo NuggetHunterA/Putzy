@@ -9,6 +9,7 @@ export type Task = {
   element: Element
   effort: Effort
   interval_days: number
+  first_due: string
   sort: number
 }
 export type Completion = { id: string; task_id: string; person: Person; monster: string; xp: number; done_at: string }

@@ -22,7 +22,7 @@ export type { Row }
 export function Home({ snap, person, now, live, onToggle, onIntervals }: Props) {
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
-    days: daysUntilDue(snap.lastDone[task.id] ?? null, task.interval_days, now),
+    days: daysUntilDue(snap.lastDone[task.id] ?? null, task.interval_days, now, task.first_due),
     done: snap.today.findLast((c) => c.task_id === task.id),
   }))
   const today = rows.filter((r) => r.done || r.days <= 0).sort((a, b) => Number(!!a.done) - Number(!!b.done) || a.days - b.days)

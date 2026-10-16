@@ -8,6 +8,8 @@ create table tasks (
   element text not null check (element in ('wasser', 'feuer', 'natur', 'luft', 'licht')),
   effort text not null check (effort in ('K', 'M', 'G')),
   interval_days int not null check (interval_days between 1 and 365),
+  -- Erste Fälligkeit, solange die Aufgabe noch nie erledigt wurde (siehe start.sql).
+  first_due date not null default current_date,
   sort int not null
 );
 

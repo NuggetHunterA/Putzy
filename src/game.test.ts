@@ -30,12 +30,15 @@ describe('Level', () => {
 describe('Fälligkeit', () => {
   const now = new Date(2026, 9, 16, 21, 0)
   it('zählt ab Erledigung', () => {
-    expect(daysUntilDue(null, 7, now)).toBe(0)
-    expect(daysUntilDue(new Date(2026, 9, 16, 8, 0), 7, now)).toBe(7)
-    expect(daysUntilDue(new Date(2026, 9, 1, 23, 0), 14, now)).toBe(-1)
+    expect(daysUntilDue(new Date(2026, 9, 16, 8, 0), 7, now, '2026-10-16')).toBe(7)
+    expect(daysUntilDue(new Date(2026, 9, 1, 23, 0), 14, now, '2026-10-16')).toBe(-1)
+  })
+  it('nutzt die erste Fälligkeit, solange nie erledigt', () => {
+    expect(daysUntilDue(null, 7, now, '2026-10-16')).toBe(0)
+    expect(daysUntilDue(null, 7, now, '2026-10-20')).toBe(4)
   })
   it('rechnet über die Zeitumstellung in ganzen Tagen', () => {
-    expect(daysUntilDue(new Date(2026, 9, 24, 12, 0), 2, new Date(2026, 9, 26, 0, 30))).toBe(0)
+    expect(daysUntilDue(new Date(2026, 9, 24, 12, 0), 2, new Date(2026, 9, 26, 0, 30), '2026-10-16')).toBe(0)
   })
 })
 

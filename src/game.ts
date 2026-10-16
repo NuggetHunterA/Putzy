@@ -69,9 +69,12 @@ const dayNumber = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth()
 
 export const sameDay = (a: Date, b: Date) => dayNumber(a) === dayNumber(b)
 
-// Tage bis zur nächsten Fälligkeit, gezählt ab der letzten Erledigung. Nie erledigt = heute fällig.
-export function daysUntilDue(lastDone: Date | null, intervalDays: number, now: Date) {
-  if (!lastDone) return 0
+// Tage bis zur nächsten Fälligkeit, gezählt ab der letzten Erledigung. Nie erledigt = erste Fälligkeit (YYYY-MM-DD).
+export function daysUntilDue(lastDone: Date | null, intervalDays: number, now: Date, firstDue: string) {
+  if (!lastDone) {
+    const [y, m, d] = firstDue.split('-').map(Number)
+    return dayNumber(new Date(y, m - 1, d)) - dayNumber(now)
+  }
   return dayNumber(lastDone) + intervalDays - dayNumber(now)
 }
 
