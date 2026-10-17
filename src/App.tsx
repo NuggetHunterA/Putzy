@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { complete, connect, deleteTask, load, markNews, markSeen, pickMonster, saveTask, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
+import { complete, connect, deleteTask, load, markNews, markSeen, pickMonster, saveTask, setInterval as saveInterval, subscribe, undo, type Completion, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
@@ -9,7 +9,7 @@ import { LATEST_NEWS, unread } from './news'
 import { NewsBox } from './NewsBox'
 import { Pedia } from './Pedia'
 import { unseen } from './pedia'
-import { PEOPLE, levelFor, monsterById, stageFor, weekStart, xpFor, type Monster, type Person } from './game'
+import { PEOPLE, STANDING_EFFORT, levelFor, monsterById, stageFor, weekStart, xpFor, type Effort, type Element, type Monster, type Person, type Standing } from './game'
 
 const PERSON_STORAGE = 'putzy.person'
 const connected = connect()
@@ -131,10 +131,10 @@ export default function App() {
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl und Entwicklungen durch sind.
   const news = myPick && view === 'home' && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
 
-  const onToggle = (row: Row) => {
-    if (row.done) return run(undo(row.done.id))
+  // Abhaken: XP mit Element-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
+  const award = (effort: Effort, element: Element, save: (monster: string, xp: number) => Promise<void>) => {
     const monster = monsterById(myPick!.monster)
-    const xp = xpFor(row.task.effort, row.task.element, monster.element)
+    const xp = xpFor(effort, element, monster.element)
     const before = snap.monsterXp[monster.id] ?? 0
     const level = levelFor(before + xp)
     setAttacking(true)
@@ -147,17 +147,28 @@ export default function App() {
         stageAfter: stageFor(monster, level),
         level,
         xp,
-        bonus: row.task.element === monster.element,
+        bonus: element === monster.element,
       }
     }
     run(
-      complete({ task_id: row.task.id, person, monster: monster.id, xp }).catch((e) => {
+      save(monster.id, xp).catch((e) => {
         pendingCel.current = null
         // 23505: Die andere Person hat die Aufgabe heute schon abgehakt. Das Neuladen zeigt, wer.
         if (e?.code === '23505') return setError('Das war heute schon erledigt.')
         throw e
       }),
     )
+  }
+
+  const onToggle = (row: Row) => {
+    if (row.done) return run(undo(row.done.id))
+    award(row.task.effort, row.task.element, (monster, xp) => complete({ task_id: row.task.id, person, monster, xp }))
+  }
+
+  // Ständige Aufgabe: done ist der eigene Haken von heute, nur der lässt sich zurücknehmen.
+  const onStanding = (s: Standing, done?: Completion) => {
+    if (done) return run(undo(done.id))
+    award(STANDING_EFFORT, s.element, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }))
   }
 
   const onInterval = (task: Task, days: number) => {
@@ -192,6 +203,7 @@ export default function App() {
           now={now}
           live={live}
           onToggle={onToggle}
+          onStanding={onStanding}
           onAttackEnd={() => {
             setCel(pendingCel.current)
             pendingCel.current = null

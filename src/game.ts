@@ -56,6 +56,17 @@ export const EFFORT_XP: Record<Effort, number> = { K: 10, M: 25, G: 50 }
 // In der App heißt der Aufwand S/M/L, in der Datenbank K/M/G.
 export const EFFORT_LABEL: Record<Effort, string> = { K: 'S', M: 'M', G: 'L' }
 export const ELEMENT_BONUS = 1.25
+
+// Ständige Aufgaben: ohne Fälligkeit, Aufwand S, jede Person hakt sie einmal pro Tag ab.
+export type Standing = { id: string; name: string; short: string; element: Element }
+export const STANDING: Standing[] = [
+  { id: 'kochen', name: 'Kochen', short: 'Kochen', element: 'feuer' },
+  { id: 'einkaufen', name: 'Einkaufen', short: 'Einkaufen', element: 'licht' },
+  { id: 'waesche', name: 'Wäsche machen', short: 'Wäsche', element: 'luft' },
+  { id: 'spuelmaschine', name: 'Spülmaschine ausräumen', short: 'Spüler', element: 'wasser' },
+  { id: 'garten', name: 'Garten / Straße pflegen', short: 'Garten', element: 'natur' },
+]
+export const STANDING_EFFORT: Effort = 'K'
 // Von Level n auf n+1 braucht ein Monster LEVEL_BASE + LEVEL_STEP × n XP.
 export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4

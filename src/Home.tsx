@@ -1,9 +1,9 @@
-// Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste.
+// Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste mit den ständigen Aufgaben oben.
 import { AnimatePresence, motion } from 'motion/react'
-import { useRef, type RefObject } from 'react'
+import { useRef, type ReactNode, type RefObject } from 'react'
 import { attack } from './fx'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Monster, type Person } from './game'
+import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Effort, type Element, type Monster, type Person, type Standing } from './game'
 import { DEX_TOTAL, PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
 import type { Completion, Snapshot, Task } from './db'
 
@@ -17,6 +17,7 @@ type Props = {
   now: Date
   live: boolean
   onToggle: (row: Row) => void
+  onStanding: (s: Standing, done?: Completion) => void
   onAttackEnd: () => void
   onIntervals: () => void
   onPedia: () => void
@@ -24,7 +25,7 @@ type Props = {
 
 export type { Row }
 
-export function Home({ snap, person, now, live, onToggle, onAttackEnd, onIntervals, onPedia }: Props) {
+export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia }: Props) {
   const myBadge = useRef<HTMLSpanElement>(null)
   const busy = useRef(false)
   const rows: Row[] = snap.tasks.map((task) => ({
@@ -39,11 +40,11 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
   const other: Person = person === 'adrian' ? 'ulrike' : 'adrian'
   const myPick = snap.picks.find((p) => p.person === person)
 
-  // Offene Aufgabe: erst greift dein Monster an, beim Treffer wird sie abgehakt. Erledigte: sofort rückgängig.
-  const toggle = async (row: Row, dot: HTMLElement) => {
+  // Offene Aufgabe: erst greift dein Monster an, beim Treffer wird sie abgehakt (hit). Erledigte: sofort rückgängig.
+  const strike = async (done: boolean, effort: Effort, element: Element, dot: HTMLElement, hit: () => void) => {
     if (busy.current) return
     const badge = myBadge.current
-    if (row.done || !myPick || !badge) return onToggle(row)
+    if (done || !myPick || !badge) return hit()
     busy.current = true
     const m = monsterById(myPick.monster)
     try {
@@ -53,14 +54,19 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
         bar: badge.parentElement!.querySelector('.xpbar')!,
         src: m.files[stageFor(m, levelFor(snap.monsterXp[m.id] ?? 0))],
         element: m.element,
-        taskElement: row.task.element,
-        xp: xpFor(row.task.effort, row.task.element, m.element),
-        onHit: () => onToggle(row),
+        taskElement: element,
+        xp: xpFor(effort, element, m.element),
+        onHit: hit,
       })
     } finally {
       busy.current = false
       onAttackEnd()
     }
+  }
+  const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task.effort, row.task.element, dot, () => onToggle(row))
+  const toggleStanding = (s: Standing, dot: HTMLElement) => {
+    const mine = snap.today.find((c) => c.standing === s.id && c.person === person)
+    strike(!!mine, STANDING_EFFORT, s.element, dot, () => onStanding(s, mine))
   }
 
   return (
@@ -110,7 +116,9 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
 
       <PediaBanner snap={snap} onClick={onPedia} />
 
-      <TaskSection title="Heute" rows={today} onToggle={toggle} />
+      <TaskSection title="Heute" rows={today} onToggle={toggle}>
+        <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
+      </TaskSection>
       {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} onToggle={toggle} />}
 
       <footer className="live">
@@ -175,10 +183,44 @@ function PediaBanner({ snap, onClick }: { snap: Snapshot; onClick: () => void })
   )
 }
 
-function TaskSection({ title, rows, onToggle }: { title: string; rows: Row[]; onToggle: (r: Row, dot: HTMLElement) => void }) {
+// Ständige Aufgaben als Leiste unter „Heute“: Knopf mit Kurzname, je eine Marke pro Person, die heute abgehakt hat.
+function StandingStrip({ today, person, onToggle }: { today: Completion[]; person: Person; onToggle: (s: Standing, dot: HTMLElement) => void }) {
+  const did = (s: Standing, p: Person) => today.some((c) => c.standing === s.id && c.person === p)
+  return (
+    <div className="standing">
+      {STANDING.map((s) => {
+        const mine = did(s, person)
+        return (
+          <button
+            key={s.id}
+            className={`st-btn ${mine ? 'mine' : ''}`}
+            aria-pressed={mine}
+            aria-label={s.name}
+            onClick={(e) => onToggle(s, e.currentTarget.querySelector('.st-dot')!)}
+          >
+            <span className="st-dot" style={{ background: ELEMENTS[s.element][mine ? 'strong' : 'soft'] }}>
+              {mine ? <b>✓</b> : <ElementIcon element={s.element} />}
+              <span className="st-marks">
+                {(Object.keys(PEOPLE) as Person[]).map((p) => (
+                  <i key={p} className={did(s, p) ? 'on' : ''} title={PEOPLE[p]}>
+                    {PEOPLE[p][0]}
+                  </i>
+                ))}
+              </span>
+            </span>
+            <span className="st-name">{s.short}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function TaskSection({ title, rows, onToggle, children }: { title: string; rows: Row[]; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
       <h2 className="section-title">{title}</h2>
+      {children}
       <AnimatePresence initial={false}>
         {rows.map((r, i) => (
           <motion.button

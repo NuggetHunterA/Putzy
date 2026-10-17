@@ -17,6 +17,8 @@ create table completions (
   id uuid primary key default gen_random_uuid(),
   -- Wird eine Aufgabe gelöscht, bleibt die Erledigung (und damit die XP) erhalten.
   task_id text references tasks (id) on delete set null,
+  -- Ständige Aufgabe (id aus STANDING in src/game.ts), dann ist task_id leer.
+  standing text,
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
   xp int not null,
@@ -25,6 +27,9 @@ create table completions (
 create index on completions (task_id, done_at desc);
 -- Jede Aufgabe zählt pro Tag (deutsche Zeit) nur einmal. Haken beide Handys gleichzeitig ab, gewinnt die erste Erledigung.
 create unique index completions_once_per_day on completions (task_id, ((done_at at time zone 'Europe/Berlin')::date));
+-- Ständige Aufgaben zählen pro Tag und Person einmal.
+create unique index completions_standing_once_per_day
+  on completions (standing, person, ((done_at at time zone 'Europe/Berlin')::date)) where standing is not null;
 
 -- Monsterwahl pro Woche: jede Person ein Monster, jedes Monster nur einmal pro Woche.
 create table picks (

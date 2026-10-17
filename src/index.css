@@ -168,6 +168,17 @@ img { display: block; }
 .row-due { font-size: 12px; font-weight: 800; white-space: nowrap; }
 .row-due.late { padding: 2px 8px; border-radius: 99px; background: var(--accent); color: var(--paper); }
 
+/* Ständige Aufgaben: Leiste oben in „Heute“ */
+.standing { display: flex; justify-content: space-between; padding: 8px 12px 6px; border: 3px solid var(--ink); border-radius: 22px; background: var(--paper); }
+.st-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 58px; padding: 0; border: 0; background: none; }
+.st-dot { position: relative; width: 44px; height: 44px; border: 3px solid var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--ink); transition: background .3s; }
+.st-dot b { font-size: 20px; }
+.st-btn.mine .st-dot { color: var(--paper); box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); animation: squish .5s ease-out; }
+.st-marks { position: absolute; bottom: -7px; right: -10px; display: flex; gap: 1px; }
+.st-marks i { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; border: 2px solid #B8B0CC; border-radius: 50%; background: var(--paper); color: #B8B0CC; font-style: normal; font-size: 8px; font-weight: 800; }
+.st-marks i.on { border-color: var(--ink); background: var(--sun); color: var(--ink); }
+.st-name { margin-top: 2px; font-size: 10.5px; font-weight: 800; }
+
 .live { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; font-weight: 700; }
 .live-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: #B8B0CC; }
 .live-dot.on { background: var(--live); animation: pulse 1.6s ease-out infinite; }

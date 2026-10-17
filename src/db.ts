@@ -12,7 +12,7 @@ export type Task = {
   first_due: string
   sort: number
 }
-export type Completion = { id: string; task_id: string | null; person: Person; monster: string; xp: number; done_at: string }
+export type Completion = { id: string; task_id: string | null; standing: string | null; person: Person; monster: string; xp: number; done_at: string }
 export type Pick = { week_start: string; person: Person; monster: string }
 export type Seen = { person: Person; monster: string; stage: number }
 
@@ -83,7 +83,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
   }
 }
 
-export async function complete(c: Omit<Completion, 'id' | 'done_at'>) {
+// standing nur bei ständigen Aufgaben mitschicken, normale Erledigungen bleiben wie bisher.
+export async function complete(c: Omit<Completion, 'id' | 'done_at' | 'standing'> & { standing?: string }) {
   check(await db().from('completions').insert(c))
 }
 
