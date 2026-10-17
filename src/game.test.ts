@@ -45,6 +45,8 @@ describe('Level', () => {
     expect(stageFor(kokeli, 30)).toBe(1)
     const samsi = monsterById('10')
     expect([9, 10, 19, 20, 29, 30].map((l) => stageFor(samsi, l))).toEqual([0, 1, 1, 2, 2, 3])
+    const aali = monsterById('11')
+    expect([19, 20, 30].map((l) => stageFor(aali, l))).toEqual([0, 1, 1])
   })
 })
 

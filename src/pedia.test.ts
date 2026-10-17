@@ -8,7 +8,7 @@ describe('Putzy-Pedia', () => {
     expect(isDiscovered([], '5', 0)).toBe(true)
     expect(isDiscovered(seen, '2', 1)).toBe(true)
     expect(isDiscovered(seen, '2', 2)).toBe(false)
-    expect(discoveredCount(seen)).toBe(11)
+    expect(discoveredCount(seen)).toBe(13)
   })
 
   it('spielt erreichte Entwicklungen nach, die diese Person noch nicht gesehen hat', () => {
@@ -19,13 +19,15 @@ describe('Putzy-Pedia', () => {
     expect(list('ulrike')).toEqual(['2:1', '2:2', '5:1'])
   })
 
-  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 30', () => {
-    expect(DEX_TOTAL).toBe(30)
+  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35', () => {
+    expect(DEX_TOTAL).toBe(35)
     expect(dexNo(monsterById('8'), 2)).toBe('24')
     expect(dexNo(monsterById('9'), 0)).toBe('25')
     expect(dexNo(monsterById('9'), 1)).toBe('26')
     expect(dexNo(monsterById('10'), 0)).toBe('27')
     expect(dexNo(monsterById('10'), 3)).toBe('30')
+    expect(dexNo(monsterById('11'), 0)).toBe('31')
+    expect(dexNo(monsterById('12'), 2)).toBe('35')
   })
 
   it('spielt bei Samsi alle drei Entwicklungen nach', () => {
