@@ -372,6 +372,7 @@ img { display: block; }
 
 /* Putzy-Pedia: Detailseite */
 .stage-btn { padding: 0; border: 0; background: none; justify-self: center; }
+.stages .slot { gap: 11px; } /* Platz für den Auswahlring (7px) über dem Namen */
 .stages .slot-img { width: 64px; height: 64px; }
 .stage-btn.sel .slot-img { box-shadow: 0 0 0 4px var(--sun), 0 0 0 7px var(--ink); }
 .detail-hero { position: relative; border: 4px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); overflow: hidden; }
