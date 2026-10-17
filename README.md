@@ -15,7 +15,7 @@ Putzy - the personal household helper. Eine PWA für Adrian und Ulrike: feste Ha
 2. **Vercel:** Repository importieren und die Umgebungsvariable `VITE_SUPABASE_URL` setzen (Project Settings > API in Supabase).
 3. **Haushaltslink:** `https://<eure-vercel-domain>/#k=<publishable- bzw. anon-key>`. Diesen Link einmal auf jedem Handy öffnen, Namen wählen und in Chrome „Zum Startbildschirm hinzufügen“. Der Schlüssel steht nur im Link, nicht im Code. Wer den Link kennt, kommt in die App, also nicht weitergeben.
 
-Die Aufgabenliste ändert ihr in `supabase/tasks.sql` und führt die Datei erneut aus. In der App eingestellte Intervalle bleiben dabei erhalten.
+Die Aufgaben pflegt ihr in der App (Zahnrad auf der Startseite). `supabase/tasks.sql` dient nur zum ersten Befüllen.
 
 ## Entwicklung
 

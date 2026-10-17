@@ -107,6 +107,16 @@ export async function setInterval(taskId: string, days: number) {
   check(await db().from('tasks').update({ interval_days: days }).eq('id', taskId))
 }
 
+// Legt eine Aufgabe an oder überschreibt sie (gleiche id).
+export async function saveTask(t: Task) {
+  check(await db().from('tasks').upsert(t))
+}
+
+// Erledigungen bleiben, ihre XP auch (task_id wird null).
+export async function deleteTask(taskId: string) {
+  check(await db().from('tasks').delete().eq('id', taskId))
+}
+
 // Jede Änderung auf einem der beiden Handys löst ein Neuladen aus. Die Datenmenge ist klein.
 export function subscribe(onChange: () => void, onStatus: (live: boolean) => void) {
   const channel = db()

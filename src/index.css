@@ -224,6 +224,30 @@ img { display: block; }
 }
 .step:disabled { background: var(--ground); opacity: .5; }
 
+/* Aufgaben pflegen */
+.new-task { background: var(--sun); }
+.iv-edit { padding: 0; border: 0; background: none; text-align: left; }
+.iv-pad { padding-left: 10px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.input { min-height: 48px; padding: 0 14px; border: 3px solid var(--ink); border-radius: 14px; background: var(--paper); font: inherit; font-size: 17px; font-weight: 800; color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn { display: flex; align-items: center; gap: 4px; padding: 6px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--paper); font-size: 13px; font-weight: 800; }
+.chip-btn.add { border-style: dashed; }
+.chip-btn.on { background: var(--ink); color: var(--paper); border-style: solid; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: var(--paper); }
+.seg button { padding: 8px 0; border: 0; border-left: 3px solid var(--ink); background: none; font-weight: 800; font-size: 16px; }
+.seg button:first-child { border-left: 0; }
+.seg button.on { background: var(--sun); }
+.seg small { display: block; font-size: 11px; font-weight: 500; }
+.hint { margin: 0; font-size: 14px; font-weight: 800; color: var(--accent); }
+.news-btn:disabled { background: var(--ground); opacity: .6; box-shadow: none; }
+.news-btn.red { background: var(--accent); color: var(--paper); }
+.del { align-self: center; border: 0; background: none; color: var(--accent); font-weight: 800; font-size: 15px; text-decoration: underline; }
+.confirm { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 22px 20px 20px; border: 4px solid var(--ink); border-radius: 24px; background: var(--paper); box-shadow: 6px 6px 0 var(--ink); animation: pop-in .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.confirm-title { margin: 0; text-align: center; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: .03em; }
+.confirm-text { margin: 0; text-align: center; font-weight: 500; }
+
 /* Putzy-Pedia: Einstieg auf der Startseite */
 .gear {
   width: 40px; height: 40px;
