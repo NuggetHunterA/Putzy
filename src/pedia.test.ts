@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { discoveredCount, isDiscovered, unseen } from './pedia'
+import { monsterById } from './game'
+import { DEX_TOTAL, dexNo, discoveredCount, isDiscovered, unseen } from './pedia'
 
 describe('Putzy-Pedia', () => {
   it('zeigt Stufe 1 immer, spätere erst wenn jemand sie gesehen hat', () => {
@@ -7,7 +8,7 @@ describe('Putzy-Pedia', () => {
     expect(isDiscovered([], '5', 0)).toBe(true)
     expect(isDiscovered(seen, '2', 1)).toBe(true)
     expect(isDiscovered(seen, '2', 2)).toBe(false)
-    expect(discoveredCount(seen)).toBe(9)
+    expect(discoveredCount(seen)).toBe(11)
   })
 
   it('spielt erreichte Entwicklungen nach, die diese Person noch nicht gesehen hat', () => {
@@ -16,5 +17,19 @@ describe('Putzy-Pedia', () => {
     const list = (p: 'adrian' | 'ulrike') => unseen(seen, p, xp).map((e) => `${e.monster.id}:${e.stage}`)
     expect(list('adrian')).toEqual(['2:2', '5:1'])
     expect(list('ulrike')).toEqual(['2:1', '2:2', '5:1'])
+  })
+
+  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 30', () => {
+    expect(DEX_TOTAL).toBe(30)
+    expect(dexNo(monsterById('8'), 2)).toBe('24')
+    expect(dexNo(monsterById('9'), 0)).toBe('25')
+    expect(dexNo(monsterById('9'), 1)).toBe('26')
+    expect(dexNo(monsterById('10'), 0)).toBe('27')
+    expect(dexNo(monsterById('10'), 3)).toBe('30')
+  })
+
+  it('spielt bei Samsi alle drei Entwicklungen nach', () => {
+    const list = unseen([], 'adrian', { '10': 5510 }).map((e) => `${e.monster.id}:${e.stage}`)
+    expect(list).toEqual(['10:1', '10:2', '10:3'])
   })
 })

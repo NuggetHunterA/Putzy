@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useRef, type RefObject } from 'react'
 import { attack } from './fx'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Person } from './game'
-import { PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
+import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Monster, type Person } from './game'
+import { DEX_TOTAL, PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
 import type { Completion, Snapshot, Task } from './db'
 
 const SOON_DAYS = 7
@@ -51,7 +51,7 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
         from: badge.querySelector('img')!,
         to: dot,
         bar: badge.parentElement!.querySelector('.xpbar')!,
-        src: m.files[stageFor(levelFor(snap.monsterXp[m.id] ?? 0))],
+        src: m.files[stageFor(m, levelFor(snap.monsterXp[m.id] ?? 0))],
         element: m.element,
         taskElement: row.task.element,
         xp: xpFor(row.task.effort, row.task.element, m.element),
@@ -136,7 +136,7 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
   const m = monsterById(pick.monster)
   const xp = snap.monsterXp[m.id] ?? 0
   const level = levelFor(xp)
-  const stage = stageFor(level)
+  const stage = stageFor(m, level)
   const from = xpForLevel(level)
   const progress = level === MAX_LEVEL ? 1 : (xp - from) / (xpForLevel(level + 1) - from)
   return (
@@ -161,18 +161,18 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
 function PediaBanner({ snap, onClick }: { snap: Snapshot; onClick: () => void }) {
   const xp = (id: string) => snap.monsterXp[id] ?? 0
   const top = [...MONSTERS].sort((a, b) => xp(b.id) - xp(a.id)).slice(0, 2)
-  const shown = (id: string) => [2, 1, 0].find((s) => isDiscovered(snap.seen, id, s))!
-  const hidden = PEDIA_ORDER.flatMap((m) => [1, 2].filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
+  const shown = (m: Monster) => m.stages.findLastIndex((_, s) => isDiscovered(snap.seen, m.id, s))
+  const hidden = PEDIA_ORDER.flatMap((m) => m.levels.map((_, i) => i + 1).filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
   return (
     <button className="pedia-banner" onClick={onClick}>
       <span className="pb-text">
         <span className="pb-kicker">Euer Monsterbuch</span>
         <span className="pb-title">Putzy-Pedia</span>
-        <span className="pb-sub">{discoveredCount(snap.seen)} von {MONSTERS.length * 3} entdeckt</span>
+        <span className="pb-sub">{discoveredCount(snap.seen)} von {DEX_TOTAL} entdeckt</span>
       </span>
       <span className="pb-mons" aria-hidden="true">
         {top.map((m) => (
-          <img key={m.id} src={m.files[shown(m.id)]} alt="" />
+          <img key={m.id} src={m.files[shown(m)]} alt="" />
         ))}
         {hidden && <img className="sil" src={hidden} alt="" />}
       </span>

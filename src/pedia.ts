@@ -3,8 +3,8 @@ import type { Seen } from './db'
 import { MONSTERS, levelFor, stageFor, type Monster, type Person } from './game'
 
 export type Entry = {
-  sizes: [string, string, string]
-  weights: [string, string, string]
+  sizes: string[]
+  weights: string[]
   room: string
   text: string
   likes: string
@@ -89,25 +89,50 @@ export const PEDIA: Record<string, Entry> = {
     dislikes: 'einzelne Socken, verstaubte Regale',
     legend: 'Kristallos wurde aus allen verlorenen Socken der Welt zusammengesetzt, die es je wiedergefunden hat. Die fehlende linke Socke sucht es bis heute.',
   },
+  '9': {
+    sizes: ['0,2 m', '1,8 m'],
+    weights: ['0,8 kg', '45 kg'],
+    room: 'Küche',
+    text: 'Kokeli wohnt im Toaster und kommt nur raus, wenn es nach Kakao riecht. Mit seiner warmen Schwanzspitze trocknet es nasse Geschirrtücher in drei Sekunden, manchmal auch in zwei und mit kleinem Brandloch.',
+    likes: 'blitzblanke Herdplatten, Pfannkuchen-Sonntage',
+    dislikes: 'Kühlschranktüren, die offen stehen, Spritzer auf dem Ceranfeld',
+    legend: 'Salamandor trägt eine Kochmütze aus Rauch, die nie verweht. Es heißt, wer in seiner Gegenwart den Herd abwischt, dem brennt nie wieder etwas an, nicht einmal Milch.',
+  },
+  '10': {
+    sizes: ['0,1 m', '0,5 m', '1,4 m', '8,0 m'],
+    weights: ['0,2 kg', '3 kg', '40 kg', '2,5 t'],
+    room: 'Draußen',
+    text: 'Samsi ist ein Samenkorn, das beschlossen hat, nicht zu warten. Es rollt nachts durch die Wohnung, sucht sich den hellsten Platz am Fenster und schläft dort ein. Jedes Mal, wenn jemand die Pflanzen gießt, wächst es ein kleines bisschen.',
+    likes: 'volle Gießkannen, gefegte Gehwege',
+    dislikes: 'vergessene Topfpflanzen, Laub im Gully',
+    legend: 'Arborius war einmal ein winziges Samsi in einem Joghurtbecher auf einer Fensterbank. Man sagt, in seinen Ringen steht jede Aufgabe, die je in diesem Haus erledigt wurde, und wer ihm zuhört, hört das Rascheln von hundert Besen.',
+  },
 }
 
 // Pedia-Reihenfolge nach Nummer, nicht nach Element wie in der Monsterwahl.
 export const PEDIA_ORDER = [...MONSTERS].sort((a, b) => Number(a.id) - Number(b.id))
 
-export const dexNo = (m: Monster, stage: number) => String((Number(m.id) - 1) * 3 + stage + 1).padStart(2, '0')
+export const DEX_TOTAL = MONSTERS.reduce((n, m) => n + m.stages.length, 0)
+
+// Fortlaufende Nummer über alle Stufen der Reihen davor, denn Reihen haben 2 bis 4 Stufen.
+export const dexNo = (m: Monster, stage: number) =>
+  String(PEDIA_ORDER.slice(0, PEDIA_ORDER.indexOf(m)).reduce((n, r) => n + r.stages.length, 0) + stage + 1).padStart(2, '0')
+
+export const lastStage = (m: Monster) => m.stages.length - 1
 
 // Stufe 1 ist immer sichtbar, die anderen, sobald einer von euch die Entwicklung gesehen hat.
 export const isDiscovered = (seen: Seen[], monster: string, stage: number) =>
   stage === 0 || seen.some((s) => s.monster === monster && s.stage === stage)
 
 export const discoveredCount = (seen: Seen[]) =>
-  MONSTERS.reduce((n, m) => n + [0, 1, 2].filter((s) => isDiscovered(seen, m.id, s)).length, 0)
+  MONSTERS.reduce((n, m) => n + m.stages.filter((_, s) => isDiscovered(seen, m.id, s)).length, 0)
 
 // Erreichte Entwicklungen, die diese Person noch nicht gesehen hat, in Abspiel-Reihenfolge.
 export function unseen(seen: Seen[], person: Person, monsterXp: Record<string, number>) {
   return PEDIA_ORDER.flatMap((m) =>
-    [1, 2]
-      .filter((stage) => stage <= stageFor(levelFor(monsterXp[m.id] ?? 0)))
+    m.levels
+      .map((_, i) => i + 1)
+      .filter((stage) => stage <= stageFor(m, levelFor(monsterXp[m.id] ?? 0)))
       .filter((stage) => !seen.some((s) => s.person === person && s.monster === m.id && s.stage === stage))
       .map((stage) => ({ monster: m, stage })),
   )

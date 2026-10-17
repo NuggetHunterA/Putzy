@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { daysUntilDue, levelFor, stageFor, weekStart, xpFor, xpForLevel } from './game'
+import { daysUntilDue, levelFor, monsterById, stageFor, weekStart, xpFor, xpForLevel } from './game'
 
 describe('XP', () => {
   it('gibt 125 % beim passenden Element', () => {
@@ -26,11 +26,20 @@ describe('Level', () => {
     expect(levelFor(5510)).toBe(30)
     expect(levelFor(99_999)).toBe(30)
   })
-  it('entwickelt auf Level 10 und 25', () => {
-    expect(stageFor(9)).toBe(0)
-    expect(stageFor(10)).toBe(1)
-    expect(stageFor(24)).toBe(1)
-    expect(stageFor(25)).toBe(2)
+  it('entwickelt 3er-Reihen auf Level 10 und 25', () => {
+    const m = monsterById('1')
+    expect(stageFor(m, 9)).toBe(0)
+    expect(stageFor(m, 10)).toBe(1)
+    expect(stageFor(m, 24)).toBe(1)
+    expect(stageFor(m, 25)).toBe(2)
+  })
+  it('entwickelt Kokeli auf Level 15 und Samsi auf 10, 20 und 30', () => {
+    const kokeli = monsterById('9')
+    expect(stageFor(kokeli, 14)).toBe(0)
+    expect(stageFor(kokeli, 15)).toBe(1)
+    expect(stageFor(kokeli, 30)).toBe(1)
+    const samsi = monsterById('10')
+    expect([9, 10, 19, 20, 29, 30].map((l) => stageFor(samsi, l))).toEqual([0, 1, 1, 2, 2, 3])
   })
 })
 
