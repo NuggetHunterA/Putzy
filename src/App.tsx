@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { complete, connect, load, markSeen, pickMonster, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
+import { complete, connect, load, markNews, markSeen, pickMonster, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
+import { LATEST_NEWS, unread } from './news'
+import { NewsBox } from './NewsBox'
 import { Pedia } from './Pedia'
 import { unseen } from './pedia'
 import { PEOPLE, levelFor, monsterById, stageFor, weekStart, xpFor, type Monster, type Person } from './game'
@@ -71,6 +73,24 @@ export default function App() {
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
   }, [next, person, evo, cel, attacking, refresh])
 
+  // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
+  const seeNews = useCallback(
+    (p: Person) => {
+      setSnap((s) => s && { ...s, newsSeen: { ...s.newsSeen, [p]: LATEST_NEWS } })
+      markNews(p, LATEST_NEWS).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+    },
+    [refresh],
+  )
+  const newsSeen = snap && person ? snap.newsSeen[person] : undefined
+  const newsStart = snap && person && newsSeen === undefined ? person : null
+  // Nur einmal pro Start versuchen, damit ein fehlschlagendes Speichern nicht endlos wiederholt wird.
+  const newsStarted = useRef(false)
+  useEffect(() => {
+    if (!newsStart || newsStarted.current) return
+    newsStarted.current = true
+    seeNews(newsStart)
+  }, [newsStart, seeNews])
+
   // Fehler bei Schreibzugriffen: Meldung zeigen und den echten Stand neu laden.
   const run = (action: Promise<unknown>) =>
     action.catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
@@ -108,6 +128,8 @@ export default function App() {
   if (!snap) return <Message title="Putzy lädt …" text={error ?? ''} />
 
   const myPick = snap.picks.find((p) => p.person === person)
+  // Die Box kommt erst auf der Startseite, wenn Monsterwahl und Entwicklungen durch sind.
+  const news = myPick && view === 'home' && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   const onToggle = (row: Row) => {
     if (row.done) return run(undo(row.done.id))
@@ -172,6 +194,7 @@ export default function App() {
           {error}
         </button>
       )}
+      {news.length > 0 && <NewsBox news={news} monsterImg={weekImg(monsterById(myPick!.monster), snap.monsterXp)} onDone={() => seeNews(person)} />}
       {cel && <Celebration cel={cel} onDone={closeCel} />}
       {evo && <Evolution cel={evo} onDone={closeEvo} />}
     </>
@@ -181,6 +204,11 @@ export default function App() {
 // Entwicklung auf eine Stufe, wie sie die Szene braucht (auch zum Wiederholen im Pedia).
 function evolution(monster: Monster, stage: number): Cel {
   return { key: Date.now(), monster, stageBefore: stage - 1, stageAfter: stage, level: monster.levels[stage - 1], xp: 0, bonus: false }
+}
+
+// Aktuelle Stufe des Wochenmonsters für den Kopf der Neuigkeiten-Box.
+function weekImg(m: Monster, monsterXp: Record<string, number>) {
+  return m.files[stageFor(m, levelFor(monsterXp[m.id] ?? 0))]
 }
 
 function Message({ title, text }: { title: string; text: string }) {

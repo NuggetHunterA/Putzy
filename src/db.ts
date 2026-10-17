@@ -23,6 +23,8 @@ export type Snapshot = {
   today: Completion[]
   picks: Pick[]
   seen: Seen[]
+  // Was ist neu: zuletzt gesehene Neuigkeit pro Person (fehlt, solange die Person noch keinen Stand hat).
+  newsSeen: Partial<Record<Person, number>>
   // Erledigte Aufgaben pro Monster und Person.
   tasksDone: Record<string, Partial<Record<Person, number>>>
 }
@@ -55,7 +57,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -63,6 +65,7 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('picks').select('*').eq('week_start', week),
     db().from('seen').select('person, monster, stage'),
     db().from('monster_stats').select('*'),
+    db().from('news_seen').select('*'),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
@@ -75,6 +78,7 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     today: check(today),
     picks: check(picks),
     seen: check(seen),
+    newsSeen: Object.fromEntries(check<{ person: Person; last_id: number }[]>(news).map((r) => [r.person, r.last_id])),
     tasksDone,
   }
 }
@@ -93,6 +97,10 @@ export async function pickMonster(p: Pick) {
 
 export async function markSeen(s: Seen) {
   check(await db().from('seen').upsert(s, { ignoreDuplicates: true }))
+}
+
+export async function markNews(person: Person, lastId: number) {
+  check(await db().from('news_seen').upsert({ person, last_id: lastId }))
 }
 
 export async function setInterval(taskId: string, days: number) {
