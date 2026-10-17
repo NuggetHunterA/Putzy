@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { complete, connect, deleteTask, load, markNews, markSeen, pickMonster, saveTask, setInterval as saveInterval, subscribe, undo, type Completion, type Snapshot, type Task } from './db'
+import { complete, connect, deleteOneOff, deleteTask, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, setInterval as saveInterval, subscribe, undo, type Completion, type OneOff, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
+import { OneOffs } from './OneOffs'
 import { LATEST_NEWS, unread } from './news'
 import { NewsBox } from './NewsBox'
 import { Pedia } from './Pedia'
 import { unseen } from './pedia'
-import { PEOPLE, STANDING_EFFORT, levelFor, monsterById, stageFor, weekStart, xpFor, type Effort, type Element, type Monster, type Person, type Standing } from './game'
+import { PEOPLE, STANDING_EFFORT, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type Person, type Standing, type Work } from './game'
 
 const PERSON_STORAGE = 'putzy.person'
 const connected = connect()
@@ -34,7 +35,7 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals' | 'pedia'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
@@ -132,9 +133,9 @@ export default function App() {
   const news = myPick && view === 'home' && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
-  const award = (effort: Effort, element: Element, save: (monster: string, xp: number) => Promise<void>) => {
+  const award = (work: Work, save: (monster: string, xp: number) => Promise<void>) => {
     const monster = monsterById(myPick!.monster)
-    const xp = xpFor(effort, element, monster.element)
+    const xp = xpOf(work, monster.element)
     const before = snap.monsterXp[monster.id] ?? 0
     const level = levelFor(before + xp)
     setAttacking(true)
@@ -147,7 +148,7 @@ export default function App() {
         stageAfter: stageFor(monster, level),
         level,
         xp,
-        bonus: element === monster.element,
+        bonus: work?.element === monster.element,
       }
     }
     run(
@@ -162,13 +163,41 @@ export default function App() {
 
   const onToggle = (row: Row) => {
     if (row.done) return run(undo(row.done.id))
-    award(row.task.effort, row.task.element, (monster, xp) => complete({ task_id: row.task.id, person, monster, xp }))
+    award(row.task, (monster, xp) => complete({ task_id: row.task.id, person, monster, xp }))
   }
 
   // Ständige Aufgabe: done ist der eigene Haken von heute, nur der lässt sich zurücknehmen.
   const onStanding = (s: Standing, done?: Completion) => {
     if (done) return run(undo(done.id))
-    award(STANDING_EFFORT, s.element, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }))
+    award({ effort: STANDING_EFFORT, element: s.element }, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }))
+  }
+
+  // Einmalige Aufgabe: done ist ihre Erledigung, rückgängig nur am selben Tag (siehe OneOffs).
+  const onOneOff = (o: OneOff, done?: Completion) => {
+    if (done) return run(undo(done.id))
+    award(null, (monster, xp) => complete({ task_id: null, oneoff: o.id, person, monster, xp }))
+  }
+
+  const onAddOneOff = (name: string) => {
+    const o = { id: crypto.randomUUID(), name }
+    setSnap({ ...snap, oneoffs: [...snap.oneoffs, { ...o, created_at: new Date().toISOString() }] })
+    run(saveOneOff(o))
+  }
+
+  const onSaveOneOff = (o: OneOff) => {
+    setSnap({ ...snap, oneoffs: snap.oneoffs.map((x) => (x.id === o.id ? o : x)) })
+    run(saveOneOff({ id: o.id, name: o.name }))
+  }
+
+  const onDeleteOneOff = (o: OneOff) => {
+    setSnap({ ...snap, oneoffs: snap.oneoffs.filter((x) => x.id !== o.id) })
+    run(deleteOneOff(o.id))
+  }
+
+  const onAttackEnd = () => {
+    setCel(pendingCel.current)
+    pendingCel.current = null
+    setAttacking(false)
   }
 
   const onInterval = (task: Task, days: number) => {
@@ -194,6 +223,18 @@ export default function App() {
         <MonsterPick person={person} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
+      ) : view === 'oneoffs' ? (
+        <OneOffs
+          snap={snap}
+          person={person}
+          now={now}
+          onAdd={onAddOneOff}
+          onToggle={onOneOff}
+          onSave={onSaveOneOff}
+          onDelete={onDeleteOneOff}
+          onAttackEnd={onAttackEnd}
+          onBack={() => setView('home')}
+        />
       ) : view === 'pedia' ? (
         <Pedia snap={snap} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} />
       ) : (
@@ -204,13 +245,10 @@ export default function App() {
           live={live}
           onToggle={onToggle}
           onStanding={onStanding}
-          onAttackEnd={() => {
-            setCel(pendingCel.current)
-            pendingCel.current = null
-            setAttacking(false)
-          }}
+          onAttackEnd={onAttackEnd}
           onIntervals={() => setView('intervals')}
           onPedia={() => setView('pedia')}
+          onOneOffs={() => setView('oneoffs')}
         />
       )}
       {error && (

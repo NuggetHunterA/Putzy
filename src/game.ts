@@ -67,6 +67,8 @@ export const STANDING: Standing[] = [
   { id: 'garten', name: 'Garten / Straße pflegen', short: 'Garten', element: 'natur' },
 ]
 export const STANDING_EFFORT: Effort = 'K'
+// Einmalige Aufgaben: kein Element, also auch kein Bonus.
+export const ONEOFF_XP = 20
 // Von Level n auf n+1 braucht ein Monster LEVEL_BASE + LEVEL_STEP × n XP.
 export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4
@@ -75,6 +77,10 @@ export const MAX_LEVEL = 30
 export function xpFor(effort: Effort, taskElement: Element, monsterElement: Element) {
   return Math.round(EFFORT_XP[effort] * (taskElement === monsterElement ? ELEMENT_BONUS : 1))
 }
+
+// Was abgehakt wird: Aufwand und Element, oder null bei einer einmaligen Aufgabe.
+export type Work = { effort: Effort; element: Element } | null
+export const xpOf = (work: Work, monsterElement: Element) => (work ? xpFor(work.effort, work.element, monsterElement) : ONEOFF_XP)
 
 // Gesamt-XP, die man für ein Level braucht: Summe von 130 + 4 × n für n = 1 … level-1.
 export const xpForLevel = (level: number) => (level - 1) * LEVEL_BASE + (LEVEL_STEP * level * (level - 1)) / 2

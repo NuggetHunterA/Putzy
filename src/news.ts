@@ -5,6 +5,7 @@ export type News = { id: number; title: string; text: string }
 export const NEWS: News[] = [
   { id: 1, title: 'Aufgaben selbst pflegen', text: 'Über das Zahnrad könnt ihr jetzt Aufgaben anlegen, ändern und löschen.' },
   { id: 2, title: 'Ständige Aufgaben', text: 'Kochen, Einkaufen, Wäsche, Spülmaschine und Garten stehen jetzt als Leiste oben unter „Heute“. Jeder von euch hakt sie einmal am Tag ab und bekommt XP wie für Aufwand S.' },
+  { id: 3, title: 'Einmalige Aufgaben', text: 'Für Dinge wie Rauchmelder anbringen oder Flur streichen gibt es jetzt das Klemmbrett oben rechts. Jeder kann dort Aufgaben anlegen, und jede erledigte bringt 20 XP.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

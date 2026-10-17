@@ -1,11 +1,11 @@
 // Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste mit den ständigen Aufgaben oben.
 import { AnimatePresence, motion } from 'motion/react'
-import { useRef, type ReactNode, type RefObject } from 'react'
-import { attack } from './fx'
+import { type ReactNode, type RefObject } from 'react'
+import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Effort, type Element, type Monster, type Person, type Standing } from './game'
+import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person, type Standing } from './game'
 import { DEX_TOTAL, PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
-import type { Completion, Snapshot, Task } from './db'
+import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
 
 const SOON_DAYS = 7
 
@@ -21,13 +21,13 @@ type Props = {
   onAttackEnd: () => void
   onIntervals: () => void
   onPedia: () => void
+  onOneOffs: () => void
 }
 
 export type { Row }
 
-export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia }: Props) {
-  const myBadge = useRef<HTMLSpanElement>(null)
-  const busy = useRef(false)
+export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs }: Props) {
+  const { myBadge, strike } = useStrike(snap, person, onAttackEnd)
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
     days: daysUntilDue(snap.lastDone[task.id] ?? null, task.interval_days, now, task.first_due),
@@ -38,35 +38,12 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
   const doneCount = today.filter((r) => r.done).length
   const pct = today.length ? Math.round((doneCount / today.length) * 100) : 100
   const other: Person = person === 'adrian' ? 'ulrike' : 'adrian'
-  const myPick = snap.picks.find((p) => p.person === person)
+  const oneoffs = openOneOffs(snap).length
 
-  // Offene Aufgabe: erst greift dein Monster an, beim Treffer wird sie abgehakt (hit). Erledigte: sofort rückgängig.
-  const strike = async (done: boolean, effort: Effort, element: Element, dot: HTMLElement, hit: () => void) => {
-    if (busy.current) return
-    const badge = myBadge.current
-    if (done || !myPick || !badge) return hit()
-    busy.current = true
-    const m = monsterById(myPick.monster)
-    try {
-      await attack({
-        from: badge.querySelector('img')!,
-        to: dot,
-        bar: badge.parentElement!.querySelector('.xpbar')!,
-        src: m.files[stageFor(m, levelFor(snap.monsterXp[m.id] ?? 0))],
-        element: m.element,
-        taskElement: element,
-        xp: xpFor(effort, element, m.element),
-        onHit: hit,
-      })
-    } finally {
-      busy.current = false
-      onAttackEnd()
-    }
-  }
-  const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task.effort, row.task.element, dot, () => onToggle(row))
+  const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task, dot, () => onToggle(row))
   const toggleStanding = (s: Standing, dot: HTMLElement) => {
     const mine = snap.today.find((c) => c.standing === s.id && c.person === person)
-    strike(!!mine, STANDING_EFFORT, s.element, dot, () => onStanding(s, mine))
+    strike(!!mine, { effort: STANDING_EFFORT, element: s.element }, dot, () => onStanding(s, mine))
   }
 
   return (
@@ -76,12 +53,21 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
           <span className="kicker">{now.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).toUpperCase()}</span>
           <h1 className="logo">Putzy</h1>
         </div>
-        <button className="gear" onClick={onIntervals} aria-label="Aufgaben">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-          </svg>
-        </button>
+        <span className="head-btns">
+          <button className={`gear${oneoffs > 0 ? ' has-count' : ''}`} onClick={onOneOffs} aria-label={`Einmalige Aufgaben, ${oneoffs} offen`}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="5" y="4" width="14" height="17" rx="2" />
+              <path d="M9 4V2.8h6V4M9 11l2 2 4-4M9 17h6" />
+            </svg>
+            {oneoffs > 0 && <span className="gear-count">{oneoffs}</span>}
+          </button>
+          <button className="gear" onClick={onIntervals} aria-label="Aufgaben">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+            </svg>
+          </button>
+        </span>
       </header>
 
       <div className="panel">
@@ -129,7 +115,7 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
   )
 }
 
-function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot; imgRef?: RefObject<HTMLSpanElement | null> }) {
+export function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot; imgRef?: RefObject<HTMLSpanElement | null> }) {
   const pick = snap.picks.find((p) => p.person === person)
   if (!pick) {
     return (

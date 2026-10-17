@@ -95,7 +95,7 @@ type Attack = {
   bar: HTMLElement // XP-Balken im Badge
   src: string
   element: Element
-  taskElement: Element
+  taskElement?: Element // fehlt bei einmaligen Aufgaben
   xp: number
   onHit: () => void
 }
@@ -138,7 +138,7 @@ export async function attack({ from, to, bar, src, element, taskElement, xp, onH
   )
 
   burst(t.x + 10, t.y, element, 18, 110)
-  burst(t.x + 10, t.y, taskElement, 8, 70)
+  if (taskElement) burst(t.x + 10, t.y, taskElement, 8, 70)
   navigator.vibrate?.(30)
   onHit()
 
