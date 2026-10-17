@@ -20,6 +20,12 @@ describe('Level', () => {
     expect(levelFor(1349)).toBe(9)
     expect(levelFor(1350)).toBe(10)
   })
+  it('endet bei Level 30', () => {
+    expect(xpForLevel(30)).toBe(5510)
+    expect(levelFor(5509)).toBe(29)
+    expect(levelFor(5510)).toBe(30)
+    expect(levelFor(99_999)).toBe(30)
+  })
   it('entwickelt auf Level 10 und 25', () => {
     expect(stageFor(9)).toBe(0)
     expect(stageFor(10)).toBe(1)

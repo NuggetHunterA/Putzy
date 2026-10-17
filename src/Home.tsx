@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useRef, type RefObject } from 'react'
 import { attack } from './fx'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, PEOPLE, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Person } from './game'
+import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Person } from './game'
+import { PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
 import type { Completion, Snapshot, Task } from './db'
 
 const SOON_DAYS = 7
@@ -18,11 +19,12 @@ type Props = {
   onToggle: (row: Row) => void
   onAttackEnd: () => void
   onIntervals: () => void
+  onPedia: () => void
 }
 
 export type { Row }
 
-export function Home({ snap, person, now, live, onToggle, onAttackEnd, onIntervals }: Props) {
+export function Home({ snap, person, now, live, onToggle, onAttackEnd, onIntervals, onPedia }: Props) {
   const myBadge = useRef<HTMLSpanElement>(null)
   const busy = useRef(false)
   const rows: Row[] = snap.tasks.map((task) => ({
@@ -72,8 +74,11 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
             <span className="accent">Glanzwerk</span>
           </h1>
         </div>
-        <button className="btn" onClick={onIntervals}>
-          Intervalle
+        <button className="gear" onClick={onIntervals} aria-label="Intervalle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+          </svg>
         </button>
       </header>
 
@@ -101,6 +106,8 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
           <MonsterBadge key={p} person={p} snap={snap} imgRef={p === person ? myBadge : undefined} />
         ))}
       </div>
+
+      <PediaBanner snap={snap} onClick={onPedia} />
 
       <TaskSection title="Heute" rows={today} onToggle={toggle} />
       {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} onToggle={toggle} />}
@@ -131,7 +138,7 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
   const level = levelFor(xp)
   const stage = stageFor(level)
   const from = xpForLevel(level)
-  const progress = (xp - from) / (xpForLevel(level + 1) - from)
+  const progress = level === MAX_LEVEL ? 1 : (xp - from) / (xpForLevel(level + 1) - from)
   return (
     <div className="badge">
       <span ref={imgRef} className="badge-img" style={{ background: backdrop(m.element), color: ELEMENTS[m.element].strong }}>
@@ -147,6 +154,32 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
         </span>
       </span>
     </div>
+  )
+}
+
+// Großer Einstieg ins Pedia: eure zwei stärksten Monster und eine Silhouette als Lockruf.
+function PediaBanner({ snap, onClick }: { snap: Snapshot; onClick: () => void }) {
+  const xp = (id: string) => snap.monsterXp[id] ?? 0
+  const top = [...MONSTERS].sort((a, b) => xp(b.id) - xp(a.id)).slice(0, 2)
+  const shown = (id: string) => [2, 1, 0].find((s) => isDiscovered(snap.seen, id, s))!
+  const hidden = PEDIA_ORDER.flatMap((m) => [1, 2].filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
+  return (
+    <button className="pedia-banner" onClick={onClick}>
+      <span className="pb-text">
+        <span className="pb-kicker">Euer Monsterbuch</span>
+        <span className="pb-title">Putzy-Pedia</span>
+        <span className="pb-sub">{discoveredCount(snap.seen)} von {MONSTERS.length * 3} entdeckt</span>
+      </span>
+      <span className="pb-mons" aria-hidden="true">
+        {top.map((m) => (
+          <img key={m.id} src={m.files[shown(m.id)]} alt="" />
+        ))}
+        {hidden && <img className="sil" src={hidden} alt="" />}
+      </span>
+      <span className="pb-go" aria-hidden="true">
+        ›
+      </span>
+    </button>
   )
 }
 

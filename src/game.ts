@@ -52,6 +52,7 @@ export const ELEMENT_BONUS = 1.25
 export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4
 export const STAGE_LEVELS = [10, 25]
+export const MAX_LEVEL = 30
 
 export function xpFor(effort: Effort, taskElement: Element, monsterElement: Element) {
   return Math.round(EFFORT_XP[effort] * (taskElement === monsterElement ? ELEMENT_BONUS : 1))
@@ -62,7 +63,7 @@ export const xpForLevel = (level: number) => (level - 1) * LEVEL_BASE + (LEVEL_S
 
 export function levelFor(xp: number) {
   let level = 1
-  while (xpForLevel(level + 1) <= xp) level++
+  while (level < MAX_LEVEL && xpForLevel(level + 1) <= xp) level++
   return level
 }
 
