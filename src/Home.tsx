@@ -146,9 +146,8 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
       </span>
       <span className="badge-text">
         <b>{PEOPLE[person]}</b>
-        <small>
-          Lv {level} · {m.stages[stage]}
-        </small>
+        <small className="badge-name">{m.stages[stage]}</small>
+        <small>Lv {level}</small>
         <span className="xpbar">
           <span style={{ width: `${progress * 100}%`, background: ELEMENTS[m.element].strong }} />
         </span>
@@ -208,7 +207,7 @@ function TaskSection({ title, rows, onToggle }: { title: string; rows: Row[]; on
                 {r.task.room} · {intervalLabel(r.task.interval_days)}
               </span>
             </span>
-            <span className="row-due">{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
+            <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
           </motion.button>
         ))}
       </AnimatePresence>

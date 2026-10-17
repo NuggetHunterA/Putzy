@@ -17,6 +17,7 @@ export const ELEMENTS: Record<Element, { name: string; soft: string; strong: str
 
 export const backdrop = (e: Element) => `radial-gradient(circle at 50% 40%, ${ELEMENTS[e].hi} 0 35%, ${ELEMENTS[e].bg} 75%)`
 
+// stages: Namen; \u00AD ist ein weiches Trennzeichen, damit lange Namen in schmalen Feldern sauber umbrechen.
 // levels: ab welchem Level die nächste Stufe kommt, also immer eine Zahl weniger als Stufen.
 export type Monster = {
   id: string
@@ -41,10 +42,10 @@ export const MONSTERS: Monster[] = [
   monster('4', 'wasser', 'Perlschaum-Wirbel', ['Schaumi', 'Blubbro', 'Spumagon'], ['schaumi', 'blubbro', 'spumagon']),
   monster('5', 'feuer', 'Glut-Schrubb', ['Funki', 'Glutfuchs', 'Infernyx'], ['funki', 'glutfuchs', 'infernyx']),
   monster('9', 'feuer', 'Brutzel-Blitz', ['Kokeli', 'Salamandor'], ['kokeli', 'salamandor'], [15]),
-  monster('6', 'natur', 'Moos-Sammler', ['Krümel', 'Kompostkröte', 'Gaiamoos'], ['kruemel', 'kompostkroete', 'gaiamoos']),
+  monster('6', 'natur', 'Moos-Sammler', ['Krümel', 'Kompost\u00ADkröte', 'Gaiamoos'], ['kruemel', 'kompostkroete', 'gaiamoos']),
   monster('10', 'natur', 'Gießkannen-Segen', ['Samsi', 'Sprössli', 'Blattwart', 'Arborius'], ['samsi', 'sproessli', 'blattwart', 'arborius'], [10, 20, 30]),
-  monster('3', 'luft', 'Taifun-Sog', ['Fluffi', 'Wirbelwusel', 'Taifunox'], ['fluffi', 'wirbelwusel', 'taifunox']),
-  monster('7', 'luft', 'Kuschel-Zyklon', ['Flausch', 'Wollwächter', 'Kaschmira'], ['flausch', 'wollwaechter', 'kaschmira']),
+  monster('3', 'luft', 'Taifun-Sog', ['Fluffi', 'Wirbel\u00ADwusel', 'Taifunox'], ['fluffi', 'wirbelwusel', 'taifunox']),
+  monster('7', 'luft', 'Kuschel-Zyklon', ['Flausch', 'Woll\u00ADwächter', 'Kaschmira'], ['flausch', 'wollwaechter', 'kaschmira']),
   monster('1', 'licht', 'Mondglanz-Pfote', ['Miezo', 'Katzelot', 'Sphinxar'], ['miezo', 'katzelot', 'sphinxar']),
   monster('8', 'licht', 'Prisma-Ordnung', ['Funkel', 'Prismabot', 'Kristallos'], ['funkel', 'prismabot', 'kristallos']),
 ]
@@ -94,6 +95,12 @@ export function weekStart(now: Date) {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
+
+// Einstellbare Intervalle in Tagen. − und + springen zur nächsten Stufe.
+const INTERVAL_STEPS = [1, 2, 3, 7, 14, 30, 60, 90, 180, 365]
+
+export const nextInterval = (days: number, dir: 1 | -1) =>
+  (dir > 0 ? INTERVAL_STEPS.find((s) => s > days) : INTERVAL_STEPS.findLast((s) => s < days)) ?? days
 
 export function intervalLabel(days: number) {
   if (days === 1) return 'täglich'

@@ -1,6 +1,6 @@
 // Intervalle der festen Aufgaben einstellen.
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, intervalLabel } from './game'
+import { ELEMENTS, intervalLabel, nextInterval } from './game'
 import type { Task } from './db'
 
 export function Intervals({ tasks, onChange, onBack }: { tasks: Task[]; onChange: (t: Task, days: number) => void; onBack: () => void }) {
@@ -27,11 +27,11 @@ export function Intervals({ tasks, onChange, onBack }: { tasks: Task[]; onChange
                   {t.name}
                   <small>{intervalLabel(t.interval_days)}</small>
                 </span>
-                <button className="step" aria-label={`${t.name} öfter`} disabled={t.interval_days <= 1} onClick={() => onChange(t, t.interval_days - 1)}>
+                <button className="step" aria-label={`${t.name} öfter`} disabled={t.interval_days <= 1} onClick={() => onChange(t, nextInterval(t.interval_days, -1))}>
                   −
                 </button>
                 <span className="iv-days">{t.interval_days}</span>
-                <button className="step" aria-label={`${t.name} seltener`} disabled={t.interval_days >= 365} onClick={() => onChange(t, t.interval_days + 1)}>
+                <button className="step" aria-label={`${t.name} seltener`} disabled={t.interval_days >= 365} onClick={() => onChange(t, nextInterval(t.interval_days, 1))}>
                   +
                 </button>
               </div>

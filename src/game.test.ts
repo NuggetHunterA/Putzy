@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { daysUntilDue, levelFor, monsterById, stageFor, weekStart, xpFor, xpForLevel } from './game'
+import { daysUntilDue, levelFor, monsterById, nextInterval, stageFor, weekStart, xpFor, xpForLevel } from './game'
 
 describe('XP', () => {
   it('gibt 125 % beim passenden Element', () => {
@@ -63,5 +63,21 @@ describe('Wochenstart', () => {
     expect(weekStart(new Date(2026, 9, 16))).toBe('2026-10-12')
     expect(weekStart(new Date(2026, 9, 12, 0, 1))).toBe('2026-10-12')
     expect(weekStart(new Date(2026, 9, 18, 23, 59))).toBe('2026-10-12')
+  })
+})
+
+describe('Intervall-Stufen', () => {
+  it('springt zur nächsten Stufe', () => {
+    expect(nextInterval(60, 1)).toBe(90)
+    expect(nextInterval(90, 1)).toBe(180)
+    expect(nextInterval(7, -1)).toBe(3)
+  })
+  it('bleibt an den Enden stehen', () => {
+    expect(nextInterval(1, -1)).toBe(1)
+    expect(nextInterval(365, 1)).toBe(365)
+  })
+  it('fängt Werte zwischen den Stufen ein', () => {
+    expect(nextInterval(5, 1)).toBe(7)
+    expect(nextInterval(5, -1)).toBe(3)
   })
 })
