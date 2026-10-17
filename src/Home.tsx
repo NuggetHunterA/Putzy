@@ -1,7 +1,9 @@
 // Startbildschirm: Manga-Fortschrittspanel, eure Monster und die Aufgabenliste.
 import { AnimatePresence, motion } from 'motion/react'
+import { useRef, type RefObject } from 'react'
+import { attack } from './fx'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, PEOPLE, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, type Person } from './game'
+import { ELEMENTS, PEOPLE, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpFor, xpForLevel, type Person } from './game'
 import type { Completion, Snapshot, Task } from './db'
 
 const SOON_DAYS = 7
@@ -14,12 +16,15 @@ type Props = {
   now: Date
   live: boolean
   onToggle: (row: Row) => void
+  onAttackEnd: () => void
   onIntervals: () => void
 }
 
 export type { Row }
 
-export function Home({ snap, person, now, live, onToggle, onIntervals }: Props) {
+export function Home({ snap, person, now, live, onToggle, onAttackEnd, onIntervals }: Props) {
+  const myBadge = useRef<HTMLSpanElement>(null)
+  const busy = useRef(false)
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
     days: daysUntilDue(snap.lastDone[task.id] ?? null, task.interval_days, now, task.first_due),
@@ -30,6 +35,31 @@ export function Home({ snap, person, now, live, onToggle, onIntervals }: Props) 
   const doneCount = today.filter((r) => r.done).length
   const pct = today.length ? Math.round((doneCount / today.length) * 100) : 100
   const other: Person = person === 'adrian' ? 'ulrike' : 'adrian'
+  const myPick = snap.picks.find((p) => p.person === person)
+
+  // Offene Aufgabe: erst greift dein Monster an, beim Treffer wird sie abgehakt. Erledigte: sofort rückgängig.
+  const toggle = async (row: Row, dot: HTMLElement) => {
+    if (busy.current) return
+    const badge = myBadge.current
+    if (row.done || !myPick || !badge) return onToggle(row)
+    busy.current = true
+    const m = monsterById(myPick.monster)
+    try {
+      await attack({
+        from: badge.querySelector('img')!,
+        to: dot,
+        bar: badge.parentElement!.querySelector('.xpbar')!,
+        src: m.files[stageFor(levelFor(snap.monsterXp[m.id] ?? 0))],
+        element: m.element,
+        taskElement: row.task.element,
+        xp: xpFor(row.task.effort, row.task.element, m.element),
+        onHit: () => onToggle(row),
+      })
+    } finally {
+      busy.current = false
+      onAttackEnd()
+    }
+  }
 
   return (
     <main className="screen">
@@ -68,12 +98,12 @@ export function Home({ snap, person, now, live, onToggle, onIntervals }: Props) 
 
       <div className="team">
         {[person, other].map((p) => (
-          <MonsterBadge key={p} person={p} snap={snap} />
+          <MonsterBadge key={p} person={p} snap={snap} imgRef={p === person ? myBadge : undefined} />
         ))}
       </div>
 
-      <TaskSection title="Heute" rows={today} onToggle={onToggle} />
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} onToggle={onToggle} />}
+      <TaskSection title="Heute" rows={today} onToggle={toggle} />
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} onToggle={toggle} />}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -83,7 +113,7 @@ export function Home({ snap, person, now, live, onToggle, onIntervals }: Props) 
   )
 }
 
-function MonsterBadge({ person, snap }: { person: Person; snap: Snapshot }) {
+function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot; imgRef?: RefObject<HTMLSpanElement | null> }) {
   const pick = snap.picks.find((p) => p.person === person)
   if (!pick) {
     return (
@@ -104,14 +134,14 @@ function MonsterBadge({ person, snap }: { person: Person; snap: Snapshot }) {
   const progress = (xp - from) / (xpForLevel(level + 1) - from)
   return (
     <div className="badge">
-      <span className="badge-img" style={{ background: ELEMENTS[m.element].soft }}>
+      <span ref={imgRef} className="badge-img" style={{ background: backdrop(m.element), color: ELEMENTS[m.element].strong }}>
         <img src={m.files[stage]} alt="" />
       </span>
       <span className="badge-text">
-        <b>
-          {PEOPLE[person]} · Lv {level}
-        </b>
-        <small>{m.stages[stage]}</small>
+        <b>{PEOPLE[person]}</b>
+        <small>
+          Lv {level} · {m.stages[stage]}
+        </small>
         <span className="xpbar">
           <span style={{ width: `${progress * 100}%`, background: ELEMENTS[m.element].strong }} />
         </span>
@@ -120,7 +150,7 @@ function MonsterBadge({ person, snap }: { person: Person; snap: Snapshot }) {
   )
 }
 
-function TaskSection({ title, rows, onToggle }: { title: string; rows: Row[]; onToggle: (r: Row) => void }) {
+function TaskSection({ title, rows, onToggle }: { title: string; rows: Row[]; onToggle: (r: Row, dot: HTMLElement) => void }) {
   return (
     <section className="section">
       <h2 className="section-title">{title}</h2>
@@ -134,7 +164,7 @@ function TaskSection({ title, rows, onToggle }: { title: string; rows: Row[]; on
             exit={{ opacity: 0, scale: 0.9 }}
             className={`row ${r.done ? 'is-done' : ''}`}
             aria-pressed={!!r.done}
-            onClick={() => onToggle(r)}
+            onClick={(e) => onToggle(r, e.currentTarget.querySelector('.dot')!)}
           >
             <span className="dot" style={{ background: ELEMENTS[r.task.element].soft }}>
               <ElementIcon element={r.task.element} />

@@ -6,13 +6,16 @@ export type Person = 'adrian' | 'ulrike'
 
 export const PEOPLE: Record<Person, string> = { adrian: 'Adrian', ulrike: 'Ulrike' }
 
-export const ELEMENTS: Record<Element, { name: string; soft: string; strong: string }> = {
-  wasser: { name: 'Wasser', soft: '#7FD8F7', strong: '#3EC1F3' },
-  feuer: { name: 'Feuer', soft: '#FF8A6B', strong: '#FF5A3C' },
-  natur: { name: 'Natur', soft: '#B7E39A', strong: '#5BC44A' },
-  luft: { name: 'Luft', soft: '#E9D5FF', strong: '#9B7BFF' },
-  licht: { name: 'Licht', soft: '#FFE89A', strong: '#FFD23F' },
+// soft/strong: Elementfarbe. bg/hi: Gegenfarbe als Hintergrund hinter dem Monster, damit es sich abhebt.
+export const ELEMENTS: Record<Element, { name: string; soft: string; strong: string; bg: string; hi: string }> = {
+  wasser: { name: 'Wasser', soft: '#7FD8F7', strong: '#3EC1F3', bg: '#FFC93C', hi: '#FFE89A' },
+  feuer: { name: 'Feuer', soft: '#FF8A6B', strong: '#FF5A3C', bg: '#1F2B66', hi: '#3A4C9E' },
+  natur: { name: 'Natur', soft: '#B7E39A', strong: '#5BC44A', bg: '#B9A3F5', hi: '#E1D6FF' },
+  luft: { name: 'Luft', soft: '#E9D5FF', strong: '#9B7BFF', bg: '#8FE3C6', hi: '#D2F7EA' },
+  licht: { name: 'Licht', soft: '#FFE89A', strong: '#FFD23F', bg: '#3B2A6B', hi: '#6A52B0' },
 }
+
+export const backdrop = (e: Element) => `radial-gradient(circle at 50% 40%, ${ELEMENTS[e].hi} 0 35%, ${ELEMENTS[e].bg} 75%)`
 
 export type Monster = {
   id: string
