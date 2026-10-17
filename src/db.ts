@@ -12,7 +12,7 @@ export type Task = {
   first_due: string
   sort: number
 }
-export type Completion = { id: string; task_id: string; person: Person; monster: string; xp: number; done_at: string }
+export type Completion = { id: string; task_id: string | null; person: Person; monster: string; xp: number; done_at: string }
 export type Pick = { week_start: string; person: Person; monster: string }
 
 export type Snapshot = {

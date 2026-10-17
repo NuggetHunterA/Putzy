@@ -15,7 +15,8 @@ create table tasks (
 
 create table completions (
   id uuid primary key default gen_random_uuid(),
-  task_id text not null references tasks (id) on delete cascade,
+  -- Wird eine Aufgabe gelöscht, bleibt die Erledigung (und damit die XP) erhalten.
+  task_id text references tasks (id) on delete set null,
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
   xp int not null,

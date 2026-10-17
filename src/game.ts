@@ -47,7 +47,7 @@ export const MONSTERS: Monster[] = [
 export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!
 
 export const EFFORT_XP: Record<Effort, number> = { K: 10, M: 25, G: 50 }
-export const ELEMENT_BONUS = 1.5
+export const ELEMENT_BONUS = 1.25
 // Von Level n auf n+1 braucht ein Monster LEVEL_FACTOR × n XP.
 export const LEVEL_FACTOR = 30
 export const STAGE_LEVELS = [10, 25]
