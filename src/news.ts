@@ -1,0 +1,11 @@
+// Was ist neu: Neuigkeiten für die Box beim Öffnen. Bei jedem spürbaren Feature unten einen Eintrag
+// mit der nächsten Nummer ergänzen (Titel und ein bis zwei kurze Sätze).
+export type News = { id: number; title: string; text: string }
+
+export const NEWS: News[] = []
+
+export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
+
+// Neuigkeiten seit dem letzten Stand, neueste oben. Ohne Stand (neue Person) gibt es keine.
+export const unread = (lastSeen: number | undefined, news = NEWS) =>
+  lastSeen === undefined ? [] : news.filter((n) => n.id > lastSeen).sort((a, b) => b.id - a.id)

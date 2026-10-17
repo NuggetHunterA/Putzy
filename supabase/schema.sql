@@ -44,6 +44,12 @@ create table seen (
   primary key (person, monster, stage)
 );
 
+-- Was ist neu: höchste Neuigkeit (src/news.ts), die eine Person schon gesehen hat.
+create table news_seen (
+  person text primary key check (person in ('adrian', 'ulrike')),
+  last_id int not null
+);
+
 create view task_last_done with (security_invoker = true) as
   select task_id, max(done_at) as last_done_at from completions group by task_id;
 
@@ -57,12 +63,14 @@ alter table tasks enable row level security;
 alter table completions enable row level security;
 alter table picks enable row level security;
 alter table seen enable row level security;
+alter table news_seen enable row level security;
 
 create policy household on tasks for select to anon using (true);
 create policy household_interval on tasks for update to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
 create policy household on picks for all to anon using (true) with check (true);
 create policy household on seen for all to anon using (true) with check (true);
+create policy household on news_seen for all to anon using (true) with check (true);
 
 -- In der App darf nur das Intervall einer Aufgabe geändert werden.
 revoke update on tasks from anon;
