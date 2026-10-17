@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
+import { eventFor } from './events'
+import './events.css'
 import { complete, connect, deleteOneOff, deleteTask, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, setInterval as saveInterval, subscribe, undo, type Completion, type OneOff, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
@@ -47,6 +49,13 @@ export default function App() {
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
+
+  // Event-Design nur auf der Startseite, nicht in der Monsterwahl oder den Unterseiten.
+  const homeEvent = view === 'home' && snap?.picks.some((p) => p.person === person) ? eventFor(now) : null
+  useEffect(() => {
+    if (homeEvent) document.documentElement.dataset.event = homeEvent
+    else delete document.documentElement.dataset.event
+  }, [homeEvent])
 
   const refresh = useCallback(async () => {
     try {
