@@ -2,20 +2,21 @@ import { describe, expect, it } from 'vitest'
 import { daysUntilDue, levelFor, stageFor, weekStart, xpFor, xpForLevel } from './game'
 
 describe('XP', () => {
-  it('gibt 150 % beim passenden Element', () => {
-    expect(xpFor('M', 'wasser', 'wasser')).toBe(38)
+  it('gibt 125 % beim passenden Element', () => {
+    expect(xpFor('M', 'wasser', 'wasser')).toBe(31)
     expect(xpFor('M', 'wasser', 'feuer')).toBe(25)
-    expect(xpFor('G', 'luft', 'luft')).toBe(75)
+    expect(xpFor('K', 'licht', 'licht')).toBe(13)
+    expect(xpFor('G', 'luft', 'luft')).toBe(63)
   })
 })
 
 describe('Level', () => {
-  it('folgt 30 × n XP pro Level', () => {
+  it('folgt 130 + 4 × n XP pro Level', () => {
     expect(levelFor(0)).toBe(1)
-    expect(levelFor(29)).toBe(1)
-    expect(levelFor(30)).toBe(2)
+    expect(levelFor(133)).toBe(1)
+    expect(levelFor(134)).toBe(2)
     expect(xpForLevel(10)).toBe(1350)
-    expect(xpForLevel(25)).toBe(9000)
+    expect(xpForLevel(25)).toBe(4320)
     expect(levelFor(1349)).toBe(9)
     expect(levelFor(1350)).toBe(10)
   })

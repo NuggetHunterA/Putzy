@@ -19,7 +19,7 @@ export function MonsterPick({ person, picks, monsterXp, onPick }: Props) {
           <br />
           <span className="accent">Monster</span>
         </h1>
-        <p className="lead">{PEOPLE[person]}, mit wem putzt du diese Woche? Passende Aufgaben geben 150 % XP.</p>
+        <p className="lead">{PEOPLE[person]}, mit wem putzt du diese Woche? Passende Aufgaben geben 125 % XP.</p>
       </header>
       <div className="pick-grid">
         {MONSTERS.map((m, i) => {
