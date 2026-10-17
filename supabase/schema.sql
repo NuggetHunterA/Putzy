@@ -8,7 +8,7 @@ create table tasks (
   element text not null check (element in ('wasser', 'feuer', 'natur', 'luft', 'licht')),
   effort text not null check (effort in ('K', 'M', 'G')),
   interval_days int not null check (interval_days between 1 and 365),
-  -- Erste Fälligkeit, solange die Aufgabe noch nie erledigt wurde (siehe start.sql).
+  -- Erste Fälligkeit, solange die Aufgabe noch nie erledigt wurde (siehe reset-alles.sql).
   first_due date not null default current_date,
   sort int not null
 );
@@ -23,6 +23,8 @@ create table completions (
   done_at timestamptz not null default now()
 );
 create index on completions (task_id, done_at desc);
+-- Jede Aufgabe zählt pro Tag (deutsche Zeit) nur einmal. Haken beide Handys gleichzeitig ab, gewinnt die erste Erledigung.
+create unique index completions_once_per_day on completions (task_id, ((done_at at time zone 'Europe/Berlin')::date));
 
 -- Monsterwahl pro Woche: jede Person ein Monster, jedes Monster nur einmal pro Woche.
 create table picks (

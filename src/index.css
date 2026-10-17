@@ -140,6 +140,8 @@ img { display: block; }
 .badge-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .badge-text b { font-size: 14px; }
 .badge-text small { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Lange Namen umbrechen statt abschneiden; die Trennstelle steht als weiches Trennzeichen im Namen (game.ts). */
+.badge-text .badge-name { white-space: normal; line-height: 1.15; }
 .xpbar { height: 8px; border: 2px solid var(--ink); border-radius: 99px; overflow: hidden; background: var(--ground); }
 .xpbar span { display: block; height: 100%; transition: width .8s cubic-bezier(.3, 1.4, .4, 1); }
 
@@ -171,6 +173,7 @@ img { display: block; }
 .row-name { font-size: 17px; font-weight: 800; }
 .row-meta { font-size: 12px; font-weight: 500; }
 .row-due { font-size: 12px; font-weight: 800; white-space: nowrap; }
+.row-due.late { padding: 2px 8px; border-radius: 99px; background: var(--accent); color: var(--paper); }
 
 .live { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; font-weight: 700; }
 .live-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: #B8B0CC; }

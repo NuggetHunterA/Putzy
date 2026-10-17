@@ -128,7 +128,14 @@ export default function App() {
         bonus: row.task.element === monster.element,
       }
     }
-    run(complete({ task_id: row.task.id, person, monster: monster.id, xp }))
+    run(
+      complete({ task_id: row.task.id, person, monster: monster.id, xp }).catch((e) => {
+        pendingCel.current = null
+        // 23505: Die andere Person hat die Aufgabe heute schon abgehakt. Das Neuladen zeigt, wer.
+        if (e?.code === '23505') return setError('Das war heute schon erledigt.')
+        throw e
+      }),
+    )
   }
 
   const onInterval = (task: Task, days: number) => {
