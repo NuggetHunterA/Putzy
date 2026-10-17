@@ -1,5 +1,5 @@
 // Monsterwahl zum Wochenstart. Ein Monster, das die andere Person schon hat, ist gesperrt.
-import { ELEMENTS, MONSTERS, PEOPLE, levelFor, stageFor, type Person } from './game'
+import { ELEMENTS, MONSTERS, PEOPLE, backdrop, levelFor, stageFor, type Person } from './game'
 import type { Pick } from './db'
 
 type Props = {
@@ -34,7 +34,7 @@ export function MonsterPick({ person, picks, monsterXp, onPick }: Props) {
               disabled={!!takenBy}
               onClick={() => onPick(m.id)}
             >
-              <span className="pick-img" style={{ background: ELEMENTS[m.element].soft }}>
+              <span className="pick-img" style={{ background: backdrop(m.element) }}>
                 <img src={m.files[stage]} alt="" />
                 <span className="chip">{ELEMENTS[m.element].name}</span>
               </span>

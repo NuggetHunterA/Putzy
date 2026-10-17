@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
+import { Evolution } from './Evolution'
 import { complete, connect, load, pickMonster, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
@@ -32,6 +33,8 @@ export default function App() {
   const [view, setView] = useState<'home' | 'intervals'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
+  // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
+  const pendingCel = useRef<Cel | null>(null)
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
@@ -96,16 +99,17 @@ export default function App() {
     const xp = xpFor(row.task.effort, row.task.element, monster.element)
     const before = snap.monsterXp[monster.id] ?? 0
     const level = levelFor(before + xp)
-    setCel({
-      key: Date.now(),
-      monster,
-      stageBefore: stageFor(levelFor(before)),
-      stageAfter: stageFor(level),
-      level,
-      xp,
-      bonus: row.task.element === monster.element,
-      task: row.task.name,
-    })
+    if (level > levelFor(before)) {
+      pendingCel.current = {
+        key: Date.now(),
+        monster,
+        stageBefore: stageFor(levelFor(before)),
+        stageAfter: stageFor(level),
+        level,
+        xp,
+        bonus: row.task.element === monster.element,
+      }
+    }
     run(complete({ task_id: row.task.id, person, monster: monster.id, xp }))
   }
 
@@ -121,14 +125,25 @@ export default function App() {
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onBack={() => setView('home')} />
       ) : (
-        <Home snap={snap} person={person} now={now} live={live} onToggle={onToggle} onIntervals={() => setView('intervals')} />
+        <Home
+          snap={snap}
+          person={person}
+          now={now}
+          live={live}
+          onToggle={onToggle}
+          onAttackEnd={() => {
+            setCel(pendingCel.current)
+            pendingCel.current = null
+          }}
+          onIntervals={() => setView('intervals')}
+        />
       )}
       {error && (
         <button className="toast" onClick={() => setError(null)}>
           {error}
         </button>
       )}
-      {cel && <Celebration cel={cel} onDone={closeCel} />}
+      {cel && (cel.stageAfter > cel.stageBefore ? <Evolution cel={cel} onDone={closeCel} /> : <Celebration cel={cel} onDone={closeCel} />)}
     </>
   )
 }
