@@ -148,11 +148,11 @@ export async function attack({ from, to, bar, src, element, taskElement, xp, onH
   label.animate(
     [
       { transform: `translate(${t.x}px, ${t.y - 20}px) scale(.4)`, opacity: 0 },
-      { transform: `translate(${t.x - 10}px, ${t.y - 70}px) scale(1.2)`, opacity: 1, offset: 0.3 },
-      { transform: `translate(${t.x - 10}px, ${t.y - 80}px)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${t.x - 10}px, ${t.y - 70}px) scale(1.2)`, opacity: 1, offset: 0.2 },
+      { transform: `translate(${t.x - 10}px, ${t.y - 80}px)`, opacity: 1, offset: 0.6 },
       { transform: `translate(${b.x - 40}px, ${b.y - 20}px) scale(.5)`, opacity: 0.2 },
     ],
-    { duration: 1100, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' },
+    { duration: 1600, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' },
   ).onfinish = () => label.remove()
 
   await move(

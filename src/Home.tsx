@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person, type Standing } from './game'
+import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, xpOf, type Monster, type Person, type Standing } from './game'
 import { DEX_TOTAL, PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
 
@@ -40,6 +40,9 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
   const other: Person = person === 'adrian' ? 'ulrike' : 'adrian'
   const oneoffs = openOneOffs(snap).length
 
+  // XP, die dein Monster für eine Aufgabe bekäme, mit Element-Bonus.
+  const myElement = monsterById(snap.picks.find((p) => p.person === person)!.monster).element
+  const xpFor = (t: Task) => xpOf(t, myElement)
   const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task, dot, () => onToggle(row))
   const toggleStanding = (s: Standing, dot: HTMLElement) => {
     const mine = snap.today.find((c) => c.standing === s.id && c.person === person)
@@ -102,10 +105,10 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
 
       <PediaBanner snap={snap} onClick={onPedia} />
 
-      <TaskSection title="Heute" rows={today} onToggle={toggle}>
+      <TaskSection title="Heute" rows={today} xp={xpFor} onToggle={toggle}>
         <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
       </TaskSection>
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} onToggle={toggle} />}
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} xp={xpFor} onToggle={toggle} />}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -215,7 +218,7 @@ function StandingStrip({ today, person, onToggle }: { today: Completion[]; perso
   )
 }
 
-function TaskSection({ title, rows, onToggle, children }: { title: string; rows: Row[]; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
+function TaskSection({ title, rows, xp, onToggle, children }: { title: string; rows: Row[]; xp: (t: Task) => number; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
       <h2 className="section-title">{title}</h2>
@@ -241,7 +244,10 @@ function TaskSection({ title, rows, onToggle, children }: { title: string; rows:
                 {r.task.room} · {intervalLabel(r.task.interval_days)}
               </span>
             </span>
-            <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
+            <span className="row-side">
+              <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
+              <span className="row-xp">{r.done ? r.done.xp : xp(r.task)} XP</span>
+            </span>
           </motion.button>
         ))}
       </AnimatePresence>

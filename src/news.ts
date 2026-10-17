@@ -8,6 +8,7 @@ export const NEWS: News[] = [
   { id: 3, title: 'Einmalige Aufgaben', text: 'Für Dinge wie Rauchmelder anbringen oder Flur streichen gibt es jetzt das Klemmbrett oben rechts. Jeder kann dort Aufgaben anlegen, und jede erledigte bringt 20 XP.' },
   { id: 4, title: 'Neue Monster: Aali und Raupsi', text: 'Aali der Aal (Wasser) entwickelt sich auf Level 20 zu Siphonix, Raupsi die Raupe (Luft) wird über Kokonella zu Papillora. Kokeli hat außerdem ein neues Bild.' },
   { id: 5, title: 'Monster antippen', text: 'Tippt oben auf euer Monster: Es hüpft und verrät, wie viele XP bis zum nächsten Level fehlen.' },
+  { id: 6, title: 'XP auf einen Blick', text: 'Auf der Startseite steht jetzt bei jeder Aufgabe, wie viele XP sie deinem Monster bringt, inklusive Element-Bonus. Beim Abhaken bleiben die XP etwas länger stehen.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
