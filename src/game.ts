@@ -53,6 +53,8 @@ export const MONSTERS: Monster[] = [
 export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!
 
 export const EFFORT_XP: Record<Effort, number> = { K: 10, M: 25, G: 50 }
+// In der App heißt der Aufwand S/M/L, in der Datenbank K/M/G.
+export const EFFORT_LABEL: Record<Effort, string> = { K: 'S', M: 'M', G: 'L' }
 export const ELEMENT_BONUS = 1.25
 // Von Level n auf n+1 braucht ein Monster LEVEL_BASE + LEVEL_STEP × n XP.
 export const LEVEL_BASE = 130
@@ -92,6 +94,13 @@ export function daysUntilDue(lastDone: Date | null, intervalDays: number, now: D
 export function weekStart(now: Date) {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// Erste Fälligkeit einer neuen Aufgabe (YYYY-MM-DD): nach dem halben Intervall, abgerundet, bei 1 oder 2 Tagen heute.
+export function firstDue(intervalDays: number, now: Date) {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (intervalDays <= 2 ? 0 : Math.floor(intervalDays / 2)))
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }

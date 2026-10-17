@@ -1,5 +1,5 @@
 -- Putzy: feste Aufgabenliste (Stand 17.10.2026, von Adrian abgestimmt).
--- Erneut ausführen ist sicher: in der App geänderte Intervalle bleiben erhalten.
+-- Nur zum ersten Befüllen. Danach pflegt ihr die Aufgaben in der App; erneut ausführen ändert vorhandene Aufgaben nicht.
 -- Aufwand: K = 10 XP, M = 25 XP, G = 50 XP. Intervall in Tagen.
 insert into tasks (id, room, name, element, effort, interval_days, sort) values
   ('ganzes-haus--katzenklo-leeren', 'Ganzes Haus', 'Katzenklo leeren', 'licht', 'K', 1, 1),
@@ -51,5 +51,4 @@ insert into tasks (id, room, name, element, effort, interval_days, sort) values
   ('wintergarten--staubsaugen-und-boden-wischen', 'Wintergarten', 'Staubsaugen und Boden wischen', 'luft', 'K', 3, 47),
   ('draussen--gehweg-saeubern', 'Draußen', 'Gehweg säubern', 'natur', 'M', 90, 48),
   ('draussen--reifenwechsel', 'Draußen', 'Reifenwechsel', 'luft', 'G', 180, 49)
-on conflict (id) do update set room = excluded.room, name = excluded.name, element = excluded.element,
-  effort = excluded.effort, sort = excluded.sort;
+on conflict (id) do nothing;

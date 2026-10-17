@@ -65,15 +65,10 @@ alter table picks enable row level security;
 alter table seen enable row level security;
 alter table news_seen enable row level security;
 
-create policy household on tasks for select to anon using (true);
-create policy household_interval on tasks for update to anon using (true) with check (true);
+create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
 create policy household on picks for all to anon using (true) with check (true);
 create policy household on seen for all to anon using (true) with check (true);
 create policy household on news_seen for all to anon using (true) with check (true);
-
--- In der App darf nur das Intervall einer Aufgabe geändert werden.
-revoke update on tasks from anon;
-grant update (interval_days) on tasks to anon;
 
 alter publication supabase_realtime add table tasks, completions, picks, seen;

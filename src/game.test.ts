@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { daysUntilDue, levelFor, monsterById, nextInterval, stageFor, weekStart, xpFor, xpForLevel } from './game'
+import { daysUntilDue, firstDue, levelFor, monsterById, nextInterval, stageFor, weekStart, xpFor, xpForLevel } from './game'
 
 describe('XP', () => {
   it('gibt 125 % beim passenden Element', () => {
@@ -55,6 +55,14 @@ describe('Fälligkeit', () => {
   })
   it('rechnet über die Zeitumstellung in ganzen Tagen', () => {
     expect(daysUntilDue(new Date(2026, 9, 24, 12, 0), 2, new Date(2026, 9, 26, 0, 30), '2026-10-16')).toBe(0)
+  })
+  it('macht neue Aufgaben nach dem halben Intervall fällig', () => {
+    expect(firstDue(1, now)).toBe('2026-10-16')
+    expect(firstDue(2, now)).toBe('2026-10-16')
+    expect(firstDue(3, now)).toBe('2026-10-17')
+    expect(firstDue(7, now)).toBe('2026-10-19')
+    expect(firstDue(30, now)).toBe('2026-10-31')
+    expect(firstDue(365, now)).toBe('2027-04-16')
   })
 })
 

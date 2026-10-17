@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { complete, connect, load, markNews, markSeen, pickMonster, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
+import { complete, connect, deleteTask, load, markNews, markSeen, pickMonster, saveTask, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
@@ -165,12 +165,24 @@ export default function App() {
     run(saveInterval(task.id, days))
   }
 
+  const onSaveTask = (task: Task) => {
+    const known = snap.tasks.some((t) => t.id === task.id)
+    const tasks = known ? snap.tasks.map((t) => (t.id === task.id ? task : t)) : [...snap.tasks, task]
+    setSnap({ ...snap, tasks: tasks.sort((a, b) => a.sort - b.sort) })
+    run(saveTask(task))
+  }
+
+  const onDeleteTask = (task: Task) => {
+    setSnap({ ...snap, tasks: snap.tasks.filter((t) => t.id !== task.id) })
+    run(deleteTask(task.id))
+  }
+
   return (
     <>
       {!myPick ? (
         <MonsterPick person={person} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
       ) : view === 'intervals' ? (
-        <Intervals tasks={snap.tasks} onChange={onInterval} onBack={() => setView('home')} />
+        <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
       ) : view === 'pedia' ? (
         <Pedia snap={snap} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} />
       ) : (
