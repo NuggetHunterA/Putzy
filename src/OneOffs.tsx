@@ -96,8 +96,8 @@ export function OneOffs({ snap, person, now, onAdd, onToggle, onSave, onDelete, 
           <h2 className="section-title">Erledigt</h2>
           {done.map(({ o, c }) => {
             const when = new Date(c.done_at)
-            // Rückgängig nur am selben Tag, damit XP und Level nicht Wochen später verschwinden.
-            const undoable = sameDay(when, now)
+            // Rückgängig nur die eigene Erledigung und nur am selben Tag, damit XP und Level nicht Wochen später verschwinden.
+            const undoable = c.person === person && sameDay(when, now)
             return (
               <button key={o.id} className="row is-done" disabled={!undoable} aria-pressed onClick={() => onToggle(o, c)}>
                 <span className="dot oo-dot">

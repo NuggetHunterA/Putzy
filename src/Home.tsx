@@ -105,10 +105,10 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
 
       <PediaBanner snap={snap} onClick={onPedia} />
 
-      <TaskSection title="Heute" rows={today} xp={xpFor} onToggle={toggle}>
+      <TaskSection title="Heute" rows={today} person={person} xp={xpFor} onToggle={toggle}>
         <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
       </TaskSection>
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} xp={xpFor} onToggle={toggle} />}
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} onToggle={toggle} />}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -218,7 +218,8 @@ function StandingStrip({ today, person, onToggle }: { today: Completion[]; perso
   )
 }
 
-function TaskSection({ title, rows, xp, onToggle, children }: { title: string; rows: Row[]; xp: (t: Task) => number; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
+// Erledigte Zeilen lassen sich nur von der Person zurücknehmen, die sie abgehakt hat.
+function TaskSection({ title, rows, person, xp, onToggle, children }: { title: string; rows: Row[]; person: Person; xp: (t: Task) => number; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
       <h2 className="section-title">{title}</h2>
@@ -233,6 +234,7 @@ function TaskSection({ title, rows, xp, onToggle, children }: { title: string; r
             exit={{ opacity: 0, scale: 0.9 }}
             className={`row ${r.done ? 'is-done' : ''}`}
             aria-pressed={!!r.done}
+            disabled={!!r.done && r.done.person !== person}
             onClick={(e) => onToggle(r, e.currentTarget.querySelector('.dot')!)}
           >
             <span className="dot" style={{ background: ELEMENTS[r.task.element].soft }}>

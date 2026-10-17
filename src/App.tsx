@@ -15,6 +15,7 @@ import { unseen } from './pedia'
 import { PEOPLE, STANDING_EFFORT, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type Person, type Standing, type Work } from './game'
 
 const PERSON_STORAGE = 'putzy.person'
+const LOAD_ERROR = 'Keine Verbindung zur Datenbank.'
 const connected = connect()
 
 // Aktuelle Zeit, minütlich und beim Zurückkehren in die App aktualisiert (für Tageswechsel).
@@ -61,16 +62,25 @@ export default function App() {
     try {
       const d = new Date()
       setSnap(await load(new Date(d.getFullYear(), d.getMonth(), d.getDate()), weekStart(d)))
-      setError(null)
+      // Nur die Lade-Meldung zurücknehmen; eine Meldung zu einem Schreibfehler bleibt stehen, bis man sie antippt.
+      setError((e) => (e === LOAD_ERROR ? null : e))
     } catch {
-      setError('Keine Verbindung zur Datenbank.')
+      setError(LOAD_ERROR)
     }
   }, [])
 
+  // Neu laden beim Start, bei jeder Änderung und beim Zurückkehren in die App: Was die Live-Verbindung
+  // verpasst hat, während das Handy im Hintergrund lag, wird nicht nachgeliefert.
   useEffect(() => {
     if (!connected) return
     refresh()
-    return subscribe(refresh, setLive)
+    const onShow = () => document.visibilityState === 'visible' && refresh()
+    document.addEventListener('visibilitychange', onShow)
+    const unsubscribe = subscribe(refresh, setLive)
+    return () => {
+      document.removeEventListener('visibilitychange', onShow)
+      unsubscribe()
+    }
   }, [refresh, day])
 
   // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken.
@@ -181,7 +191,7 @@ export default function App() {
     award({ effort: STANDING_EFFORT, element: s.element }, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }))
   }
 
-  // Einmalige Aufgabe: done ist ihre Erledigung, rückgängig nur am selben Tag (siehe OneOffs).
+  // Einmalige Aufgabe: done ist ihre Erledigung, rückgängig nur die eigene am selben Tag (siehe OneOffs).
   const onOneOff = (o: OneOff, done?: Completion) => {
     if (done) return run(undo(done.id))
     award(null, (monster, xp) => complete({ task_id: null, oneoff: o.id, person, monster, xp }))
