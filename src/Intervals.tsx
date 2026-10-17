@@ -2,8 +2,10 @@
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, intervalLabel, nextInterval } from './game'
 import type { Task } from './db'
+import { useBack } from './back'
 
 export function Intervals({ tasks, onChange, onBack }: { tasks: Task[]; onChange: (t: Task, days: number) => void; onBack: () => void }) {
+  useBack(onBack)
   const rooms = [...new Set(tasks.map((t) => t.room))]
   return (
     <main className="screen">

@@ -1,5 +1,6 @@
 // Vollbild beim Level-Up. Die Entwicklung hat eine eigene Szene (Evolution.tsx).
 import { useEffect } from 'react'
+import { useBack } from './back'
 import { ELEMENTS, MAX_LEVEL, type Monster } from './game'
 import { UNLOCK_LEVELS } from './pedia'
 
@@ -16,6 +17,7 @@ export type Cel = {
 const DURATION = 2700
 
 export function Celebration({ cel, onDone }: { cel: Cel; onDone: () => void }) {
+  useBack(onDone)
   useEffect(() => {
     const t = setTimeout(onDone, DURATION)
     return () => clearTimeout(t)

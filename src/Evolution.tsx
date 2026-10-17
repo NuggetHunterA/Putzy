@@ -1,6 +1,7 @@
 // Entwicklung: Bildschirm wird dunkel, das Monster wird zur Silhouette, wechselt immer schneller
 // zwischen alter und neuer Form, weißer Blitz, dann steht die neue Stufe in Farbe da.
 import { useEffect, useRef, useState } from 'react'
+import { useBack } from './back'
 import type { Cel } from './Celebration'
 import { burst, confetti, pullIn } from './fx'
 import { ELEMENTS } from './game'
@@ -11,6 +12,7 @@ const CLOSE_AFTER = 4000
 type Phase = 'intro' | 'charge' | 'reveal'
 
 export function Evolution({ cel, onDone }: { cel: Cel; onDone: () => void }) {
+  useBack(onDone)
   const [phase, setPhase] = useState<Phase>('intro')
   const [showNew, setShowNew] = useState(false)
   const [banner, setBanner] = useState(false)
