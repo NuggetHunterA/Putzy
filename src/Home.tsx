@@ -1,4 +1,4 @@
-// Startbildschirm: Manga-Fortschrittspanel, eure Monster und die Aufgabenliste.
+// Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste.
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, type RefObject } from 'react'
 import { attack } from './fx'
@@ -68,11 +68,7 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
       <header className="home-head">
         <div className="col">
           <span className="kicker">{now.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).toUpperCase()}</span>
-          <h1 className="title">
-            Team
-            <br />
-            <span className="accent">Glanzwerk</span>
-          </h1>
+          <h1 className="logo">Putzy</h1>
         </div>
         <button className="gear" onClick={onIntervals} aria-label="Intervalle">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -91,20 +87,25 @@ export function Home({ snap, person, now, live, onToggle, onAttackEnd, onInterva
             </svg>
           </div>
         </div>
-        <div className="panel-content">
-          <span className="pct">{pct}%</span>
-          <span className="bubble">
-            {today.length === 0 ? 'Heute ist nichts fällig.' : `${doneCount} von ${today.length} besiegt.`}
-            <br />
-            {pct === 100 ? 'Alles glänzt!' : 'Weiter so, Team!'}
-          </span>
-        </div>
-      </div>
-
-      <div className="team">
-        {[person, other].map((p) => (
-          <MonsterBadge key={p} person={p} snap={snap} imgRef={p === person ? myBadge : undefined} />
-        ))}
+        <span className="pct">{pct}%</span>
+        <span className="bubble">
+          {today.length === 0 ? (
+            'Heute frei!'
+          ) : pct === 100 ? (
+            'Alles glänzt!'
+          ) : (
+            <>
+              {doneCount} von {today.length}
+              <br />
+              besiegt
+            </>
+          )}
+        </span>
+        <span className="team">
+          {[person, other].map((p) => (
+            <MonsterBadge key={p} person={p} snap={snap} imgRef={p === person ? myBadge : undefined} />
+          ))}
+        </span>
       </div>
 
       <PediaBanner snap={snap} onClick={onPedia} />
@@ -124,13 +125,10 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
   const pick = snap.picks.find((p) => p.person === person)
   if (!pick) {
     return (
-      <div className="badge">
+      <span className="badge" title={`${PEOPLE[person]} wählt noch`}>
         <span className="badge-img empty" />
-        <span className="badge-text">
-          <b>{PEOPLE[person]}</b>
-          <small>wählt noch</small>
-        </span>
-      </div>
+        <b>wählt noch</b>
+      </span>
     )
   }
   const m = monsterById(pick.monster)
@@ -140,34 +138,29 @@ function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot
   const from = xpForLevel(level)
   const progress = level === MAX_LEVEL ? 1 : (xp - from) / (xpForLevel(level + 1) - from)
   return (
-    <div className="badge">
+    <span className="badge" title={`${PEOPLE[person]}: ${m.stages[stage]}, Level ${level}`}>
       <span ref={imgRef} className="badge-img" style={{ background: backdrop(m.element), color: ELEMENTS[m.element].strong }}>
         <img src={m.files[stage]} alt="" />
       </span>
-      <span className="badge-text">
-        <b>{PEOPLE[person]}</b>
-        <small className="badge-name">{m.stages[stage]}</small>
-        <small>Lv {level}</small>
-        <span className="xpbar">
-          <span style={{ width: `${progress * 100}%`, background: ELEMENTS[m.element].strong }} />
-        </span>
+      <b>Lv {level}</b>
+      <span className="xpbar">
+        <span style={{ width: `${progress * 100}%`, background: ELEMENTS[m.element].strong }} />
       </span>
-    </div>
+    </span>
   )
 }
 
-// Großer Einstieg ins Pedia: eure zwei stärksten Monster und eine Silhouette als Lockruf.
+// Schmales Pedia-Band über den Aufgaben: eure zwei stärksten Monster und eine Silhouette als Lockruf.
 function PediaBanner({ snap, onClick }: { snap: Snapshot; onClick: () => void }) {
   const xp = (id: string) => snap.monsterXp[id] ?? 0
   const top = [...MONSTERS].sort((a, b) => xp(b.id) - xp(a.id)).slice(0, 2)
   const shown = (m: Monster) => m.stages.findLastIndex((_, s) => isDiscovered(snap.seen, m.id, s))
   const hidden = PEDIA_ORDER.flatMap((m) => m.levels.map((_, i) => i + 1).filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
   return (
-    <button className="pedia-banner" onClick={onClick}>
-      <span className="pb-text">
-        <span className="pb-kicker">Euer Monsterbuch</span>
-        <span className="pb-title">Putzy-Pedia</span>
-        <span className="pb-sub">{discoveredCount(snap.seen)} von {DEX_TOTAL} entdeckt</span>
+    <button className="pedia-banner" onClick={onClick} aria-label={`Putzy-Pedia, ${discoveredCount(snap.seen)} von ${DEX_TOTAL} entdeckt`}>
+      <span className="pb-title">Putzy-Pedia</span>
+      <span className="pb-sub">
+        {discoveredCount(snap.seen)}/{DEX_TOTAL}
       </span>
       <span className="pb-mons" aria-hidden="true">
         {top.map((m) => (
