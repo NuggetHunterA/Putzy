@@ -33,23 +33,37 @@ create table picks (
   unique (week_start, monster)
 );
 
+-- Putzy-Pedia: wer welche Entwicklung schon gesehen hat (Stufe 1 = zweite Form, 2 = dritte Form).
+create table seen (
+  person text not null check (person in ('adrian', 'ulrike')),
+  monster text not null,
+  stage int not null check (stage in (1, 2)),
+  seen_at timestamptz not null default now(),
+  primary key (person, monster, stage)
+);
+
 create view task_last_done with (security_invoker = true) as
   select task_id, max(done_at) as last_done_at from completions group by task_id;
 
 create view monster_xp with (security_invoker = true) as
   select monster, sum(xp)::int as xp from completions group by monster;
 
+create view monster_stats with (security_invoker = true) as
+  select monster, person, count(*)::int as tasks from completions group by monster, person;
+
 alter table tasks enable row level security;
 alter table completions enable row level security;
 alter table picks enable row level security;
+alter table seen enable row level security;
 
 create policy household on tasks for select to anon using (true);
 create policy household_interval on tasks for update to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
 create policy household on picks for all to anon using (true) with check (true);
+create policy household on seen for all to anon using (true) with check (true);
 
 -- In der App darf nur das Intervall einer Aufgabe geändert werden.
 revoke update on tasks from anon;
 grant update (interval_days) on tasks to anon;
 
-alter publication supabase_realtime add table tasks, completions, picks;
+alter publication supabase_realtime add table tasks, completions, picks, seen;

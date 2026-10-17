@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { complete, connect, load, pickMonster, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
+import { complete, connect, load, markSeen, pickMonster, setInterval as saveInterval, subscribe, undo, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
-import { PEOPLE, levelFor, monsterById, stageFor, weekStart, xpFor, type Person } from './game'
+import { Pedia } from './Pedia'
+import { unseen } from './pedia'
+import { PEOPLE, STAGE_LEVELS, levelFor, monsterById, stageFor, weekStart, xpFor, type Monster, type Person } from './game'
 
 const PERSON_STORAGE = 'putzy.person'
 const connected = connect()
@@ -30,11 +32,15 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
   const pendingCel = useRef<Cel | null>(null)
+  // Entwicklungen laufen aus der Warteschlange (unseen), nie während eines Angriffs.
+  const [evo, setEvo] = useState<Cel | null>(null)
+  const closeEvo = useCallback(() => setEvo(null), [])
+  const [attacking, setAttacking] = useState(false)
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
@@ -54,6 +60,16 @@ export default function App() {
     refresh()
     return subscribe(refresh, setLive)
   }, [refresh, day])
+
+  // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken.
+  const next = snap && person ? unseen(snap.seen, person, snap.monsterXp)[0] : undefined
+  useEffect(() => {
+    if (!next || !person || evo || cel || attacking) return
+    const seen = { person, monster: next.monster.id, stage: next.stage }
+    setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
+    setEvo(evolution(next.monster, next.stage))
+    markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [next, person, evo, cel, attacking, refresh])
 
   // Fehler bei Schreibzugriffen: Meldung zeigen und den echten Stand neu laden.
   const run = (action: Promise<unknown>) =>
@@ -99,7 +115,9 @@ export default function App() {
     const xp = xpFor(row.task.effort, row.task.element, monster.element)
     const before = snap.monsterXp[monster.id] ?? 0
     const level = levelFor(before + xp)
-    if (level > levelFor(before)) {
+    setAttacking(true)
+    // Bei einer Entwicklung übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.
+    if (level > levelFor(before) && stageFor(level) === stageFor(levelFor(before))) {
       pendingCel.current = {
         key: Date.now(),
         monster,
@@ -124,6 +142,8 @@ export default function App() {
         <MonsterPick person={person} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onBack={() => setView('home')} />
+      ) : view === 'pedia' ? (
+        <Pedia snap={snap} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} />
       ) : (
         <Home
           snap={snap}
@@ -134,8 +154,10 @@ export default function App() {
           onAttackEnd={() => {
             setCel(pendingCel.current)
             pendingCel.current = null
+            setAttacking(false)
           }}
           onIntervals={() => setView('intervals')}
+          onPedia={() => setView('pedia')}
         />
       )}
       {error && (
@@ -143,9 +165,15 @@ export default function App() {
           {error}
         </button>
       )}
-      {cel && (cel.stageAfter > cel.stageBefore ? <Evolution cel={cel} onDone={closeCel} /> : <Celebration cel={cel} onDone={closeCel} />)}
+      {cel && <Celebration cel={cel} onDone={closeCel} />}
+      {evo && <Evolution cel={evo} onDone={closeEvo} />}
     </>
   )
+}
+
+// Entwicklung auf eine Stufe, wie sie die Szene braucht (auch zum Wiederholen im Pedia).
+function evolution(monster: Monster, stage: number): Cel {
+  return { key: Date.now(), monster, stageBefore: stage - 1, stageAfter: stage, level: STAGE_LEVELS[stage - 1], xp: 0, bonus: false }
 }
 
 function Message({ title, text }: { title: string; text: string }) {
