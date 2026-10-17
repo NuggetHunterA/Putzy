@@ -5,10 +5,12 @@ Putzy - the personal household helper. Eine PWA für Adrian und Ulrike: feste Ha
 ## Spielregeln
 
 - Jede Aufgabe hat einen Aufwand: K = 10 XP, M = 25 XP, G = 50 XP. Passt das Element zum Monster der Woche, gibt es 125 %.
+- Ständige Aufgaben (Kochen, Einkaufen, Wäsche, Spülmaschine, Garten) stehen als Leiste unter „Heute“. Jede Person hakt sie einmal pro Tag ab und bekommt XP wie für Aufwand K.
 - Einmalige Aufgaben (Klemmbrett auf der Startseite) haben kein Element und geben immer 20 XP. Jede wird nur einmal erledigt.
 - Das Intervall zählt ab der letzten Erledigung. Jede Aufgabe zählt pro Tag nur einmal: Wer zuerst abhakt, bekommt die XP.
+- Zurücknehmen kann man nur den eigenen Haken, bei einmaligen Aufgaben nur am selben Tag.
 - Jeden Montag wählt jede Person ein Monster. Ein Monster gibt es einmal im Haushalt, es behält seine XP dauerhaft und ist pro Woche nur für eine Person wählbar.
-- Von Level n auf n+1 braucht ein Monster 130 + 4 × n XP (`LEVEL_BASE` und `LEVEL_STEP` in `src/game.ts`). Die meisten Monster entwickeln sich auf Level 10 (1.350 XP) und 25 (4.320 XP); Kokeli und Samsi haben eigene Stufen (`levels` in `src/game.ts`).
+- Von Level n auf n+1 braucht ein Monster 130 + 4 × n XP (`LEVEL_BASE` und `LEVEL_STEP` in `src/game.ts`). Die meisten Monster entwickeln sich auf Level 10 (1.350 XP) und 25 (4.320 XP); Kokeli, Samsi und Aali haben eigene Stufen (`levels` in `src/game.ts`).
 
 ## Einrichtung
 
