@@ -107,6 +107,24 @@ export const PEDIA: Record<string, Entry> = {
     dislikes: 'vergessene Topfpflanzen, Laub im Gully',
     legend: 'Arborius war einmal ein winziges Samsi in einem Joghurtbecher auf einer Fensterbank. Man sagt, in seinen Ringen steht jede Aufgabe, die je in diesem Haus erledigt wurde, und wer ihm zuhört, hört das Rascheln von hundert Besen.',
   },
+  '11': {
+    sizes: ['0,4 m', '3,2 m'],
+    weights: ['0,6 kg', '55 kg'],
+    room: 'Bad',
+    text: 'Aali wohnt im Abfluss der Dusche und frisst alles, was dort nicht hingehört. Wenn das Wasser gurgelnd abläuft, ist das Aali, das sich bedankt.',
+    likes: 'blanke Armaturen, Haare im Sieb (zum Frühstück)',
+    dislikes: 'Rohrreiniger aus der Flasche, Kalkränder',
+    legend: 'Siphonix soll durch alle Rohre des Hauses gleichzeitig schwimmen können. Wer nachts ein leises Plätschern im Waschbecken hört, weiß: Hier verstopft so schnell nichts mehr.',
+  },
+  '12': {
+    sizes: ['0,2 m', '0,5 m', '1,6 m'],
+    weights: ['0,3 kg', '2 kg', '4 kg'],
+    room: 'Waschküche',
+    text: 'Raupsi wohnt im Wäschekorb und knabbert nur an Fusseln. Es riecht immer nach frischem Weichspüler, und wer eine Socke ohne Partner findet, findet meistens auch Raupsi.',
+    likes: 'warme Wäsche aus dem Trockner, Wäscheklammern',
+    dislikes: 'volle Wäschekörbe, die tagelang stehen, Knitterfalten',
+    legend: 'Papillora fliegt nur an Tagen, an denen die Wäsche draußen hängt. Wo ihre Flügel ein Laken streifen, ist es danach glatt wie gebügelt.',
+  },
 }
 
 // Pedia-Reihenfolge nach Nummer, nicht nach Element wie in der Monsterwahl.
