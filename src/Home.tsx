@@ -1,6 +1,6 @@
 // Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste mit den ständigen Aufgaben oben.
 import { AnimatePresence, motion } from 'motion/react'
-import { type ReactNode, type RefObject } from 'react'
+import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person, type Standing } from './game'
@@ -115,7 +115,14 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
   )
 }
 
+// Antippen: Monster hüpft und sagt kurz, wie viele XP bis zum nächsten Level fehlen.
 export function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot; imgRef?: RefObject<HTMLSpanElement | null> }) {
+  const [talk, setTalk] = useState(0)
+  useEffect(() => {
+    if (!talk) return
+    const t = setTimeout(() => setTalk(0), 2500)
+    return () => clearTimeout(t)
+  }, [talk])
   const pick = snap.picks.find((p) => p.person === person)
   if (!pick) {
     return (
@@ -131,16 +138,22 @@ export function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: S
   const stage = stageFor(m, level)
   const from = xpForLevel(level)
   const progress = level === MAX_LEVEL ? 1 : (xp - from) / (xpForLevel(level + 1) - from)
+  const line = level === MAX_LEVEL ? 'Level 30 erreicht! ★' : `Noch ${(xpForLevel(level + 1) - xp).toLocaleString('de-DE')} XP bis Lv ${level + 1}!`
   return (
-    <span className="badge" title={`${PEOPLE[person]}: ${m.stages[stage]}, Level ${level}`}>
-      <span ref={imgRef} className="badge-img" style={{ background: backdrop(m.element), color: ELEMENTS[m.element].strong }}>
+    <button className="badge" title={`${PEOPLE[person]}: ${m.stages[stage]}, Level ${level}`} onClick={() => setTalk((n) => n + 1)}>
+      {talk > 0 && (
+        <span key={`say${talk}`} className="say" role="status">
+          {line}
+        </span>
+      )}
+      <span key={`img${talk}`} ref={imgRef} className={`badge-img ${talk > 0 ? 'hop' : ''}`} style={{ background: backdrop(m.element), color: ELEMENTS[m.element].strong }}>
         <img src={m.files[stage]} alt="" />
       </span>
       <b>Lv {level}</b>
       <span className="xpbar">
         <span style={{ width: `${progress * 100}%`, background: ELEMENTS[m.element].strong }} />
       </span>
-    </span>
+    </button>
   )
 }
 
