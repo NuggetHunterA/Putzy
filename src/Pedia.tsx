@@ -1,9 +1,9 @@
 // Putzy-Pedia: Übersicht aller Reihen und Detailseite mit Infos, die alle 5 Level freigeschaltet werden.
-import { Fragment, useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STAGE_LEVELS, backdrop, levelFor, xpForLevel, type Monster, type Person } from './game'
-import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, discoveredCount, isDiscovered } from './pedia'
+import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, xpForLevel, type Monster, type Person } from './game'
+import { DEX_TOTAL, PEDIA, PEDIA_ORDER, UNLOCK, dexNo, discoveredCount, isDiscovered, lastStage } from './pedia'
 
 type Props = {
   snap: Snapshot
@@ -11,7 +11,9 @@ type Props = {
   onReplay: (m: Monster, stage: number) => void
 }
 
-const STAGES = [0, 1, 2]
+// Stufen als Spalten: Slot, Pfeil, Slot … für 2 bis 4 Stufen.
+const stagesOf = (m: Monster) => m.stages.map((_, s) => s)
+const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.length - 1}, 1fr auto) 1fr` })
 const fmt = (n: number) => n.toLocaleString('de-DE')
 
 export function Pedia({ snap, onBack, onReplay }: Props) {
@@ -23,7 +25,7 @@ export function Pedia({ snap, onBack, onReplay }: Props) {
   if (open) return <Detail m={open} snap={snap} onBack={() => show(null)} onReplay={onReplay} />
 
   const found = discoveredCount(snap.seen)
-  const total = MONSTERS.length * 3
+  const total = DEX_TOTAL
   return (
     <main className="screen">
       <div className="bar">
@@ -43,12 +45,12 @@ export function Pedia({ snap, onBack, onReplay }: Props) {
         return (
           <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => show(m)}>
             <span className="dex-top">
-              #{dexNo(m, 0)}–{dexNo(m, 2)}
+              #{dexNo(m, 0)}–{dexNo(m, lastStage(m))}
               <Element m={m} />
               <span className="lv">{level === MAX_LEVEL ? 'Lv 30 · MAX ★' : `Lv ${level}`}</span>
             </span>
-            <span className="dex-line">
-              {STAGES.map((s) => (
+            <span className={`dex-line ${m.stages.length > 3 ? 'many' : ''}`} style={stageGrid(m)}>
+              {stagesOf(m).map((s) => (
                 <Fragment key={s}>
                   {s > 0 && <span className="arrow">›</span>}
                   <Slot m={m} stage={s} snap={snap} hint />
@@ -80,13 +82,13 @@ function Slot({ m, stage, snap, hint }: { m: Monster; stage: number; snap: Snaps
         <img src={m.files[stage]} alt="" />
       </span>
       <b>{found ? m.stages[stage] : '???'}</b>
-      {hint && !found && <small>ab Lv {STAGE_LEVELS[stage - 1]}</small>}
+      {hint && !found && <small>ab Lv {m.levels[stage - 1]}</small>}
     </span>
   )
 }
 
 function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
-  const known = STAGES.filter((s) => isDiscovered(snap.seen, m.id, s))
+  const known = stagesOf(m).filter((s) => isDiscovered(snap.seen, m.id, s))
   const [stage, setStage] = useState(known[known.length - 1])
   const xp = snap.monsterXp[m.id] ?? 0
   const level = levelFor(xp)
@@ -98,10 +100,10 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
   const share = (p: Person) => (tasks ? Math.round(((done[p] ?? 0) / tasks) * 100) : 0)
   const e = PEDIA[m.id]
 
-  // Infoblöcke und Stufen in Level-Reihenfolge; Gesperrtes als Schloss-Zeile.
-  const blocks = [
+  // Infoblöcke und Stufen in Level-Reihenfolge, bei gleichem Level die Stufe zuerst; Gesperrtes als Schloss-Zeile.
+  const stageBlocks = m.levels.map((at, i) => ({ at, title: `Stufe ${i + 2}`, stage: i + 1 }))
+  const infoBlocks = [
     { at: UNLOCK.facts, title: 'Steckbrief', body: <Facts e={e} stage={stage} /> },
-    { at: STAGE_LEVELS[0], title: 'Stufe 2', stage: 1 },
     { at: UNLOCK.entry, title: 'Pedia-Eintrag', body: <p>{e.text}</p> },
     {
       at: UNLOCK.quirk,
@@ -119,9 +121,9 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
         </span>
       ),
     },
-    { at: STAGE_LEVELS[1], title: 'Stufe 3', stage: 2 },
     { at: UNLOCK.legend, title: '★ Legende', body: <p>{e.legend}</p>, legend: true },
   ]
+  const blocks: { at: number; title: string; stage?: number; body?: ReactNode; legend?: boolean }[] = [...stageBlocks, ...infoBlocks].sort((a, b) => a.at - b.at)
 
   return (
     <main className="screen">
@@ -130,11 +132,11 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
           ←
         </button>
         <span className="kicker">
-          PUTZY-PEDIA · #{dexNo(m, 0)}–{dexNo(m, 2)}
+          PUTZY-PEDIA · #{dexNo(m, 0)}–{dexNo(m, lastStage(m))}
         </span>
       </div>
-      <div className="stages">
-        {STAGES.map((s) => (
+      <div className={`stages ${m.stages.length > 3 ? 'many' : ''}`} style={stageGrid(m)}>
+        {stagesOf(m).map((s) => (
           <Fragment key={s}>
             {s > 0 && <span className="arrow">›</span>}
             <button className={`stage-btn ${s === stage ? 'sel' : ''}`} disabled={!known.includes(s)} onClick={() => setStage(s)}>
@@ -173,14 +175,14 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
         )}
       </div>
       <div className="replays">
-        {[1, 2].map((s) =>
+        {m.levels.map((_, i) => i + 1).map((s) =>
           known.includes(s) ? (
             <button key={s} className="btn" onClick={() => onReplay(m, s)}>
               ▶ Entwicklung {s}→{s + 1}
             </button>
           ) : (
             <button key={s} className="btn" disabled>
-              🔒 {s}→{s + 1} ab Lv {STAGE_LEVELS[s - 1]}
+              🔒 {s}→{s + 1} ab Lv {m.levels[s - 1]}
             </button>
           ),
         )}

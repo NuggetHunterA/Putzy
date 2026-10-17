@@ -25,7 +25,7 @@ export function MonsterPick({ person, picks, monsterXp, onPick }: Props) {
         {MONSTERS.map((m, i) => {
           const takenBy = picks.find((p) => p.monster === m.id && p.person !== person)
           const level = levelFor(monsterXp[m.id] ?? 0)
-          const stage = stageFor(level)
+          const stage = stageFor(m, level)
           return (
             <button
               key={m.id}

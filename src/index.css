@@ -309,6 +309,10 @@ img { display: block; }
 }
 .slot b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 17px; letter-spacing: .03em; line-height: 1; }
 .slot small { font-size: 10px; font-weight: 800; opacity: .6; }
+/* Reihen mit 4 Stufen: kleinere Kreise, damit alles in eine Zeile passt. */
+.dex-line.many .slot-img { width: 66px; height: 66px; }
+.stages.many .slot-img { width: 54px; height: 54px; }
+.many .slot b { font-size: 15px; }
 
 /* Putzy-Pedia: Detailseite */
 .stage-btn { padding: 0; border: 0; background: none; justify-self: center; }

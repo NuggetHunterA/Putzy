@@ -17,27 +17,32 @@ export const ELEMENTS: Record<Element, { name: string; soft: string; strong: str
 
 export const backdrop = (e: Element) => `radial-gradient(circle at 50% 40%, ${ELEMENTS[e].hi} 0 35%, ${ELEMENTS[e].bg} 75%)`
 
+// levels: ab welchem Level die nächste Stufe kommt, also immer eine Zahl weniger als Stufen.
 export type Monster = {
   id: string
   element: Element
-  stages: [string, string, string]
-  files: [string, string, string]
+  stages: string[]
+  files: string[]
+  levels: number[]
   move: string
 }
 
-const monster = (id: string, element: Element, move: string, names: [string, string, string], slugs: [string, string, string]): Monster => ({
+const monster = (id: string, element: Element, move: string, names: string[], slugs: string[], levels = [10, 25]): Monster => ({
   id,
   element,
   move,
   stages: names,
-  files: slugs.map((s, i) => `/monster/${id}-${i + 1}-${s}.webp`) as [string, string, string],
+  files: slugs.map((s, i) => `/monster/${id}-${i + 1}-${s}.webp`),
+  levels,
 })
 
 export const MONSTERS: Monster[] = [
   monster('2', 'wasser', 'Gezeitenstoß', ['Plitsch', 'Platschkoi', 'Tsunadra'], ['plitsch', 'platschkoi', 'tsunadra']),
   monster('4', 'wasser', 'Perlschaum-Wirbel', ['Schaumi', 'Blubbro', 'Spumagon'], ['schaumi', 'blubbro', 'spumagon']),
   monster('5', 'feuer', 'Glut-Schrubb', ['Funki', 'Glutfuchs', 'Infernyx'], ['funki', 'glutfuchs', 'infernyx']),
+  monster('9', 'feuer', 'Brutzel-Blitz', ['Kokeli', 'Salamandor'], ['kokeli', 'salamandor'], [15]),
   monster('6', 'natur', 'Moos-Sammler', ['Krümel', 'Kompostkröte', 'Gaiamoos'], ['kruemel', 'kompostkroete', 'gaiamoos']),
+  monster('10', 'natur', 'Gießkannen-Segen', ['Samsi', 'Sprössli', 'Blattwart', 'Arborius'], ['samsi', 'sproessli', 'blattwart', 'arborius'], [10, 20, 30]),
   monster('3', 'luft', 'Taifun-Sog', ['Fluffi', 'Wirbelwusel', 'Taifunox'], ['fluffi', 'wirbelwusel', 'taifunox']),
   monster('7', 'luft', 'Kuschel-Zyklon', ['Flausch', 'Wollwächter', 'Kaschmira'], ['flausch', 'wollwaechter', 'kaschmira']),
   monster('1', 'licht', 'Mondglanz-Pfote', ['Miezo', 'Katzelot', 'Sphinxar'], ['miezo', 'katzelot', 'sphinxar']),
@@ -51,7 +56,6 @@ export const ELEMENT_BONUS = 1.25
 // Von Level n auf n+1 braucht ein Monster LEVEL_BASE + LEVEL_STEP × n XP.
 export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4
-export const STAGE_LEVELS = [10, 25]
 export const MAX_LEVEL = 30
 
 export function xpFor(effort: Effort, taskElement: Element, monsterElement: Element) {
@@ -67,7 +71,7 @@ export function levelFor(xp: number) {
   return level
 }
 
-export const stageFor = (level: number) => (level >= STAGE_LEVELS[1] ? 2 : level >= STAGE_LEVELS[0] ? 1 : 0)
+export const stageFor = (m: Monster, level: number) => m.levels.filter((at) => level >= at).length
 
 // Kalendertag (lokal) als Zahl, damit Tagesdifferenzen nicht an Sommerzeit scheitern.
 const dayNumber = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000)

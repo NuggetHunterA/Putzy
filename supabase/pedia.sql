@@ -3,7 +3,7 @@
 create table seen (
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
-  stage int not null check (stage in (1, 2)),
+  stage int not null check (stage in (1, 2, 3)),
   seen_at timestamptz not null default now(),
   primary key (person, monster, stage)
 );

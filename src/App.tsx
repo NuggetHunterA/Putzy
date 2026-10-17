@@ -7,7 +7,7 @@ import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
 import { Pedia } from './Pedia'
 import { unseen } from './pedia'
-import { PEOPLE, STAGE_LEVELS, levelFor, monsterById, stageFor, weekStart, xpFor, type Monster, type Person } from './game'
+import { PEOPLE, levelFor, monsterById, stageFor, weekStart, xpFor, type Monster, type Person } from './game'
 
 const PERSON_STORAGE = 'putzy.person'
 const connected = connect()
@@ -117,12 +117,12 @@ export default function App() {
     const level = levelFor(before + xp)
     setAttacking(true)
     // Bei einer Entwicklung übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.
-    if (level > levelFor(before) && stageFor(level) === stageFor(levelFor(before))) {
+    if (level > levelFor(before) && stageFor(monster, level) === stageFor(monster, levelFor(before))) {
       pendingCel.current = {
         key: Date.now(),
         monster,
-        stageBefore: stageFor(levelFor(before)),
-        stageAfter: stageFor(level),
+        stageBefore: stageFor(monster, levelFor(before)),
+        stageAfter: stageFor(monster, level),
         level,
         xp,
         bonus: row.task.element === monster.element,
@@ -173,7 +173,7 @@ export default function App() {
 
 // Entwicklung auf eine Stufe, wie sie die Szene braucht (auch zum Wiederholen im Pedia).
 function evolution(monster: Monster, stage: number): Cel {
-  return { key: Date.now(), monster, stageBefore: stage - 1, stageAfter: stage, level: STAGE_LEVELS[stage - 1], xp: 0, bonus: false }
+  return { key: Date.now(), monster, stageBefore: stage - 1, stageAfter: stage, level: monster.levels[stage - 1], xp: 0, bonus: false }
 }
 
 function Message({ title, text }: { title: string; text: string }) {
