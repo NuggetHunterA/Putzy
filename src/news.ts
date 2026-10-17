@@ -9,7 +9,7 @@ export const NEWS: News[] = [
   { id: 4, title: 'Neue Monster: Aali und Raupsi', text: 'Aali der Aal (Wasser) entwickelt sich auf Level 20 zu Siphonix, Raupsi die Raupe (Luft) wird über Kokonella zu Papillora. Kokeli hat außerdem ein neues Bild.' },
   { id: 5, title: 'Monster antippen', text: 'Tippt oben auf euer Monster: Es hüpft und verrät, wie viele XP bis zum nächsten Level fehlen.' },
   { id: 6, title: 'XP auf einen Blick', text: 'Auf der Startseite steht jetzt bei jeder Aufgabe, wie viele XP sie deinem Monster bringt, inklusive Element-Bonus. Beim Abhaken bleiben die XP etwas länger stehen.' },
-  { id: 7, title: 'Event-Designs', text: 'Zu Halloween (28. bis 31.10.), Weihnachten (20. bis 26.12.) und Silvester verkleidet sich die Startseite mit eigenem Himmel, Mütze auf dem Logo und passender Deko.' },
+  { id: 7, title: 'Event-Designs', text: 'Zu Festen und besonderen Tagen verkleidet sich die Startseite mit eigenem Himmel, Mütze auf dem Logo und passender Deko. Welche Tage das sind, verraten wir nicht.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
