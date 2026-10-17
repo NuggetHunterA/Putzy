@@ -7,7 +7,7 @@ Putzy - the personal household helper. Eine PWA für Adrian und Ulrike: feste Ha
 - Jede Aufgabe hat einen Aufwand: K = 10 XP, M = 25 XP, G = 50 XP. Passt das Element zum Monster der Woche, gibt es 125 %.
 - Das Intervall zählt ab der letzten Erledigung. Wer zuerst abhakt, bekommt die XP.
 - Jeden Montag wählt jede Person ein Monster. Ein Monster gibt es einmal im Haushalt, es behält seine XP dauerhaft und ist pro Woche nur für eine Person wählbar.
-- Von Level n auf n+1 braucht ein Monster 30 × n XP (`LEVEL_FACTOR` in `src/game.ts`). Entwicklung auf Level 10 und 25.
+- Von Level n auf n+1 braucht ein Monster 130 + 4 × n XP (`LEVEL_BASE` und `LEVEL_STEP` in `src/game.ts`). Entwicklung auf Level 10 (1.350 XP) und 25 (4.320 XP).
 
 ## Einrichtung
 

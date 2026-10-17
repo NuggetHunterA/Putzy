@@ -11,12 +11,12 @@ describe('XP', () => {
 })
 
 describe('Level', () => {
-  it('folgt 30 × n XP pro Level', () => {
+  it('folgt 130 + 4 × n XP pro Level', () => {
     expect(levelFor(0)).toBe(1)
-    expect(levelFor(29)).toBe(1)
-    expect(levelFor(30)).toBe(2)
+    expect(levelFor(133)).toBe(1)
+    expect(levelFor(134)).toBe(2)
     expect(xpForLevel(10)).toBe(1350)
-    expect(xpForLevel(25)).toBe(9000)
+    expect(xpForLevel(25)).toBe(4320)
     expect(levelFor(1349)).toBe(9)
     expect(levelFor(1350)).toBe(10)
   })

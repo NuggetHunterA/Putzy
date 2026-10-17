@@ -48,16 +48,17 @@ export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!
 
 export const EFFORT_XP: Record<Effort, number> = { K: 10, M: 25, G: 50 }
 export const ELEMENT_BONUS = 1.25
-// Von Level n auf n+1 braucht ein Monster LEVEL_FACTOR × n XP.
-export const LEVEL_FACTOR = 30
+// Von Level n auf n+1 braucht ein Monster LEVEL_BASE + LEVEL_STEP × n XP.
+export const LEVEL_BASE = 130
+export const LEVEL_STEP = 4
 export const STAGE_LEVELS = [10, 25]
 
 export function xpFor(effort: Effort, taskElement: Element, monsterElement: Element) {
   return Math.round(EFFORT_XP[effort] * (taskElement === monsterElement ? ELEMENT_BONUS : 1))
 }
 
-// Gesamt-XP, die man für ein Level braucht: Summe von 30 × n für n = 1 … level-1.
-export const xpForLevel = (level: number) => (LEVEL_FACTOR * level * (level - 1)) / 2
+// Gesamt-XP, die man für ein Level braucht: Summe von 130 + 4 × n für n = 1 … level-1.
+export const xpForLevel = (level: number) => (level - 1) * LEVEL_BASE + (LEVEL_STEP * level * (level - 1)) / 2
 
 export function levelFor(xp: number) {
   let level = 1
