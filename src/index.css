@@ -71,15 +71,23 @@ img { display: block; }
 /* Kopf des Startbildschirms */
 .home-head { display: flex; justify-content: space-between; align-items: flex-end; }
 
-/* Manga-Fortschrittspanel mit steigendem Wasser */
+/* Wortmarke wie im App-Icon: dunkel mit gelbem Versatz und zwei Seifenblasen. */
+.logo { position: relative; align-self: flex-start; margin: 2px 0 0; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 52px; letter-spacing: .04em; line-height: .9; text-shadow: 3px 3px 0 var(--sun); }
+.logo::before, .logo::after { content: ''; position: absolute; border: 2.5px solid #3EC1F3; border-radius: 50%; }
+.logo::before { width: 14px; height: 14px; right: -22px; top: -4px; }
+.logo::after { width: 9px; height: 9px; right: -30px; top: 14px; }
+
+/* Flache Leiste: steigendes Wasser als Fortschritt, rechts eure beiden Monster */
 .panel {
   position: relative;
-  height: 170px;
+  display: flex; align-items: center; gap: 10px;
+  height: 92px;
+  padding: 0 12px;
   border: 4px solid var(--ink);
+  border-radius: 20px;
   background: var(--paper);
   overflow: hidden;
-  box-shadow: 6px 6px 0 var(--ink);
-  transform: rotate(-1deg);
+  box-shadow: 5px 5px 0 var(--ink);
   animation: panel-in .6s cubic-bezier(.3, 1.4, .5, 1) both;
 }
 .water {
@@ -95,35 +103,23 @@ img { display: block; }
 }
 .wave-box { position: absolute; left: 0; top: -13px; width: 200%; height: 16px; overflow: hidden; }
 .wave { animation: wave 3s linear infinite; }
-.panel-content {
-  position: relative;
-  display: flex; justify-content: space-between; align-items: flex-end;
-  height: 100%;
-  padding: 12px 16px;
-}
-.pct { font-family: 'Bangers', sans-serif; font-size: 72px; line-height: .9; }
+.pct { position: relative; font-family: 'Bangers', sans-serif; font-size: 52px; line-height: .9; }
 .bubble {
-  font-size: 14px; font-weight: 700; text-align: right;
-  padding: 6px 10px;
+  position: relative;
+  font-size: 12px; font-weight: 700;
+  padding: 4px 8px;
   background: var(--paper);
   border: 3px solid var(--ink);
-  border-radius: 16px 16px 4px 16px;
+  border-radius: 16px 16px 16px 4px;
 }
 
-/* Eure beiden Monster */
-.team { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.badge {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px 6px 6px;
-  border: 3px solid var(--ink);
-  border-radius: 18px;
-  background: var(--paper);
-  min-width: 0;
-}
+/* Eure beiden Monster in der Leiste */
+.team { position: relative; margin-left: auto; display: flex; gap: 6px; }
+.badge { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 62px; }
 .badge-img {
   position: relative;
   flex: none;
-  width: 60px; height: 60px;
+  width: 50px; height: 50px;
   border: 3px solid var(--ink);
   border-radius: 50%;
   box-shadow: inset 0 0 0 3px currentColor;
@@ -137,11 +133,8 @@ img { display: block; }
   transform-origin: 50% 100%;
   animation: breathe 2.6s ease-in-out infinite;
 }
-.badge-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.badge-text b { font-size: 14px; }
-.badge-text small { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Lange Namen umbrechen statt abschneiden; die Trennstelle steht als weiches Trennzeichen im Namen (game.ts). */
-.badge-text .badge-name { white-space: normal; line-height: 1.15; }
+.badge b { position: relative; z-index: 1; margin-top: -12px; padding: 0 6px; border: 2px solid var(--ink); border-radius: 99px; background: var(--paper); font-size: 10px; font-weight: 800; white-space: nowrap; }
+.badge .xpbar { width: 54px; height: 7px; }
 .xpbar { height: 8px; border: 2px solid var(--ink); border-radius: 99px; overflow: hidden; background: var(--ground); }
 .xpbar span { display: block; height: 100%; transition: width .8s cubic-bezier(.3, 1.4, .4, 1); }
 
@@ -244,32 +237,31 @@ img { display: block; }
 }
 .pedia-banner {
   position: relative;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   width: 100%;
-  min-height: 100px;
-  padding: 12px 14px;
-  border: 4px solid var(--ink);
-  border-radius: 22px;
+  height: 62px;
+  padding: 0 14px;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
   background: linear-gradient(120deg, var(--sun) 0 55%, #FFB13C);
-  box-shadow: 6px 6px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
   text-align: left;
   overflow: hidden;
 }
-.pedia-banner:active { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); }
+.pedia-banner:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
 .pedia-banner::before {
   content: ''; position: absolute; inset: 0;
   background-image: radial-gradient(rgba(27, 21, 48, .12) 1.4px, transparent 1.6px);
   background-size: 8px 8px;
 }
-.pb-text { position: relative; z-index: 1; flex: none; display: flex; flex-direction: column; gap: 2px; white-space: nowrap; }
-.pb-kicker { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.pb-title { font-family: 'Bangers', sans-serif; font-size: 34px; letter-spacing: .03em; line-height: .9; color: var(--paper); -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; }
-.pb-sub { font-size: 13px; font-weight: 800; }
-.pb-mons { position: relative; z-index: 1; flex: 1; min-width: 0; display: flex; justify-content: flex-end; align-items: flex-end; }
-.pb-mons img { flex: none; width: 54px; height: 54px; object-fit: contain; margin-left: -18px; filter: drop-shadow(2px 3px 0 rgba(27, 21, 48, .35)); }
-.pb-mons img:first-child { width: 72px; height: 72px; }
-.pb-mons img.sil { width: 50px; height: 50px; filter: brightness(0) opacity(.55); }
-.pb-go { position: relative; z-index: 1; font-size: 30px; font-weight: 800; }
+.pedia-banner > * { position: relative; z-index: 1; }
+.pb-title { flex: none; font-family: 'Bangers', sans-serif; font-size: 26px; letter-spacing: .03em; line-height: .9; color: var(--paper); -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; }
+.pb-sub { flex: none; font-size: 12px; font-weight: 800; }
+.pb-mons { flex: 1; min-width: 0; display: flex; justify-content: flex-end; align-items: center; }
+.pb-mons img { flex: none; width: 46px; height: 46px; object-fit: contain; margin-left: -18px; filter: drop-shadow(2px 3px 0 rgba(27, 21, 48, .35)); }
+.pb-mons img:first-child { width: 54px; height: 54px; }
+.pb-mons img.sil { width: 40px; height: 40px; filter: brightness(0) opacity(.55); }
+.pb-go { font-size: 30px; font-weight: 800; }
 
 /* Putzy-Pedia: Übersicht */
 .back { width: 44px; padding: 0; font-size: 20px; }
@@ -416,7 +408,7 @@ img { display: block; }
 @keyframes wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes pop-in { 0% { opacity: 0; transform: scale(.8); } 100% { opacity: 1; transform: none; } }
 @keyframes squish { 0% { transform: scale(1); } 35% { transform: scale(1.06, .94); } 65% { transform: scale(.97, 1.03); } 100% { transform: scale(1); } }
-@keyframes panel-in { 0% { opacity: 0; transform: rotate(-1deg) translateY(-20px) scale(.95); } 100% { opacity: 1; transform: rotate(-1deg); } }
+@keyframes panel-in { 0% { opacity: 0; transform: translateY(-20px) scale(.95); } 100% { opacity: 1; transform: none; } }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 179, 155, .6); } 100% { box-shadow: 0 0 0 10px rgba(0, 179, 155, 0); } }
 @keyframes flash { 0% { opacity: 0; } 6% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes stripes { 0% { transform: translateX(-100%) skewX(-20deg); } 30%, 100% { transform: translateX(0) skewX(-20deg); } }
