@@ -1,5 +1,6 @@
 // Putzy-Pedia: Übersicht aller Reihen und Detailseite mit Infos, die alle 5 Level freigeschaltet werden.
 import { Fragment, useState, type ReactNode } from 'react'
+import { useBack } from './back'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, xpForLevel, type Monster, type Person } from './game'
@@ -17,6 +18,7 @@ const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.len
 const fmt = (n: number) => n.toLocaleString('de-DE')
 
 export function Pedia({ snap, onBack, onReplay }: Props) {
+  useBack(onBack)
   const [open, setOpen] = useState<Monster | null>(null)
   const show = (m: Monster | null) => {
     setOpen(m)
@@ -88,6 +90,7 @@ function Slot({ m, stage, snap, hint }: { m: Monster; stage: number; snap: Snaps
 }
 
 function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
+  useBack(onBack)
   const known = stagesOf(m).filter((s) => isDiscovered(snap.seen, m.id, s))
   const [stage, setStage] = useState(known[known.length - 1])
   const xp = snap.monsterXp[m.id] ?? 0
