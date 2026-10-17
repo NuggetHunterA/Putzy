@@ -114,19 +114,19 @@ export function TaskEdit({ task, tasks, onSave, onDelete, onBack }: Props) {
           Aufgabe löschen
         </button>
       )}
-      {task && confirm && <Confirm task={task} onDelete={() => onDelete(task)} onCancel={() => setConfirm(false)} />}
+      {task && confirm && <Confirm name={task.name} onDelete={() => onDelete(task)} onCancel={() => setConfirm(false)} />}
     </main>
   )
 }
 
-function Confirm({ task, onDelete, onCancel }: { task: Task; onDelete: () => void; onCancel: () => void }) {
+export function Confirm({ name, onDelete, onCancel }: { name: string; onDelete: () => void; onCancel: () => void }) {
   useBack(onCancel)
   return (
     <div className="news">
       <div className="confirm">
         <h2 className="confirm-title">Wirklich löschen?</h2>
         <p className="confirm-text">
-          <b>{task.name}</b> verschwindet aus der Liste. Schon verdiente XP bleiben bei den Monstern.
+          <b>{name}</b> verschwindet aus der Liste. Schon verdiente XP bleiben bei den Monstern.
         </p>
         <button className="news-btn red" onClick={onDelete}>
           Löschen

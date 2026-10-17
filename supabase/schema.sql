@@ -13,12 +13,21 @@ create table tasks (
   sort int not null
 );
 
+-- Einmalige Aufgaben: kein Element, kein Intervall, immer ONEOFF_XP (src/game.ts).
+create table oneoffs (
+  id text primary key,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
 create table completions (
   id uuid primary key default gen_random_uuid(),
   -- Wird eine Aufgabe gelöscht, bleibt die Erledigung (und damit die XP) erhalten.
   task_id text references tasks (id) on delete set null,
   -- Ständige Aufgabe (id aus STANDING in src/game.ts), dann ist task_id leer.
   standing text,
+  -- Einmalige Aufgabe, dann ist task_id leer.
+  oneoff text references oneoffs (id) on delete set null,
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
   xp int not null,
@@ -30,6 +39,8 @@ create unique index completions_once_per_day on completions (task_id, ((done_at 
 -- Ständige Aufgaben zählen pro Tag und Person einmal.
 create unique index completions_standing_once_per_day
   on completions (standing, person, ((done_at at time zone 'Europe/Berlin')::date)) where standing is not null;
+-- Einmalige Aufgaben werden nur einmal erledigt.
+create unique index completions_oneoff_once on completions (oneoff) where oneoff is not null;
 
 -- Monsterwahl pro Woche: jede Person ein Monster, jedes Monster nur einmal pro Woche.
 create table picks (
@@ -66,14 +77,16 @@ create view monster_stats with (security_invoker = true) as
 
 alter table tasks enable row level security;
 alter table completions enable row level security;
+alter table oneoffs enable row level security;
 alter table picks enable row level security;
 alter table seen enable row level security;
 alter table news_seen enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
+create policy household on oneoffs for all to anon using (true) with check (true);
 create policy household on picks for all to anon using (true) with check (true);
 create policy household on seen for all to anon using (true) with check (true);
 create policy household on news_seen for all to anon using (true) with check (true);
 
-alter publication supabase_realtime add table tasks, completions, picks, seen;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen;

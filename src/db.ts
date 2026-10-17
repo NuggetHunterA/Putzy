@@ -12,9 +12,10 @@ export type Task = {
   first_due: string
   sort: number
 }
-export type Completion = { id: string; task_id: string | null; standing: string | null; person: Person; monster: string; xp: number; done_at: string }
+export type Completion = { id: string; task_id: string | null; standing: string | null; oneoff: string | null; person: Person; monster: string; xp: number; done_at: string }
 export type Pick = { week_start: string; person: Person; monster: string }
 export type Seen = { person: Person; monster: string; stage: number }
+export type OneOff = { id: string; name: string; created_at: string }
 
 export type Snapshot = {
   tasks: Task[]
@@ -27,7 +28,13 @@ export type Snapshot = {
   newsSeen: Partial<Record<Person, number>>
   // Erledigte Aufgaben pro Monster und Person.
   tasksDone: Record<string, Partial<Record<Person, number>>>
+  // Einmalige Aufgaben, älteste zuerst, und ihre Erledigungen, neueste zuerst.
+  oneoffs: OneOff[]
+  oneoffsDone: Completion[]
 }
+
+// Einmalige Aufgaben ohne Erledigung.
+export const openOneOffs = (snap: Snapshot) => snap.oneoffs.filter((o) => !snap.oneoffsDone.some((c) => c.oneoff === o.id))
 
 const KEY_STORAGE = 'putzy.key'
 
@@ -57,7 +64,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -66,6 +73,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('seen').select('person, monster, stage'),
     db().from('monster_stats').select('*'),
     db().from('news_seen').select('*'),
+    db().from('oneoffs').select('*').order('created_at'),
+    db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
@@ -80,11 +89,13 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     seen: check(seen),
     newsSeen: Object.fromEntries(check<{ person: Person; last_id: number }[]>(news).map((r) => [r.person, r.last_id])),
     tasksDone,
+    oneoffs: check(oneoffs),
+    oneoffsDone: check(oneoffsDone),
   }
 }
 
-// standing nur bei ständigen Aufgaben mitschicken, normale Erledigungen bleiben wie bisher.
-export async function complete(c: Omit<Completion, 'id' | 'done_at' | 'standing'> & { standing?: string }) {
+// standing nur bei ständigen, oneoff nur bei einmaligen Aufgaben mitschicken, normale Erledigungen bleiben wie bisher.
+export async function complete(c: Omit<Completion, 'id' | 'done_at' | 'standing' | 'oneoff'> & { standing?: string; oneoff?: string }) {
   check(await db().from('completions').insert(c))
 }
 
@@ -118,6 +129,15 @@ export async function deleteTask(taskId: string) {
   check(await db().from('tasks').delete().eq('id', taskId))
 }
 
+// Legt eine einmalige Aufgabe an oder benennt sie um (gleiche id).
+export async function saveOneOff(o: Omit<OneOff, 'created_at'>) {
+  check(await db().from('oneoffs').upsert(o))
+}
+
+export async function deleteOneOff(id: string) {
+  check(await db().from('oneoffs').delete().eq('id', id))
+}
+
 // Jede Änderung auf einem der beiden Handys löst ein Neuladen aus. Die Datenmenge ist klein.
 export function subscribe(onChange: () => void, onStatus: (live: boolean) => void) {
   const channel = db()
@@ -125,6 +145,7 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'picks' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'oneoffs' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'seen' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {

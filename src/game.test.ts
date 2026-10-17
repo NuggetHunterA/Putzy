@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { daysUntilDue, firstDue, levelFor, monsterById, nextInterval, stageFor, weekStart, xpFor, xpForLevel } from './game'
+import { daysUntilDue, firstDue, levelFor, monsterById, nextInterval, stageFor, weekStart, xpFor, xpForLevel, xpOf } from './game'
 
 describe('XP', () => {
   it('gibt 125 % beim passenden Element', () => {
@@ -7,6 +7,11 @@ describe('XP', () => {
     expect(xpFor('M', 'wasser', 'feuer')).toBe(25)
     expect(xpFor('K', 'licht', 'licht')).toBe(13)
     expect(xpFor('G', 'luft', 'luft')).toBe(63)
+  })
+
+  it('gibt für einmalige Aufgaben immer 20, ohne Bonus', () => {
+    expect(xpOf(null, 'wasser')).toBe(20)
+    expect(xpOf({ effort: 'M', element: 'wasser' }, 'wasser')).toBe(31)
   })
 })
 
