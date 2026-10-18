@@ -218,7 +218,7 @@ export function unseen(seen: Seen[], person: Person, monsterXp: Record<string, n
   )
 }
 
-export type Stats = { favorite: string | null; since: Date | null; record: { tasks: number; week: number } | null }
+export type Stats = { favorite: { name: string; tasks: number } | null; since: Date | null; record: { tasks: number; week: number } | null }
 
 // Kalenderwoche nach ISO (Woche mit dem ersten Donnerstag ist KW 1).
 export function isoWeek(date: Date) {
@@ -243,5 +243,5 @@ export function monsterStats(done: Done[], monster: string, tasks: Task[]): Stat
   }
   const favorite = [...names].reduce<[string, number] | null>((a, b) => (!a || b[1] > a[1] ? b : a), null)
   const best = [...weeks.values()].reduce<{ tasks: number; at: Date } | null>((a, b) => (!a || b.tasks > a.tasks ? b : a), null)
-  return { favorite: favorite?.[0] ?? null, since, record: best && { tasks: best.tasks, week: isoWeek(best.at) } }
+  return { favorite: favorite && { name: favorite[0], tasks: favorite[1] }, since, record: best && { tasks: best.tasks, week: isoWeek(best.at) } }
 }

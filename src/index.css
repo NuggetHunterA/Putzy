@@ -399,7 +399,11 @@ img { display: block; }
 .fact small, .likes small { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .fact b { font-size: 15px; }
 .compare { font-size: 13px; font-weight: 600; font-style: italic; }
-.facts-head { margin-top: 4px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.stats { display: flex; flex-direction: column; border: 2px solid var(--ink); border-radius: 10px; background: var(--ground); }
+.stats small { padding: 6px 10px 2px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.stats > span { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 10px; border-top: 1.5px dashed var(--ink); font-size: 13px; font-weight: 600; }
+.stats b { font-size: 15px; text-align: right; }
+.stats em { display: block; font-size: 12px; font-weight: 600; font-style: normal; }
 .likes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
 .likes > span { padding: 6px 8px; border: 2px solid var(--ink); border-radius: 10px; }
 .likes small { display: block; }

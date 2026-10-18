@@ -54,7 +54,7 @@ describe('Putzy-Pedia', () => {
       c(null, '2026-10-01T08:00:00Z'), // einmalige Aufgabe zählt für Datum und Woche, nicht als Lieblingsaufgabe
       c('bad', '2026-09-01T08:00:00Z', '5'),
     ]
-    expect(monsterStats(done, '2', tasks)).toEqual({ favorite: 'Bad putzen', since: new Date('2026-10-01T08:00:00Z'), record: { tasks: 4, week: 41 } })
+    expect(monsterStats(done, '2', tasks)).toEqual({ favorite: { name: 'Bad putzen', tasks: 2 }, since: new Date('2026-10-01T08:00:00Z'), record: { tasks: 4, week: 41 } })
     expect(monsterStats(done, '9', tasks)).toEqual({ favorite: null, since: null, record: null })
   })
 

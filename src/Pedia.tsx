@@ -218,11 +218,21 @@ function Facts({ e, stage, stats }: { e: (typeof PEDIA)[string]; stage: number; 
         <Fact label="Liebt" value={e.room} />
       </span>
       <span className="compare">{e.compare[stage]}</span>
-      <small className="facts-head">Eure Werte</small>
-      <span className="facts">
-        <Fact label="Lieblingsaufgabe" value={stats.favorite ?? '–'} />
-        <Fact label="Dabei seit" value={since ?? '–'} />
-        <Fact label="Rekordwoche" value={stats.record ? `${stats.record.tasks} · KW ${stats.record.week}` : '–'} />
+      <span className="stats">
+        <small>Eure Werte</small>
+        <span>
+          Lieblingsaufgabe
+          <b>
+            {stats.favorite?.name ?? '–'}
+            {stats.favorite && <em>{stats.favorite.tasks}-mal erledigt</em>}
+          </b>
+        </span>
+        <span>
+          Dabei seit <b>{since ?? '–'}</b>
+        </span>
+        <span>
+          Rekordwoche <b>{stats.record ? `${stats.record.tasks} Aufgaben · KW ${stats.record.week}` : '–'}</b>
+        </span>
       </span>
     </>
   )
