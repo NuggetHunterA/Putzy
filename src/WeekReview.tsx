@@ -2,10 +2,11 @@
 import { useEffect, useState } from 'react'
 import { useBack } from './back'
 import { loadHistory, type Completion, type Pick, type Task } from './db'
+import type { Earned } from './stamps'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, PEOPLE, backdrop } from './game'
 import { Sponge } from './Sponge'
-import { KINDS, reviewWeeks, weekLabel, weekReview, type Kind, type MonsterWeek } from './review'
+import { KINDS, reviewWeeks, weekLabel, weekReview, weekStamps, type Kind, type MonsterWeek } from './review'
 
 type Props = {
   tasks: Task[]
@@ -22,14 +23,14 @@ const ONEOFF_COLOR = '#8C82A8'
 
 export function WeekReview({ tasks, week: start, archive, streak, onDone }: Props) {
   useBack(onDone)
-  const [history, setHistory] = useState<{ picks: Pick[]; completions: Completion[] } | null>(null)
+  const [history, setHistory] = useState<{ picks: Pick[]; completions: Completion[]; stamps: Earned[] } | null>(null)
   const [failed, setFailed] = useState(false)
   const [week, setWeek] = useState(start)
   useEffect(() => {
     loadHistory().then(setHistory, () => setFailed(true))
   }, [])
 
-  const cards = history ? weekReview(week, history.picks, history.completions, tasks) : []
+  const cards = history ? weekReview(week, history.picks, history.completions, tasks, history.stamps) : []
   // Montags: Ohne Monster in der Vorwoche oder ohne Verbindung geht es direkt zur Monsterwahl.
   const skip = !archive && (failed || (history !== null && cards.length === 0))
   useEffect(() => {
@@ -50,6 +51,7 @@ export function WeekReview({ tasks, week: start, archive, streak, onDone }: Prop
   const newer = i > 0 ? weeks[i - 1] : undefined
   const label = !archive ? `Letzte Woche · ${weekLabel(week)}` : week === start ? 'Diese Woche · bisher' : weekLabel(week)
   const max = Math.max(1, ...cards.flatMap((c) => KINDS.map((k) => c.tasks[k])))
+  const stamped = weekStamps(week, history.stamps)
 
   return (
     <main className="screen">
@@ -72,6 +74,14 @@ export function WeekReview({ tasks, week: start, archive, streak, onDone }: Prop
           <Sponge n={streak.earned} size={34} />
           <span>
             +{streak.earned} Streak-Punkte · Konto jetzt {streak.bank}
+          </span>
+        </div>
+      )}
+      {stamped > 0 && (
+        <div className="wr-streak">
+          <span className="wr-stamp" aria-hidden="true" />
+          <span>
+            Stempel: {stamped} neu im Stempelheft
           </span>
         </div>
       )}

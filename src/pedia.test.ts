@@ -51,7 +51,7 @@ describe('Putzy-Pedia', () => {
 
   it('rechnet Eure Werte aus den Erledigungen eines Monsters', () => {
     const tasks = [{ id: 'bad', name: 'Bad putzen' }, { id: 'boden', name: 'Boden wischen' }] as Parameters<typeof monsterStats>[2]
-    const c = (task_id: string | null, done_at: string, monster = '2', standing: string | null = null) => ({ monster, task_id, standing, done_at })
+    const c = (task_id: string | null, done_at: string, monster = '2', standing: string | null = null) => ({ monster, task_id, standing, oneoff: null, person: 'adrian' as const, xp: 10, done_at })
     const done = [
       c('bad', '2026-10-06T08:00:00Z'),
       c('boden', '2026-10-07T08:00:00Z'),

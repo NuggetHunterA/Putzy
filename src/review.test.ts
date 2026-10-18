@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Completion, Pick, Task } from './db'
-import { previousWeek, reviewWeeks, weekLabel, weekReview } from './review'
+import { previousWeek, reviewWeeks, weekLabel, weekReview, weekStamps } from './review'
+import type { Earned } from './stamps'
 
 const task: Task = { id: 't1', room: 'Bad', name: 'Wanne', element: 'wasser', effort: 'M', interval_days: 7, first_due: '2026-10-01', sort: 1 }
 let n = 0
@@ -29,6 +30,15 @@ describe('Wochenrückblick', () => {
     expect([adrian.stageBefore, adrian.stageAfter]).toEqual([0, 1])
     expect(adrian.tasks).toEqual({ wasser: 1, feuer: 1, natur: 0, luft: 0, licht: 0, einmalig: 1 })
     expect(ulrike).toMatchObject({ person: 'ulrike', xp: 0, levelBefore: 1, levelAfter: 1 })
+  })
+
+  it('zählt Stempel-Boni zur Woche, in der der Stempel kam', () => {
+    const stamp = (id: string, at: string, monsters: string[]): Earned => ({ id, earned_at: new Date(at).toISOString(), person: 'adrian', xp: 15, monsters, label: null })
+    const stamps = [stamp('a', '2026-10-06T10:00', ['2']), stamp('b', '2026-10-13T10:00', ['2', '5']), stamp('c', '2026-10-14T10:00', ['8'])]
+    const [adrian, ulrike] = weekReview('2026-10-12', picks, [done('2', 1340, '2026-10-06T10:00')], [], stamps) // 1.340 + 15 Bonus = Level 10
+    expect(adrian).toMatchObject({ xp: 15, levelBefore: 10 })
+    expect(ulrike).toMatchObject({ xp: 15 })
+    expect(weekStamps('2026-10-12', stamps)).toBe(2)
   })
 
   it('zeigt nur Personen mit Monster in der Woche', () => {

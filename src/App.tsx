@@ -3,7 +3,7 @@ import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
 import { eventFor } from './events'
 import './events.css'
-import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
+import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, markStampSeen, pickMonster, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
 import { balance, nextEggScene, rollEgg, type Egg } from './eggs'
 import { EggScene, type Scene } from './EggScene'
 import { Home, type Row } from './Home'
@@ -16,12 +16,17 @@ import { Pedia } from './Pedia'
 import { previousWeek } from './review'
 import { unseen } from './pedia'
 import { Reveal } from './Reveal'
+import { newStamps, stamps, unseenStamps, xpBeforeUnseen, type Earned, type Facts } from './stamps'
+import { StampScene } from './StampScene'
+import { Stamps } from './Stamps'
 import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
 import { PEOPLE, STANDING_EFFORT, dayString, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
 import { weekPoints } from './streak'
 
 const PERSON_STORAGE = 'putzy.person'
+// Wann diese Person das Stempelheft zuletzt geöffnet hat; neuere Stempel zählen im Pedia als „neu“.
+const STAMPS_STORAGE = 'putzy.stampsOpened'
 const LOAD_ERROR = 'Keine Verbindung zur Datenbank.'
 const connected = connect()
 
@@ -45,7 +50,7 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks' | 'stamps'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
@@ -60,6 +65,9 @@ export default function App() {
   // Fund oder Schlüpfen eines Eis, das gerade gezeigt wird.
   const [eggShown, setEggShown] = useState<Scene | null>(null)
   const closeEgg = useCallback(() => setEggShown(null), [])
+  // Stempel, dessen Animation gerade läuft.
+  const [stampShown, setStampShown] = useState<Earned | null>(null)
+  const closeStamp = useCallback(() => setStampShown(null), [])
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
@@ -141,15 +149,39 @@ export default function App() {
     saveWeeks(unsaved).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
   }, [snap, week, refresh])
 
-  // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken.
-  const next = snap && person ? unseen(snap.seen, person, snap.monsterXp)[0] : undefined
+  // Stempel: Ist eine Bedingung erfüllt, wird der Stempel samt Bonus gespeichert. Pro Stempel nur ein Versuch je Start.
+  const facts: Facts | null = snap && { done: snap.done, tasks: snap.tasks, monsterXp: snap.monsterXp, unlocks: snap.unlocks, eggs: snap.eggs, streakWeeks: snap.streakWeeks, today, week }
+  const earnable = facts && snap ? newStamps(facts, snap.stamps) : []
+  const earnableKey = earnable.map((e) => e.id).join()
+  const stampTried = useRef(new Set<string>())
   useEffect(() => {
-    if (!next || !person || reveal || secret || eggScene || eggShown || evo || cel || attacking) return
+    const list = earnable.filter((e) => !stampTried.current.has(e.id))
+    if (list.length === 0) return
+    list.forEach((e) => stampTried.current.add(e.id))
+    saveStamps(list).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+    // earnable ändert sich mit jedem Neuladen, entscheidend sind nur neue Stempel.
+  }, [earnableKey, refresh])
+  const stampsSeen = snap && person ? snap.stampsSeen.filter((s) => s.person === person).map((s) => s.stamp) : []
+
+  // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken. Entwicklungen, die erst ein
+  // noch nicht gesehener Stempel ausgelöst hat, warten bis nach seiner Animation.
+  const next = snap && person ? unseen(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
+  useEffect(() => {
+    if (!next || !person || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, reveal, secret, eggScene, eggShown, evo, cel, attacking, refresh])
+  }, [next, person, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
+
+  // Stempel nach den Entwicklungen zeigen, ältester zuerst, und sofort als gesehen merken.
+  const stampNext = snap && person && !next ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
+  useEffect(() => {
+    if (!stampNext || !person || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
+    setSnap((s) => s && { ...s, stampsSeen: [...s.stampsSeen, { person, stamp: stampNext.id }] })
+    setStampShown(stampNext)
+    markStampSeen(person, stampNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [stampNext, person, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -209,7 +241,7 @@ export default function App() {
   const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
   const bank = balance(points, snap.eggs)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !reveal && !secret && !eggScene && !eggShown && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
+  const news = myPick && view === 'home' && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
@@ -281,6 +313,13 @@ export default function App() {
 
   const onHatch = (e: Egg) => run(hatchEgg(e.monster, person))
 
+  const stampShownDef = stampShown && stamps(snap.tasks, snap.stamps).find((s) => s.id === stampShown.id)
+  const stampsOpened = localStorage.getItem(STAMPS_STORAGE) ?? ''
+  const onStamps = () => {
+    localStorage.setItem(STAMPS_STORAGE, new Date().toISOString())
+    setView('stamps')
+  }
+
   const onAttackEnd = () => {
     setCel(pendingCel.current)
     pendingCel.current = null
@@ -331,7 +370,19 @@ export default function App() {
           onBack={() => setView('home')}
         />
       ) : view === 'pedia' ? (
-        <Pedia snap={snap} monsters={monsters} points={bank} onHatch={onHatch} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} onWeeks={() => setView('weeks')} />
+        <Pedia
+          snap={snap}
+          monsters={monsters}
+          points={bank}
+          stampsNew={snap.stamps.filter((e) => e.earned_at > stampsOpened).length}
+          onHatch={onHatch}
+          onBack={() => setView('home')}
+          onReplay={(m, stage) => setEvo(evolution(m, stage))}
+          onWeeks={() => setView('weeks')}
+          onStamps={onStamps}
+        />
+      ) : view === 'stamps' ? (
+        <Stamps snap={snap} facts={facts!} onBack={() => setView('pedia')} />
       ) : view === 'weeks' ? (
         <WeekReview tasks={snap.tasks} week={week} archive onDone={() => setView('pedia')} />
       ) : (
@@ -359,6 +410,15 @@ export default function App() {
       {cel && <Celebration cel={cel} onDone={closeCel} />}
       {evo && <Evolution cel={evo} onDone={closeEvo} />}
       {secret && <Reveal monster={secret} canPick={!myPick} onDone={closeSecret} />}
+      {stampShownDef && (
+        <StampScene
+          stamp={stampShownDef}
+          earned={stampShown!}
+          person={person}
+          monsterXp={snap.monsterXp}
+          onDone={closeStamp}
+        />
+      )}
       {eggShown && <EggScene scene={eggShown} person={person} canPick={!myPick} onDone={closeEgg} />}
     </>
   )

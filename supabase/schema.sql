@@ -93,8 +93,31 @@ create table news_seen (
 create view task_last_done with (security_invoker = true) as
   select task_id, max(done_at) as last_done_at from completions group by task_id;
 
+-- Stempelheft (src/stamps.ts): verdiente Stempel. Bonus-XP gehen an die Monster in monsters. person leer: beide zusammen.
+create table stamps (
+  id text primary key,
+  earned_at timestamptz not null default now(),
+  person text check (person in ('adrian', 'ulrike')),
+  xp int not null default 0,
+  monsters text[] not null default '{}',
+  -- Name der Aufgabe beim Verdienen, damit gelöschte Aufgaben ihren Stempel behalten.
+  label text
+);
+
+-- Wer die Animation eines Stempels schon gesehen hat.
+create table stamps_seen (
+  person text not null check (person in ('adrian', 'ulrike')),
+  stamp text not null,
+  primary key (person, stamp)
+);
+
+-- XP aus Erledigungen und Stempel-Boni.
 create view monster_xp with (security_invoker = true) as
-  select monster, sum(xp)::int as xp from completions group by monster;
+  select monster, sum(xp)::int as xp from (
+    select monster, xp from completions
+    union all
+    select unnest(monsters), xp from stamps
+  ) x group by monster;
 
 create view monster_stats with (security_invoker = true) as
   select monster, person, count(*)::int as tasks from completions group by monster, person;
@@ -108,6 +131,8 @@ alter table news_seen enable row level security;
 alter table unlocks enable row level security;
 alter table eggs enable row level security;
 alter table streak_weeks enable row level security;
+alter table stamps enable row level security;
+alter table stamps_seen enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
@@ -118,5 +143,7 @@ create policy household on news_seen for all to anon using (true) with check (tr
 create policy household on unlocks for all to anon using (true) with check (true);
 create policy household on eggs for all to anon using (true) with check (true);
 create policy household on streak_weeks for all to anon using (true) with check (true);
+create policy household on stamps for all to anon using (true) with check (true);
+create policy household on stamps_seen for all to anon using (true) with check (true);
 
-alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps;
