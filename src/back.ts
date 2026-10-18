@@ -1,7 +1,11 @@
 // Android-Zurück: Jede offene Ebene (Unterseite, Detail, Vollbild) legt einen Verlaufseintrag an.
 // Zurück schließt die oberste Ebene. Schließt man sie per Knopf, wird ihr Eintrag wieder entfernt,
 // damit Zurück auf der Startseite die App wie gewohnt verlässt.
-import { useEffect, useRef } from 'react'
+// Die Scrollstelle darunter merkt sich jede Ebene selbst und stellt sie beim Schließen wieder her,
+// denn das automatische Zurückspringen des Browsers landete auf Android teils auf einer leeren Stelle.
+import { useEffect, useRef, useState } from 'react'
+
+history.scrollRestoration = 'manual'
 
 const open: { current: () => void }[] = []
 let removing = 0
@@ -14,6 +18,8 @@ addEventListener('popstate', () => {
 
 export function useBack(onBack: () => void) {
   const ref = useRef(onBack)
+  // Beim ersten Rendern zeigt die Seite noch die Ebene darunter.
+  const [below] = useState(() => window.scrollY)
   useEffect(() => {
     ref.current = onBack
   })
@@ -21,6 +27,7 @@ export function useBack(onBack: () => void) {
     history.pushState(null, '')
     open.push(ref)
     return () => {
+      window.scrollTo(0, below)
       const i = open.indexOf(ref)
       if (i < 0) return // schon per Zurück geschlossen
       open.splice(i, 1)
