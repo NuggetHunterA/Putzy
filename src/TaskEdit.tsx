@@ -9,7 +9,10 @@ type Props = { task: Task | null; tasks: Task[]; onSave: (t: Task) => void; onDe
 
 export function TaskEdit({ task, tasks, onSave, onDelete, onBack }: Props) {
   useBack(onBack)
-  useEffect(() => window.scrollTo(0, 0), [])
+  // Geschweifte Klammern: Neuere Browser geben bei scrollTo ein Promise zurück, React hielte es sonst für die Aufräumfunktion.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
   const rooms = [...new Set(tasks.map((t) => t.room))]
   const [name, setName] = useState(task?.name ?? '')
   const [room, setRoom] = useState(task?.room ?? '')

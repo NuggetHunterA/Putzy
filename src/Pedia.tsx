@@ -107,7 +107,10 @@ function Slot({ m, stage, snap, hint }: { m: Monster; stage: number; snap: Snaps
 
 function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
   useBack(onBack)
-  useEffect(() => window.scrollTo(0, 0), [])
+  // Geschweifte Klammern: Neuere Browser geben bei scrollTo ein Promise zurück, React hielte es sonst für die Aufräumfunktion.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
   const known = stagesOf(m).filter((s) => isDiscovered(snap.seen, m.id, s))
   const [stage, setStage] = useState(known[known.length - 1])
   const xp = snap.monsterXp[m.id] ?? 0
