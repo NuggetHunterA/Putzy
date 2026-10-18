@@ -6,6 +6,9 @@ import { eggCost, eggFile, eggName, waiting, type Egg } from './eggs'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
 import { Sponge } from './Sponge'
+import { StampMark } from './StampMark'
+import { tilt } from './Stamps'
+import { stamps } from './stamps'
 import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage, monsterStats, type Stats } from './pedia'
 
 type Props = {
@@ -18,6 +21,9 @@ type Props = {
   onBack: () => void
   onReplay: (m: Monster, stage: number) => void
   onWeeks: () => void
+  // Stempelheft: Anzahl der Stempel seit dem letzten Öffnen.
+  stampsNew: number
+  onStamps: () => void
 }
 
 // Stufen als Spalten: Slot, Pfeil, Slot … für 2 bis 4 Stufen.
@@ -25,12 +31,16 @@ const stagesOf = (m: Monster) => m.stages.map((_, s) => s)
 const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.length - 1}, 1fr auto) 1fr` })
 const fmt = (n: number) => n.toLocaleString('de-DE')
 
-export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWeeks }: Props) {
+export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps }: Props) {
   useBack(onBack)
   const [open, setOpen] = useState<Monster | null>(null)
   const [hatch, setHatch] = useState<Egg | null>(null)
   if (open) return <Detail m={open} snap={snap} onBack={() => setOpen(null)} onReplay={onReplay} />
 
+  const all = stamps(snap.tasks, snap.stamps)
+  // Neuester Stempel als Bild auf der Kachel, solange keiner verdient ist ein offener.
+  const newest = [...snap.stamps].sort((a, b) => b.earned_at.localeCompare(a.earned_at))[0]
+  const latest = all.find((s) => s.id === newest?.id)
   const found = discoveredCount(snap.seen, monsters)
   const total = dexTotal(monsters)
   return (
@@ -51,6 +61,7 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
           <span style={{ width: `${(found / total) * 100}%`, background: 'var(--accent)' }} />
         </span>
       </div>
+      <div className="pd-pair">
       <button className="wr-entry" onClick={onWeeks}>
         <span className="wr-pair">
           {snap.picks.map((p) => {
@@ -63,11 +74,21 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
           })}
         </span>
         <span>
-          <b>Wochenrückblicke</b>
-          <small>Diese Woche bisher und alle alten Wochen</small>
+          <b>Rückblicke</b>
+          <small>Alle Wochen</small>
         </span>
-        <span className="go">›</span>
       </button>
+      <button className="wr-entry sh-entry" onClick={onStamps}>
+        {latest && <StampMark stamp={latest} size={44} tilt={tilt(latest.id)} />}
+        <span>
+          <b>Stempelheft</b>
+          <small>
+            {snap.stamps.length} von {all.length}
+          </small>
+        </span>
+        {stampsNew > 0 && <span className="sh-new">{stampsNew} neu</span>}
+      </button>
+      </div>
       {waiting(snap.eggs).length > 0 && (
         <>
           <h2 className="section-title">Nest</h2>

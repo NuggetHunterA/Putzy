@@ -2,6 +2,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Egg } from './eggs'
 import type { Effort, Element, Person } from './game'
+import type { Earned } from './stamps'
 import type { StreakWeek } from './streak'
 
 export type Task = {
@@ -18,7 +19,7 @@ export type Completion = { id: string; task_id: string | null; standing: string 
 export type Pick = { week_start: string; person: Person; monster: string }
 export type Seen = { person: Person; monster: string; stage: number }
 // Alle Erledigungen in kurz, für Eure Werte im Pedia.
-export type Done = { monster: string; task_id: string | null; standing: string | null; done_at: string }
+export type Done = { monster: string; task_id: string | null; standing: string | null; oneoff: string | null; person: Person; xp: number; done_at: string }
 export type OneOff = { id: string; name: string; created_at: string }
 
 export type Snapshot = {
@@ -41,6 +42,9 @@ export type Snapshot = {
   // Eier im Nest und ausgebrütete (src/eggs.ts), gespeicherte Streak-Punkte pro Woche (src/streak.ts).
   eggs: Egg[]
   streakWeeks: StreakWeek[]
+  // Stempelheft (src/stamps.ts): verdiente Stempel und welche Animation wer schon gesehen hat.
+  stamps: Earned[]
+  stampsSeen: { person: Person; stamp: string }[]
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -74,7 +78,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, done] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -88,6 +92,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('unlocks').select('*'),
     db().from('eggs').select('*'),
     db().from('streak_weeks').select('*'),
+    db().from('stamps').select('*'),
+    db().from('stamps_seen').select('person, stamp'),
     loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
@@ -109,18 +115,21 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     unlocks: Object.fromEntries(check<{ monster: string; unlocked_on: string }[]>(unlocks).map((r) => [r.monster, r.unlocked_on])),
     eggs: check(eggs),
     streakWeeks: check(streakWeeks),
+    stamps: check(stamps),
+    stampsSeen: check(stampsSeen),
   }
 }
 
-// Wochenrückblick: alle Monsterwahlen und Erledigungen. Supabase liefert höchstens 1000 Zeilen pro Abfrage,
+// Wochenrückblick: alle Monsterwahlen, Erledigungen und Stempel. Supabase liefert höchstens 1000 Zeilen pro Abfrage,
 // deshalb werden die Erledigungen seitenweise geholt.
 export async function loadHistory() {
   const picks = check<Pick[]>(await db().from('picks').select('*'))
+  const stamps = check<Earned[]>(await db().from('stamps').select('*'))
   const completions: Completion[] = []
   for (let from = 0; ; from += 1000) {
     const page = check<Completion[]>(await db().from('completions').select('*').order('done_at').order('id').range(from, from + 999))
     completions.push(...page)
-    if (page.length < 1000) return { picks, completions }
+    if (page.length < 1000) return { picks, completions, stamps }
   }
 }
 
@@ -128,7 +137,7 @@ export async function loadHistory() {
 async function loadDone() {
   const done: Done[] = []
   for (let from = 0; ; from += 1000) {
-    const page = check<Done[]>(await db().from('completions').select('monster, task_id, standing, done_at').order('done_at').order('id').range(from, from + 999))
+    const page = check<Done[]>(await db().from('completions').select('monster, task_id, standing, oneoff, person, xp, done_at').order('done_at').order('id').range(from, from + 999))
     done.push(...page)
     if (page.length < 1000) return done
   }
@@ -171,6 +180,15 @@ export async function saveWeeks(weeks: StreakWeek[]) {
   check(await db().from('streak_weeks').upsert(weeks, { ignoreDuplicates: true }))
 }
 
+// Bleibt der erste Eintrag: Melden beide Handys denselben Stempel, gilt der zuerst gespeicherte.
+export async function saveStamps(stamps: Omit<Earned, 'earned_at'>[]) {
+  check(await db().from('stamps').upsert(stamps, { ignoreDuplicates: true }))
+}
+
+export async function markStampSeen(person: Person, stamp: string) {
+  check(await db().from('stamps_seen').upsert({ person, stamp }, { ignoreDuplicates: true }))
+}
+
 export async function markNews(person: Person, lastId: number) {
   check(await db().from('news_seen').upsert({ person, last_id: lastId }))
 }
@@ -209,6 +227,7 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'seen' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'unlocks' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'eggs' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'stamps' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     db().removeChannel(channel)

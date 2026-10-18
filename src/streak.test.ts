@@ -3,7 +3,7 @@ import type { Done, Task } from './db'
 import { current, longest, pastWeeks, weekDays, weekPoints } from './streak'
 
 const task = (id: string, interval_days: number, first_due: string): Task => ({ id, room: 'Küche', name: id, element: 'feuer', effort: 'K', interval_days, first_due, sort: 0 })
-const done = (task_id: string, day: string): Done => ({ monster: '5', task_id, standing: null, done_at: `${day}T18:00:00` })
+const done = (task_id: string, day: string): Done => ({ monster: '5', task_id, standing: null, oneoff: null, person: 'adrian', xp: 10, done_at: `${day}T18:00:00` })
 const week = '2026-10-19'
 
 describe('Streak', () => {
@@ -20,7 +20,7 @@ describe('Streak', () => {
   })
 
   it('ignoriert ständige Aufgaben und Tage vor dem Start', () => {
-    const standing: Done = { monster: '5', task_id: null, standing: 'kochen', done_at: '2026-10-19T12:00:00' }
+    const standing: Done = { monster: '5', task_id: null, standing: 'kochen', oneoff: null, person: 'adrian', xp: 10, done_at: '2026-10-19T12:00:00' }
     expect(weekDays('2026-10-12', '2026-10-25', [], [standing]).every((d) => !d)).toBe(true)
   })
 

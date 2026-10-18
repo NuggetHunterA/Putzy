@@ -1,6 +1,7 @@
 // Wochenrückblick: was die Monster einer Woche an XP, Level, Entwicklung und Aufgaben pro Element geschafft haben.
-// Alles wird aus den gespeicherten Erledigungen und der Monsterwahl berechnet, es gibt keine eigene Tabelle.
+// Alles wird aus den gespeicherten Erledigungen, Stempel-Boni und der Monsterwahl berechnet, es gibt keine eigene Tabelle.
 import type { Completion, Pick, Task } from './db'
+import type { Earned } from './stamps'
 import { PEOPLE, STANDING, TASK_ELEMENTS, levelFor, monsterById, stageFor, weekStart, type Element, type Monster, type Person } from './game'
 
 // Einmalige Aufgaben haben kein Element und bekommen eine eigene Zeile.
@@ -28,15 +29,18 @@ function kindOf(c: Completion, tasks: Task[]): Kind | null {
 const weekOf = (c: Completion) => weekStart(new Date(c.done_at))
 
 // Ein Eintrag pro Person, die in der Woche ein Monster hatte, in der Reihenfolge von PEOPLE.
-export function weekReview(week: string, picks: Pick[], completions: Completion[], tasks: Task[]): MonsterWeek[] {
+// Stempel-Boni zählen zur XP der Woche, in der der Stempel kam.
+export function weekReview(week: string, picks: Pick[], completions: Completion[], tasks: Task[], stamps: Earned[] = []): MonsterWeek[] {
   return (Object.keys(PEOPLE) as Person[]).flatMap((person) => {
     const pick = picks.find((p) => p.week_start === week && p.person === person)
     if (!pick) return []
     const monster = monsterById(pick.monster)
     const own = completions.filter((c) => c.monster === monster.id)
-    const before = own.filter((c) => weekOf(c) < week).reduce((n, c) => n + c.xp, 0)
+    const bonus = stamps.filter((e) => e.monsters.includes(monster.id))
+    const bonusXp = (keep: (w: string) => boolean) => bonus.filter((e) => keep(weekStart(new Date(e.earned_at)))).reduce((n, e) => n + e.xp, 0)
+    const before = own.filter((c) => weekOf(c) < week).reduce((n, c) => n + c.xp, 0) + bonusXp((w) => w < week)
     const done = own.filter((c) => weekOf(c) === week)
-    const xp = done.reduce((n, c) => n + c.xp, 0)
+    const xp = done.reduce((n, c) => n + c.xp, 0) + bonusXp((w) => w === week)
     const counts = Object.fromEntries(KINDS.map((k) => [k, 0])) as Record<Kind, number>
     for (const c of done) {
       const k = kindOf(c, tasks)
@@ -47,6 +51,9 @@ export function weekReview(week: string, picks: Pick[], completions: Completion[
     return [{ person, monster, xp, levelBefore, levelAfter, stageBefore: stageFor(monster, levelBefore), stageAfter: stageFor(monster, levelAfter), tasks: counts }]
   })
 }
+
+// Stempel, die in dieser Woche verdient wurden.
+export const weekStamps = (week: string, stamps: Earned[]) => stamps.filter((e) => weekStart(new Date(e.earned_at)) === week).length
 
 // Wochen mit Monsterwahl, neueste zuerst.
 export const reviewWeeks = (picks: Pick[]) => [...new Set(picks.map((p) => p.week_start))].sort().reverse()
