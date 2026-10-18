@@ -11,8 +11,10 @@ import { OneOffs } from './OneOffs'
 import { LATEST_NEWS, unread } from './news'
 import { NewsBox } from './NewsBox'
 import { Pedia } from './Pedia'
+import { previousWeek } from './review'
 import { unseen } from './pedia'
 import { Reveal } from './Reveal'
+import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
 import { PEOPLE, STANDING_EFFORT, dayString, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type Person, type Standing, type Work } from './game'
 
@@ -40,7 +42,7 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
@@ -56,6 +58,9 @@ export default function App() {
   const week = weekStart(now)
   const day = now.toDateString()
   const today = dayString(now)
+  // Woche, deren Wochenrückblick schon weggeklickt ist; danach kommt die Monsterwahl.
+  const [reviewed, setReviewed] = useState<string | null>(null)
+  const doneReview = useCallback(() => setReviewed(week), [week])
 
   // Event-Design nur auf der Startseite, nicht in der Monsterwahl oder den Unterseiten.
   const homeEvent = view === 'home' && snap?.picks.some((p) => p.person === person) ? eventFor(now) : null
@@ -265,7 +270,9 @@ export default function App() {
 
   return (
     <>
-      {!myPick ? (
+      {!myPick && reviewed !== week ? (
+        <WeekReview key={week} tasks={snap.tasks} week={previousWeek(week)} onDone={doneReview} />
+      ) : !myPick ? (
         <MonsterPick person={person} monsters={monsters} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
@@ -282,7 +289,9 @@ export default function App() {
           onBack={() => setView('home')}
         />
       ) : view === 'pedia' ? (
-        <Pedia snap={snap} monsters={monsters} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} />
+        <Pedia snap={snap} monsters={monsters} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} onWeeks={() => setView('weeks')} />
+      ) : view === 'weeks' ? (
+        <WeekReview tasks={snap.tasks} week={week} archive onDone={() => setView('pedia')} />
       ) : (
         <Home
           snap={snap}

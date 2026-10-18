@@ -1,0 +1,49 @@
+import { describe, expect, it } from 'vitest'
+import type { Completion, Pick, Task } from './db'
+import { previousWeek, reviewWeeks, weekLabel, weekReview } from './review'
+
+const task: Task = { id: 't1', room: 'Bad', name: 'Wanne', element: 'wasser', effort: 'M', interval_days: 7, first_due: '2026-10-01', sort: 1 }
+let n = 0
+const done = (monster: string, xp: number, at: string, extra: Partial<Completion> = {}): Completion => ({
+  id: String(n++), task_id: null, standing: null, oneoff: null, person: 'adrian', monster, xp, done_at: new Date(at).toISOString(), ...extra,
+})
+const picks: Pick[] = [
+  { week_start: '2026-10-05', person: 'adrian', monster: '2' },
+  { week_start: '2026-10-12', person: 'adrian', monster: '2' },
+  { week_start: '2026-10-12', person: 'ulrike', monster: '5' },
+]
+
+describe('Wochenrückblick', () => {
+  it('zählt XP, Level und Aufgaben pro Element nur in der Woche', () => {
+    const completions = [
+      done('2', 1300, '2026-10-06T10:00'), // Vorwoche: Level 9
+      done('2', 31, '2026-10-12T08:00', { task_id: 't1' }),
+      done('2', 13, '2026-10-14T08:00', { standing: 'kochen' }),
+      done('2', 20, '2026-10-15T08:00', { oneoff: 'o1' }),
+      done('2', 25, '2026-10-16T08:00', { task_id: 'geloescht' }),
+      done('2', 50, '2026-10-19T08:00', { task_id: 't1' }), // nächste Woche
+    ]
+    const [adrian, ulrike] = weekReview('2026-10-12', picks, completions, [task])
+    expect(adrian.xp).toBe(89)
+    expect([adrian.levelBefore, adrian.levelAfter]).toEqual([9, 10])
+    expect([adrian.stageBefore, adrian.stageAfter]).toEqual([0, 1])
+    expect(adrian.tasks).toEqual({ wasser: 1, feuer: 1, natur: 0, luft: 0, licht: 0, einmalig: 1 })
+    expect(ulrike).toMatchObject({ person: 'ulrike', xp: 0, levelBefore: 1, levelAfter: 1 })
+  })
+
+  it('zeigt nur Personen mit Monster in der Woche', () => {
+    expect(weekReview('2026-10-05', picks, [], []).map((w) => w.person)).toEqual(['adrian'])
+    expect(weekReview('2026-09-28', picks, [], [])).toEqual([])
+  })
+
+  it('listet Wochen mit Monsterwahl, neueste zuerst', () => {
+    expect(reviewWeeks(picks)).toEqual(['2026-10-12', '2026-10-05'])
+  })
+
+  it('findet die Vorwoche und beschriftet den Zeitraum', () => {
+    expect(previousWeek('2026-10-12')).toBe('2026-10-05')
+    expect(previousWeek('2026-11-02')).toBe('2026-10-26')
+    expect(weekLabel('2026-10-12')).toBe('12.–18.10.')
+    expect(weekLabel('2026-09-28')).toBe('28.09.–04.10.')
+  })
+})

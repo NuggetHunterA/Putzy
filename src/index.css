@@ -606,6 +606,45 @@ img { display: block; }
 }
 .news-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
 
+/* Wochenrückblick: zwei Monster nebeneinander, darunter Aufgaben pro Element als Balken */
+.wr-head { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; }
+.wr-head .kicker { flex: 1; text-align: center; }
+.wr-head .btn { font-size: 26px; }
+.wr-head .btn:disabled { opacity: .35; }
+.wr-title { margin: 0; text-align: center; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 48px; letter-spacing: .04em; line-height: 1; text-shadow: 3px 3px 0 var(--sun); }
+.wr-cols { display: grid; gap: 12px; justify-content: center; }
+.wr-col { display: flex; flex-direction: column; border: 4px solid var(--ink); border-radius: 22px; background: var(--paper); box-shadow: 5px 5px 0 var(--ink); overflow: hidden; animation: pop-in .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.wr-col + .wr-col { animation-delay: .1s; }
+.wr-hero { position: relative; height: 150px; border-bottom: 4px solid var(--ink); overflow: hidden; }
+.wr-big { position: absolute; left: 50%; bottom: -8%; width: 125%; max-width: none; translate: -50% 0; }
+.wr-old { position: absolute; left: 6px; top: 6px; width: 46px; height: 46px; border: 3px solid var(--ink); border-radius: 50%; overflow: hidden; }
+.wr-old img { position: absolute; left: 50%; bottom: -6%; width: 118%; max-width: none; translate: -50% 0; }
+.wr-tag { position: absolute; right: 6px; top: 8px; padding: 2px 7px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--sun); font-size: 11px; font-weight: 800; }
+.wr-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 12px; }
+.wr-body .kicker { font-size: 11px; }
+.wr-name { margin-top: 2px; font-size: 18px; font-weight: 800; line-height: 1.05; }
+.wr-xp { font-family: 'Bangers', sans-serif; font-size: 36px; letter-spacing: .03em; line-height: .9; text-shadow: 2px 2px 0 var(--sun); }
+.wr-lv { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; }
+.wr-lv i { padding: 1px 7px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--ground); font-style: normal; }
+.wr-lv i.up { background: var(--sun); }
+.wr-bars { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.wr-bar { display: grid; grid-template-columns: 18px 1fr 18px; align-items: center; gap: 5px; font-size: 13px; }
+.wr-bar .track { height: 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--ground); overflow: hidden; }
+.wr-bar .track span { display: block; height: 100%; border-right: 2.5px solid var(--ink); }
+.wr-bar b { text-align: right; }
+.wr-bar.zero { opacity: .35; }
+.wr-bar.zero .track span { border: 0; }
+
+/* Pedia: Knopf zum Archiv der Wochenrückblicke */
+.wr-entry { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 4px solid var(--ink); border-radius: 20px; background: var(--sun); box-shadow: 4px 4px 0 var(--ink); text-align: left; }
+.wr-entry:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.wr-pair { display: flex; flex: none; }
+.wr-pair .wr-old { position: relative; left: 0; top: 0; width: 52px; height: 52px; }
+.wr-pair .wr-old + .wr-old { margin-left: -14px; }
+.wr-entry b { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .04em; line-height: 1; }
+.wr-entry small { font-size: 13px; font-weight: 700; }
+.wr-entry .go { margin-left: auto; font-size: 24px; font-weight: 800; }
+
 @keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.04, .95) translateY(1px); } }
 @keyframes stamp { 0% { transform: scale(2.4) rotate(-20deg); opacity: 0; } 60% { transform: scale(.9) rotate(4deg); opacity: 1; } 100% { transform: none; opacity: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
