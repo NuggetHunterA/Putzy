@@ -112,6 +112,11 @@ img { display: block; }
   border: 3px solid var(--ink);
   border-radius: 16px 16px 16px 4px;
 }
+/* Schmale Handys: Ohne Sprechblase passen beide Monster ganz in die Leiste. */
+@media (max-width: 389px) {
+  .bubble { display: none; }
+  .pct { font-size: 44px; }
+}
 
 /* Eure beiden Monster in der Leiste */
 .team { position: relative; margin-left: auto; display: flex; gap: 6px; }

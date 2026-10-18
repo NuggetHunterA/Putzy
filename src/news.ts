@@ -12,6 +12,7 @@ export const NEWS: News[] = [
   { id: 7, title: 'Event-Designs', text: 'Zu Festen und besonderen Tagen verkleidet sich die Startseite mit eigenem Himmel, Mütze auf dem Logo und passender Deko. Welche Tage das sind, verraten wir nicht.' },
   { id: 8, title: 'Zuverlässiger abhaken', text: 'Putzy lädt beim Zurückkehren in die App den neuesten Stand, und Fehlermeldungen bleiben stehen, bis ihr sie antippt. Einen Haken kann nur noch zurücknehmen, wer ihn gesetzt hat.' },
   { id: 9, title: 'Wochenrückblick', text: 'Zum Wochenstart seht ihr vor der Monsterwahl, was eure Monster letzte Woche geschafft haben: XP, Level, Entwicklungen und Aufgaben pro Element. Alle Wochen findet ihr in der Putzy-Pedia.' },
+  { id: 10, title: 'Pedia und schmale Handys', text: 'Nach dem Zurück aus einer Monsterreihe landet ihr wieder an derselben Stelle der Putzy-Pedia. Auf schmalen Handys sind jetzt beide Monster auf der Startseite ganz zu sehen.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
