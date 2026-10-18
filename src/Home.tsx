@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, MONSTERS, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, xpOf, type Monster, type Person, type Standing } from './game'
-import { DEX_TOTAL, PEDIA_ORDER, discoveredCount, isDiscovered } from './pedia'
+import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, backdrop, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, xpForLevel, xpOf, type Monster, type Person, type Standing } from './game'
+import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
 
 const SOON_DAYS = 7
@@ -14,6 +14,8 @@ type Row = { task: Task; days: number; done?: Completion }
 type Props = {
   snap: Snapshot
   person: Person
+  // Nur sichtbare Monster, geheime Reihen erst nach ihrer Freischaltung.
+  monsters: Monster[]
   now: Date
   live: boolean
   onToggle: (row: Row) => void
@@ -26,7 +28,7 @@ type Props = {
 
 export type { Row }
 
-export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs }: Props) {
+export function Home({ snap, person, monsters, now, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs }: Props) {
   const { myBadge, strike } = useStrike(snap, person, onAttackEnd)
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
@@ -103,7 +105,7 @@ export function Home({ snap, person, now, live, onToggle, onStanding, onAttackEn
         </span>
       </div>
 
-      <PediaBanner snap={snap} onClick={onPedia} />
+      <PediaBanner snap={snap} monsters={monsters} onClick={onPedia} />
 
       <TaskSection title="Heute" rows={today} person={person} xp={xpFor} onToggle={toggle}>
         <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
@@ -161,16 +163,16 @@ export function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: S
 }
 
 // Schmales Pedia-Band über den Aufgaben: eure zwei stärksten Monster und eine Silhouette als Lockruf.
-function PediaBanner({ snap, onClick }: { snap: Snapshot; onClick: () => void }) {
+function PediaBanner({ snap, monsters, onClick }: { snap: Snapshot; monsters: Monster[]; onClick: () => void }) {
   const xp = (id: string) => snap.monsterXp[id] ?? 0
-  const top = [...MONSTERS].sort((a, b) => xp(b.id) - xp(a.id)).slice(0, 2)
+  const top = [...monsters].sort((a, b) => xp(b.id) - xp(a.id)).slice(0, 2)
   const shown = (m: Monster) => m.stages.findLastIndex((_, s) => isDiscovered(snap.seen, m.id, s))
-  const hidden = PEDIA_ORDER.flatMap((m) => m.levels.map((_, i) => i + 1).filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
+  const hidden = PEDIA_ORDER.filter((m) => monsters.includes(m)).flatMap((m) => m.levels.map((_, i) => i + 1).filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
   return (
-    <button className="pedia-banner" onClick={onClick} aria-label={`Putzy-Pedia, ${discoveredCount(snap.seen)} von ${DEX_TOTAL} entdeckt`}>
+    <button className="pedia-banner" onClick={onClick} aria-label={`Putzy-Pedia, ${discoveredCount(snap.seen, monsters)} von ${dexTotal(monsters)} entdeckt`}>
       <span className="pb-title">Putzy-Pedia</span>
       <span className="pb-sub">
-        {discoveredCount(snap.seen)}/{DEX_TOTAL}
+        {discoveredCount(snap.seen, monsters)}/{dexTotal(monsters)}
       </span>
       <span className="pb-mons" aria-hidden="true">
         {top.map((m) => (

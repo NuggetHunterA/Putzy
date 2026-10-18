@@ -1,15 +1,17 @@
 // Monsterwahl zum Wochenstart. Ein Monster, das die andere Person schon hat, ist gesperrt.
-import { ELEMENTS, MONSTERS, PEOPLE, backdrop, levelFor, stageFor, type Person } from './game'
+import { ELEMENTS, PEOPLE, backdrop, levelFor, stageFor, type Monster, type Person } from './game'
 import type { Pick } from './db'
 
 type Props = {
   person: Person
+  // Nur sichtbare Monster, geheime Reihen erst nach ihrer Freischaltung.
+  monsters: Monster[]
   picks: Pick[]
   monsterXp: Record<string, number>
   onPick: (monsterId: string) => void
 }
 
-export function MonsterPick({ person, picks, monsterXp, onPick }: Props) {
+export function MonsterPick({ person, monsters, picks, monsterXp, onPick }: Props) {
   return (
     <main className="screen">
       <header className="pick-head">
@@ -22,7 +24,7 @@ export function MonsterPick({ person, picks, monsterXp, onPick }: Props) {
         <p className="lead">{PEOPLE[person]}, mit wem putzt du diese Woche? Passende Aufgaben geben 125 % XP.</p>
       </header>
       <div className="pick-grid">
-        {MONSTERS.map((m, i) => {
+        {monsters.map((m, i) => {
           const takenBy = picks.find((p) => p.monster === m.id && p.person !== person)
           const level = levelFor(monsterXp[m.id] ?? 0)
           const stage = stageFor(m, level)

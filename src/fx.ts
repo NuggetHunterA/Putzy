@@ -1,5 +1,5 @@
 // Effekte außerhalb von React: fliegendes Monster, Element-Partikel, Konfetti. Alles läuft in einer festen Ebene über der App.
-import type { Element } from './game'
+import type { Element, MonsterElement } from './game'
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 })
@@ -23,7 +23,7 @@ function spawn(tag: 'span' | 'img', className: string) {
 }
 
 // Partikel im Stil des Elements: Feuer steigt, Wasser fällt, Blätter trudeln, Luft wirbelt, Licht funkelt.
-export function burst(x: number, y: number, element: Element, n = 16, spread = 90) {
+export function burst(x: number, y: number, element: MonsterElement, n = 16, spread = 90) {
   if (reduced()) return
   for (let i = 0; i < n; i++) {
     const p = spawn('span', `p ${element}`)
@@ -47,7 +47,7 @@ export function burst(x: number, y: number, element: Element, n = 16, spread = 9
 }
 
 // Partikel strömen von außen in einen Punkt, bis stop() aufgerufen wird.
-export function pullIn(target: HTMLElement, element: Element) {
+export function pullIn(target: HTMLElement, element: MonsterElement) {
   if (reduced()) return () => {}
   const id = setInterval(() => {
     const c = center(target.getBoundingClientRect())
@@ -94,7 +94,7 @@ type Attack = {
   to: HTMLElement // Element-Punkt der Aufgabe
   bar: HTMLElement // XP-Balken im Badge
   src: string
-  element: Element
+  element: MonsterElement
   taskElement?: Element // fehlt bei einmaligen Aufgaben
   xp: number
   onHit: () => void

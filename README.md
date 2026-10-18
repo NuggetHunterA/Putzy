@@ -10,6 +10,7 @@ Putzy - the personal household helper. Eine PWA für Adrian und Ulrike: feste Ha
 - Das Intervall zählt ab der letzten Erledigung. Jede Aufgabe zählt pro Tag nur einmal: Wer zuerst abhakt, bekommt die XP.
 - Zurücknehmen kann man nur den eigenen Haken, bei einmaligen Aufgaben nur am selben Tag.
 - Jeden Montag wählt jede Person ein Monster. Ein Monster gibt es einmal im Haushalt, es behält seine XP dauerhaft und ist pro Woche nur für eine Person wählbar.
+- Sechs geheime Reihen (`secret` in `src/game.ts`, Regeln in `src/secret.ts`) sind anfangs nirgends zu sehen. Erreicht ein Monster eines Elements die Endform einer mindestens dreistufigen Reihe (bei Samsi Arborius), wird die geheime Reihe dieses Elements freigeschaltet; Wichti (ohne Element, 30 XP für einmalige Aufgaben, nie Element-Bonus) kommt mit der fünften. Sichtbar wird eine Reihe ab dem Tag danach, mit einer Animation beim ersten Öffnen. Datenbank: `supabase/geheime-monster.sql`.
 - Von Level n auf n+1 braucht ein Monster 130 + 4 × n XP (`LEVEL_BASE` und `LEVEL_STEP` in `src/game.ts`). Die meisten Monster entwickeln sich auf Level 10 (1.350 XP) und 25 (4.320 XP); Kokeli, Samsi und Aali haben eigene Stufen (`levels` in `src/game.ts`).
 
 ## Einrichtung

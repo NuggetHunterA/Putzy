@@ -1,7 +1,7 @@
 // Eine Aufgabe anlegen, ändern oder löschen.
 import { useState } from 'react'
 import { ElementIcon } from './ElementIcon'
-import { EFFORT_LABEL, EFFORT_XP, ELEMENTS, firstDue, intervalLabel, nextInterval, type Effort, type Element } from './game'
+import { EFFORT_LABEL, EFFORT_XP, ELEMENTS, TASK_ELEMENTS, firstDue, intervalLabel, nextInterval, type Effort, type Element } from './game'
 import type { Task } from './db'
 import { useBack } from './back'
 
@@ -73,7 +73,7 @@ export function TaskEdit({ task, tasks, onSave, onDelete, onBack }: Props) {
       <div className="field">
         <span className="label">Element</span>
         <div className="chips">
-          {(Object.keys(ELEMENTS) as Element[]).map((e) => (
+          {TASK_ELEMENTS.map((e) => (
             <button key={e} className={`chip-btn${e === element ? ' on' : ''}`} style={e === element ? undefined : { background: ELEMENTS[e].soft }} onClick={() => setElement(e)}>
               <ElementIcon element={e} size={15} />
               {ELEMENTS[e].name}
