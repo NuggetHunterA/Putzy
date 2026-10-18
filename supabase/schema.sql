@@ -52,12 +52,19 @@ create table picks (
 );
 
 -- Putzy-Pedia: wer welche Entwicklung schon gesehen hat (Stufe 1 = zweite Form, 2 = dritte Form).
+-- Stufe 0: hat die Freischaltung einer geheimen Reihe gesehen.
 create table seen (
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
-  stage int not null check (stage in (1, 2, 3)),
+  stage int not null check (stage between 0 and 3),
   seen_at timestamptz not null default now(),
   primary key (person, monster, stage)
+);
+
+-- Geheime Reihen (src/secret.ts): Tag, an dem die Bedingung erfüllt war. Sichtbar ab dem Tag danach.
+create table unlocks (
+  monster text primary key,
+  unlocked_on date not null
 );
 
 -- Was ist neu: höchste Neuigkeit (src/news.ts), die eine Person schon gesehen hat.
@@ -81,6 +88,7 @@ alter table oneoffs enable row level security;
 alter table picks enable row level security;
 alter table seen enable row level security;
 alter table news_seen enable row level security;
+alter table unlocks enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
@@ -88,5 +96,6 @@ create policy household on oneoffs for all to anon using (true) with check (true
 create policy household on picks for all to anon using (true) with check (true);
 create policy household on seen for all to anon using (true) with check (true);
 create policy household on news_seen for all to anon using (true) with check (true);
+create policy household on unlocks for all to anon using (true) with check (true);
 
-alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks;

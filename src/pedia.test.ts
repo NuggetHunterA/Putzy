@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS, monsterById } from './game'
-import { DEX_TOTAL, PEDIA, dexNo, discoveredCount, isDiscovered, isoWeek, monsterStats, unseen } from './pedia'
+import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, monsterStats, unseen } from './pedia'
+
+const open = MONSTERS.filter((m) => !m.secret)
 
 describe('Putzy-Pedia', () => {
   it('zeigt Stufe 1 immer, spätere erst wenn jemand sie gesehen hat', () => {
@@ -8,7 +10,7 @@ describe('Putzy-Pedia', () => {
     expect(isDiscovered([], '5', 0)).toBe(true)
     expect(isDiscovered(seen, '2', 1)).toBe(true)
     expect(isDiscovered(seen, '2', 2)).toBe(false)
-    expect(discoveredCount(seen)).toBe(13)
+    expect(discoveredCount(seen, open)).toBe(13)
   })
 
   it('spielt erreichte Entwicklungen nach, die diese Person noch nicht gesehen hat', () => {
@@ -19,8 +21,11 @@ describe('Putzy-Pedia', () => {
     expect(list('ulrike')).toEqual(['2:1', '2:2', '5:1'])
   })
 
-  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35', () => {
-    expect(DEX_TOTAL).toBe(35)
+  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35, geheime Reihen danach bis 53', () => {
+    expect(dexTotal(open)).toBe(35)
+    expect(dexTotal(MONSTERS)).toBe(53)
+    expect(dexNo(monsterById('13'), 0)).toBe('36')
+    expect(dexNo(monsterById('18'), 2)).toBe('53')
     expect(dexNo(monsterById('8'), 2)).toBe('24')
     expect(dexNo(monsterById('9'), 0)).toBe('25')
     expect(dexNo(monsterById('9'), 1)).toBe('26')

@@ -3,7 +3,7 @@ import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
 import { eventFor } from './events'
 import './events.css'
-import { complete, connect, deleteOneOff, deleteTask, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, setInterval as saveInterval, subscribe, undo, type Completion, type OneOff, type Snapshot, type Task } from './db'
+import { complete, connect, deleteOneOff, deleteTask, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
@@ -11,8 +11,12 @@ import { OneOffs } from './OneOffs'
 import { LATEST_NEWS, unread } from './news'
 import { NewsBox } from './NewsBox'
 import { Pedia } from './Pedia'
+import { previousWeek } from './review'
 import { unseen } from './pedia'
-import { PEOPLE, STANDING_EFFORT, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type Person, type Standing, type Work } from './game'
+import { Reveal } from './Reveal'
+import { WeekReview } from './WeekReview'
+import { newUnlocks, unrevealed, visibleMonsters } from './secret'
+import { PEOPLE, STANDING_EFFORT, dayString, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type Person, type Standing, type Work } from './game'
 
 const PERSON_STORAGE = 'putzy.person'
 const LOAD_ERROR = 'Keine Verbindung zur Datenbank.'
@@ -38,7 +42,7 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
@@ -47,9 +51,16 @@ export default function App() {
   const [evo, setEvo] = useState<Cel | null>(null)
   const closeEvo = useCallback(() => setEvo(null), [])
   const [attacking, setAttacking] = useState(false)
+  // Freischaltung einer geheimen Reihe, die gerade gezeigt wird.
+  const [secret, setSecret] = useState<Monster | null>(null)
+  const closeSecret = useCallback(() => setSecret(null), [])
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
+  const today = dayString(now)
+  // Woche, deren Wochenrückblick schon weggeklickt ist; danach kommt die Monsterwahl.
+  const [reviewed, setReviewed] = useState<string | null>(null)
+  const doneReview = useCallback(() => setReviewed(week), [week])
 
   // Event-Design nur auf der Startseite, nicht in der Monsterwahl oder den Unterseiten.
   const homeEvent = view === 'home' && snap?.picks.some((p) => p.person === person) ? eventFor(now) : null
@@ -83,15 +94,35 @@ export default function App() {
     }
   }, [refresh, day])
 
+  // Geheime Reihen: Ist eine Bedingung erfüllt, wird der heutige Tag gespeichert. Pro Reihe nur ein Versuch je Start.
+  const fresh = snap ? newUnlocks(snap.monsterXp, snap.unlocks).map((m) => m.id).join() : ''
+  const unlockTried = useRef(new Set<string>())
+  useEffect(() => {
+    const ids = fresh.split(',').filter((id) => id && !unlockTried.current.has(id))
+    if (ids.length === 0) return
+    ids.forEach((id) => unlockTried.current.add(id))
+    unlock(ids, today).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [fresh, today, refresh])
+
+  // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
+  const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined
+  useEffect(() => {
+    if (!reveal || !person || secret || evo || cel || attacking) return
+    const seen = { person, monster: reveal.id, stage: 0 }
+    setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
+    setSecret(reveal)
+    markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [reveal, person, secret, evo, cel, attacking, refresh])
+
   // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken.
   const next = snap && person ? unseen(snap.seen, person, snap.monsterXp)[0] : undefined
   useEffect(() => {
-    if (!next || !person || evo || cel || attacking) return
+    if (!next || !person || reveal || secret || evo || cel || attacking) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, evo, cel, attacking, refresh])
+  }, [next, person, reveal, secret, evo, cel, attacking, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -148,8 +179,9 @@ export default function App() {
   if (!snap) return <Message title="Putzy lädt …" text={error ?? ''} />
 
   const myPick = snap.picks.find((p) => p.person === person)
-  // Die Box kommt erst auf der Startseite, wenn Monsterwahl und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
+  const monsters = visibleMonsters(snap.unlocks, today)
+  // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
+  const news = myPick && view === 'home' && !reveal && !secret && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
   const award = (work: Work, save: (monster: string, xp: number) => Promise<void>) => {
@@ -238,8 +270,10 @@ export default function App() {
 
   return (
     <>
-      {!myPick ? (
-        <MonsterPick person={person} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
+      {!myPick && reviewed !== week ? (
+        <WeekReview key={week} tasks={snap.tasks} week={previousWeek(week)} onDone={doneReview} />
+      ) : !myPick ? (
+        <MonsterPick person={person} monsters={monsters} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
       ) : view === 'oneoffs' ? (
@@ -255,11 +289,14 @@ export default function App() {
           onBack={() => setView('home')}
         />
       ) : view === 'pedia' ? (
-        <Pedia snap={snap} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} />
+        <Pedia snap={snap} monsters={monsters} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} onWeeks={() => setView('weeks')} />
+      ) : view === 'weeks' ? (
+        <WeekReview tasks={snap.tasks} week={week} archive onDone={() => setView('pedia')} />
       ) : (
         <Home
           snap={snap}
           person={person}
+          monsters={monsters}
           now={now}
           live={live}
           onToggle={onToggle}
@@ -278,6 +315,7 @@ export default function App() {
       {news.length > 0 && <NewsBox news={news} monsterImg={weekImg(monsterById(myPick!.monster), snap.monsterXp)} onDone={() => seeNews(person)} />}
       {cel && <Celebration cel={cel} onDone={closeCel} />}
       {evo && <Evolution cel={evo} onDone={closeEvo} />}
+      {secret && <Reveal monster={secret} canPick={!myPick} onDone={closeSecret} />}
     </>
   )
 }

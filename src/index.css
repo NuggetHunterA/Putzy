@@ -112,6 +112,11 @@ img { display: block; }
   border: 3px solid var(--ink);
   border-radius: 16px 16px 16px 4px;
 }
+/* Schmale Handys: Ohne Sprechblase passen beide Monster ganz in die Leiste. */
+@media (max-width: 389px) {
+  .bubble { display: none; }
+  .pct { font-size: 44px; }
+}
 
 /* Eure beiden Monster in der Leiste */
 .team { position: relative; margin-left: auto; display: flex; gap: 6px; }
@@ -493,6 +498,7 @@ img { display: block; }
 .p.natur { border-radius: 0 70% 0 70%; background: #5BC44A; border: 2px solid var(--ink); }
 .p.luft { border-radius: 50%; background: var(--paper); border: 2px solid #9B7BFF; }
 .p.licht { background: var(--sun); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.p.ohne { border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFFFFF, #F3D9F0 45%, #BFD8F5 80%); border: 2px solid var(--ink); }
 .p.confetti { width: 10px; height: 16px; border: 2px solid var(--ink); border-radius: 2px; }
 .xp-fly {
   position: absolute; left: 0; top: 0;
@@ -551,6 +557,17 @@ img { display: block; }
 .evo-sub { font-size: 15px; font-weight: 700; }
 .evo-skip { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, .6); }
 
+/* Freischaltung einer geheimen Reihe: wie die Entwicklung, aber mit schwarzer Silhouette und Knopf */
+.rev-text { position: absolute; left: 16px; right: 16px; top: 9%; text-align: center; font-family: 'Bangers', sans-serif; font-size: 38px; letter-spacing: .03em; line-height: 1; color: var(--paper); }
+.rev-sub { position: absolute; left: 16px; right: 16px; top: calc(9% + 88px); text-align: center; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, .75); }
+.evo-stage img.rev-sil { filter: brightness(0) drop-shadow(0 0 2px #fff) drop-shadow(0 0 16px var(--glow)) drop-shadow(0 0 30px var(--glow)); animation: wobble 1.6s ease-in-out infinite; }
+.rev-q { position: absolute; left: 50%; top: 50%; translate: -50% -50%; font-family: 'Bangers', sans-serif; font-size: 110px; color: var(--sun); text-shadow: 4px 4px 0 var(--ink); animation: pulse-q 1.2s ease-in-out infinite; }
+.rev-banner { top: 70%; }
+.rev-chip { margin-left: 8px; padding: 3px 9px; vertical-align: middle; border: 2px solid var(--ink); border-radius: 99px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0; }
+.rev-btn { position: absolute; left: 28px; right: 28px; bottom: max(26px, env(safe-area-inset-bottom)); min-height: 54px; background: var(--sun); font-size: 18px; animation: pop-in .4s .8s both; }
+@keyframes wobble { 0%, 100% { rotate: -6deg; } 50% { rotate: 6deg; } }
+@keyframes pulse-q { 0%, 100% { scale: 1; } 50% { scale: 1.15; } }
+
 /* Was ist neu: zentrierte Karte, oben sitzt das Monster der Woche */
 .news {
   position: fixed; inset: 0; z-index: 20;
@@ -599,6 +616,45 @@ img { display: block; }
   font-weight: 800; font-size: 18px;
 }
 .news-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+/* Wochenrückblick: zwei Monster nebeneinander, darunter Aufgaben pro Element als Balken */
+.wr-head { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; }
+.wr-head .kicker { flex: 1; text-align: center; }
+.wr-head .btn { font-size: 26px; }
+.wr-head .btn:disabled { opacity: .35; }
+.wr-title { margin: 0; text-align: center; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 48px; letter-spacing: .04em; line-height: 1; text-shadow: 3px 3px 0 var(--sun); }
+.wr-cols { display: grid; gap: 12px; justify-content: center; }
+.wr-col { display: flex; flex-direction: column; border: 4px solid var(--ink); border-radius: 22px; background: var(--paper); box-shadow: 5px 5px 0 var(--ink); overflow: hidden; animation: pop-in .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.wr-col + .wr-col { animation-delay: .1s; }
+.wr-hero { position: relative; height: 150px; border-bottom: 4px solid var(--ink); overflow: hidden; }
+.wr-big { position: absolute; left: 50%; bottom: -8%; width: 125%; max-width: none; translate: -50% 0; }
+.wr-old { position: absolute; left: 6px; top: 6px; width: 46px; height: 46px; border: 3px solid var(--ink); border-radius: 50%; overflow: hidden; }
+.wr-old img { position: absolute; left: 50%; bottom: -6%; width: 118%; max-width: none; translate: -50% 0; }
+.wr-tag { position: absolute; right: 6px; top: 8px; padding: 2px 7px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--sun); font-size: 11px; font-weight: 800; }
+.wr-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 10px 12px; }
+.wr-body .kicker { font-size: 11px; }
+.wr-name { margin-top: 2px; font-size: 18px; font-weight: 800; line-height: 1.05; }
+.wr-xp { font-family: 'Bangers', sans-serif; font-size: 36px; letter-spacing: .03em; line-height: .9; text-shadow: 2px 2px 0 var(--sun); }
+.wr-lv { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; }
+.wr-lv i { padding: 1px 7px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--ground); font-style: normal; }
+.wr-lv i.up { background: var(--sun); }
+.wr-bars { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.wr-bar { display: grid; grid-template-columns: 18px 1fr 18px; align-items: center; gap: 5px; font-size: 13px; }
+.wr-bar .track { height: 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--ground); overflow: hidden; }
+.wr-bar .track span { display: block; height: 100%; border-right: 2.5px solid var(--ink); }
+.wr-bar b { text-align: right; }
+.wr-bar.zero { opacity: .35; }
+.wr-bar.zero .track span { border: 0; }
+
+/* Pedia: Knopf zum Archiv der Wochenrückblicke */
+.wr-entry { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 4px solid var(--ink); border-radius: 20px; background: var(--sun); box-shadow: 4px 4px 0 var(--ink); text-align: left; }
+.wr-entry:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.wr-pair { display: flex; flex: none; }
+.wr-pair .wr-old { position: relative; left: 0; top: 0; width: 52px; height: 52px; }
+.wr-pair .wr-old + .wr-old { margin-left: -14px; }
+.wr-entry b { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .04em; line-height: 1; }
+.wr-entry small { font-size: 13px; font-weight: 700; }
+.wr-entry .go { margin-left: auto; font-size: 24px; font-weight: 800; }
 
 @keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.04, .95) translateY(1px); } }
 @keyframes stamp { 0% { transform: scale(2.4) rotate(-20deg); opacity: 0; } 60% { transform: scale(.9) rotate(4deg); opacity: 1; } 100% { transform: none; opacity: 1; } }

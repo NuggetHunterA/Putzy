@@ -34,6 +34,8 @@ export type Snapshot = {
   oneoffs: OneOff[]
   oneoffsDone: Completion[]
   done: Done[]
+  // Geheime Reihen: Monster-id → Tag der Freischaltung (src/secret.ts).
+  unlocks: Record<string, string>
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -67,7 +69,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, done] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -78,7 +80,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('news_seen').select('*'),
     db().from('oneoffs').select('*').order('created_at'),
     db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }),
-    db().from('completions').select('monster, task_id, standing, done_at'),
+    db().from('unlocks').select('*'),
+    loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
@@ -95,7 +98,30 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     tasksDone,
     oneoffs: check(oneoffs),
     oneoffsDone: check(oneoffsDone),
-    done: check(done),
+    done,
+    unlocks: Object.fromEntries(check<{ monster: string; unlocked_on: string }[]>(unlocks).map((r) => [r.monster, r.unlocked_on])),
+  }
+}
+
+// Wochenrückblick: alle Monsterwahlen und Erledigungen. Supabase liefert höchstens 1000 Zeilen pro Abfrage,
+// deshalb werden die Erledigungen seitenweise geholt.
+export async function loadHistory() {
+  const picks = check<Pick[]>(await db().from('picks').select('*'))
+  const completions: Completion[] = []
+  for (let from = 0; ; from += 1000) {
+    const page = check<Completion[]>(await db().from('completions').select('*').order('done_at').order('id').range(from, from + 999))
+    completions.push(...page)
+    if (page.length < 1000) return { picks, completions }
+  }
+}
+
+// Eure Werte im Pedia: alle Erledigungen in kurz, seitenweise wie beim Wochenrückblick.
+async function loadDone() {
+  const done: Done[] = []
+  for (let from = 0; ; from += 1000) {
+    const page = check<Done[]>(await db().from('completions').select('monster, task_id, standing, done_at').order('done_at').order('id').range(from, from + 999))
+    done.push(...page)
+    if (page.length < 1000) return done
   }
 }
 
@@ -114,6 +140,11 @@ export async function pickMonster(p: Pick) {
 
 export async function markSeen(s: Seen) {
   check(await db().from('seen').upsert(s, { ignoreDuplicates: true }))
+}
+
+// Bleibt der erste Tag: Ein zweites Handy, das dieselbe Freischaltung meldet, ändert nichts.
+export async function unlock(monsters: string[], day: string) {
+  check(await db().from('unlocks').upsert(monsters.map((monster) => ({ monster, unlocked_on: day })), { ignoreDuplicates: true }))
 }
 
 export async function markNews(person: Person, lastId: number) {
@@ -152,6 +183,7 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'oneoffs' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'seen' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'unlocks' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     db().removeChannel(channel)

@@ -187,14 +187,100 @@ export const PEDIA: Record<string, Entry> = {
     dislikes: 'volle Wäschekörbe, die tagelang stehen, Knitterfalten',
     legend: 'Papillora fliegt nur an Tagen, an denen die Wäsche draußen hängt. Wo ihre Flügel ein Laken streifen, ist es danach glatt wie gebügelt.',
   },
+  '13': {
+    sizes: ['0,3 m', '2,4 m', '18 m'],
+    weights: ['2 kg', '300 kg', '9 t'],
+    compare: ['Passt in eine Teetasse', 'So lang wie ein Sofa', 'So lang wie ein ganzes Haus'],
+    room: 'Badewanne',
+    text: [
+      'Wali planscht am liebsten in Teetassen, die jemand stehen gelassen hat. Wenn es singt, beschlagen alle Spiegel im Haus, und wer genau hinhört, hört das Meer.',
+      'Nebelwal schwebt morgens durch das beschlagene Bad und malt mit seiner Flosse Wellen an den Spiegel. Wo er vorbeischwimmt, perlen die Tropfen einfach ab.',
+      'Leviara trägt den ganzen Nachthimmel auf dem Rücken. Wenn sie durch die Wohnung gleitet, wird jede Wanne zum See und jedes Waschbecken zum Sternenteich.',
+    ],
+    likes: 'Schaumbäder, Kamillentee',
+    dislikes: 'leere Wannen, Kalk am Duschkopf',
+    legend: 'Leviara schwimmt nicht durchs Wasser, sondern durch den Nachthimmel. Man sagt, jeder Stern ist ein Tropfen, den sie beim Auftauchen verloren hat.',
+  },
+  '14': {
+    sizes: ['0,2 m', '0,7 m', '1,8 m'],
+    weights: ['0,4 kg', '3 kg', '12 kg'],
+    compare: ['So groß wie ein Taschenbuch', 'So hoch wie eine Schreibtischlampe', 'So groß wie ein Bücherregal'],
+    room: 'Leseecke',
+    text: [
+      'Huhu schläft tagsüber unter dem Lampenschirm und wird wach, sobald jemand ein Buch aufschlägt. Seine Federn leuchten genau so hell, dass man noch eine Seite weiterlesen kann.',
+      'Leuchteule sitzt auf der Leselampe und knipst sie an, sobald jemand ein Buch aufschlägt. Staub auf dem Regal pustet sie mit einem einzigen Flügelschlag weg.',
+      'Astralux trägt Sternbilder in den Flügeln und sortiert nachts die Bücher nach Farben. Morgens steht jedes Buch wieder gerade, als hätte es nie jemand gelesen.',
+    ],
+    likes: 'warmes Leselicht, Lesezeichen',
+    dislikes: 'Eselsohren, flackernde Glühbirnen',
+    legend: 'Astralux hat jedes Sternbild selbst an den Himmel gehängt. Wer nachts nicht schlafen kann, sieht sie manchmal auf dem Fensterbrett sitzen und die Sterne zurechtrücken.',
+  },
+  '15': {
+    sizes: ['0,15 m', '0,8 m', '2,2 m'],
+    weights: ['0,2 kg', '2,5 kg', '15 kg'],
+    compare: ['So groß wie eine Kerze', 'So hoch wie eine Weinflasche', 'Flügel so breit wie ein Esstisch'],
+    room: 'Esstisch',
+    text: [
+      'Dochti sitzt im Kerzenständer und wartet auf gemütliche Abende. Wird eine Kerze ausgepustet, zieht es beleidigt Rauchkringel, bis jemand eine neue anzündet.',
+      'Kerzenfalke wacht auf dem Kerzenständer über das Abendessen. Wenn Wachs auf die Tischdecke tropft, fängt er es auf, bevor es fest wird.',
+      'Phönixa steigt aus jeder heruntergebrannten Kerze neu empor. Nach einem gemütlichen Abend fegt sie mit ihren glühenden Federn die Krümel vom Tisch.',
+    ],
+    likes: 'Kerzenschein beim Abendessen, Wachstropfen zum Spielen',
+    dislikes: 'Zugluft, Teelichter, die keiner nachfüllt',
+    legend: 'Phönixa ist schon tausendmal aus ihrer eigenen Asche aufgestiegen. Man sagt, sie kommt jedes Mal zurück, wenn in einem Haus nach einem langen Winter wieder zusammen gegessen wird.',
+  },
+  '16': {
+    sizes: ['0,2 m', '0,6 m', '2,6 m'],
+    weights: ['0,3 kg', '2 kg', '140 kg'],
+    compare: ['So groß wie ein Kopfkissen', 'So groß wie ein Kissenbezug', 'So lang wie ein Doppelbett'],
+    room: 'Dachboden',
+    text: [
+      'Pusti klaut nachts Kopfkissenbezüge, aber nur, um damit vom Schrank zu segeln. Morgens liegt der Bezug wieder da, nur ein bisschen zerknitterter als vorher.',
+      'Segelhörnchen breitet seine Flughaut aus und segelt von Schrank zu Schrank. Unterwegs pflückt es Spinnweben aus jeder Ecke, die man sonst nie erreicht.',
+      'Zephyrion reitet auf dem Durchzug, wenn alle Fenster offen sind. Nach einem Flug durchs Haus riecht jedes Zimmer nach frischer Luft und Sommerwiese.',
+    ],
+    likes: 'offene Dachfenster, Bettwäsche frisch vom Wäscheständer',
+    dislikes: 'geschlossene Türen, Windstille',
+    legend: 'Zephyrion soll schon jeden Wind der Welt geritten haben. Wenn im Herbst ein warmer Windstoß durch den Garten fährt, war das angeblich er, auf dem Weg nach Süden.',
+  },
+  '17': {
+    sizes: ['0,4 m', '1,3 m', '2,8 m'],
+    weights: ['4 kg', '80 kg', '400 kg'],
+    compare: ['So groß wie ein Blumentopf mit Pflanze', 'So hoch wie eine Gartenbank', 'So hoch wie ein Apfelbaum'],
+    room: 'Garten',
+    text: [
+      'Kitzli nascht heimlich von den Balkonkräutern, aber nur von denen, die sowieso zurückgeschnitten werden müssten. Wo es schläft, wächst am nächsten Morgen ein kleines Kleeblatt.',
+      'Farnhirsch trägt ein Geweih aus Farn und knabbert nur welke Blätter von den Pflanzen. Wo er steht, wächst Moos auf den Steinen, aber nie zwischen den Fugen.',
+      'Silvarion zieht Blüten und Ranken hinter sich her, wenn er durch den Garten schreitet. Ein Schütteln seines Geweihs, und jedes Beet ist gejätet.',
+    ],
+    likes: 'frisch gegossene Beete, Morgentau',
+    dislikes: 'Laubbläser, vertrocknete Blumentöpfe',
+    legend: 'Silvarion wandert nur in Vollmondnächten durch die Gärten. Jeder Baum, an dem er sein Geweih reibt, blüht im nächsten Frühling doppelt so schön.',
+  },
+  '18': {
+    sizes: ['0,15 m', '0,5 m', '1,2 m'],
+    weights: ['0,5 kg', '6 kg', '30 kg'],
+    compare: ['So groß wie eine Teekanne', 'So groß wie ein Putzeimer mit Besen', 'So groß wie eine Kommode'],
+    room: 'Ganzes Haus',
+    text: [
+      'Wichti erledigt nachts heimlich alles, was liegen geblieben ist, und lässt sich dabei nie erwischen. Wer morgens einen frisch zusammengelegten Pullover findet, den keiner gefaltet hat, weiß Bescheid.',
+      'Heinzel trägt Besen und Fingerhut immer bei sich und flickt nachts, was kaputt ist. Fehlt morgens eine Socke, hat er sie nur zum Stopfen mitgenommen.',
+      'Domovar wandert mit seiner Laterne durchs schlafende Haus und schaut, ob alles an seinem Platz ist. An seinem Gürtel hängt ein Schlüssel für jede Tür, die es je hier gab.',
+    ],
+    likes: 'einmalige Aufgaben, die endlich jemand angeht, Milch und Kekse',
+    dislikes: 'neugierige Blicke, Zettel mit „Mach ich morgen“',
+    legend: 'Domovar hat dieses Haus schon gehütet, bevor es gebaut wurde. Er zeigt sich nur denen, die jedem Element ein Monster großgezogen haben, und seitdem verschwindet in diesem Haus nie wieder ein Schlüssel.',
+  },
 }
 
 // Pedia-Reihenfolge nach Nummer, nicht nach Element wie in der Monsterwahl.
 export const PEDIA_ORDER = [...MONSTERS].sort((a, b) => Number(a.id) - Number(b.id))
 
-export const DEX_TOTAL = MONSTERS.reduce((n, m) => n + m.stages.length, 0)
+// Gezählt werden nur sichtbare Reihen (geheime erst nach ihrer Freischaltung, src/secret.ts).
+export const dexTotal = (monsters: Monster[]) => monsters.reduce((n, m) => n + m.stages.length, 0)
 
-// Fortlaufende Nummer über alle Stufen der Reihen davor, denn Reihen haben 2 bis 4 Stufen.
+// Fortlaufende Nummer über alle Stufen der Reihen davor, denn Reihen haben 2 bis 4 Stufen. Geheime Reihen zählen mit,
+// damit die Nummern fest bleiben, egal welche zuerst freigeschaltet wird.
 export const dexNo = (m: Monster, stage: number) =>
   String(PEDIA_ORDER.slice(0, PEDIA_ORDER.indexOf(m)).reduce((n, r) => n + r.stages.length, 0) + stage + 1).padStart(2, '0')
 
@@ -204,8 +290,8 @@ export const lastStage = (m: Monster) => m.stages.length - 1
 export const isDiscovered = (seen: Seen[], monster: string, stage: number) =>
   stage === 0 || seen.some((s) => s.monster === monster && s.stage === stage)
 
-export const discoveredCount = (seen: Seen[]) =>
-  MONSTERS.reduce((n, m) => n + m.stages.filter((_, s) => isDiscovered(seen, m.id, s)).length, 0)
+export const discoveredCount = (seen: Seen[], monsters: Monster[]) =>
+  monsters.reduce((n, m) => n + m.stages.filter((_, s) => isDiscovered(seen, m.id, s)).length, 0)
 
 // Erreichte Entwicklungen, die diese Person noch nicht gesehen hat, in Abspiel-Reihenfolge.
 export function unseen(seen: Seen[], person: Person, monsterXp: Record<string, number>) {

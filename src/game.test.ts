@@ -13,6 +13,11 @@ describe('XP', () => {
     expect(xpOf(null, 'wasser')).toBe(20)
     expect(xpOf({ effort: 'M', element: 'wasser' }, 'wasser')).toBe(31)
   })
+
+  it('gibt Monstern ohne Element 30 XP für einmalige Aufgaben und nie den Bonus', () => {
+    expect(xpOf(null, 'ohne')).toBe(30)
+    expect(xpOf({ effort: 'M', element: 'wasser' }, 'ohne')).toBe(25)
+  })
 })
 
 describe('Level', () => {
