@@ -454,9 +454,7 @@ img { display: block; }
   z-index: 10;
   border: 0; padding: 0;
   overflow: hidden;
-  animation-name: flash;
-  animation-fill-mode: forwards;
-  animation-timing-function: ease;
+  animation: fade-in .16s ease;
 }
 .cel-stripes {
   position: absolute; top: 0; bottom: 0; left: -20%; width: 140%;
@@ -492,13 +490,13 @@ img { display: block; }
 }
 .cel-move { font-size: 34px; font-weight: 800; font-style: italic; letter-spacing: -.02em; line-height: 1; }
 .cel-sub { font-size: 15px; font-weight: 700; color: var(--sun); }
+.cel-skip { animation: fade-in .4s 1.4s both; }
 
 @keyframes wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes pop-in { 0% { opacity: 0; transform: scale(.8); } 100% { opacity: 1; transform: none; } }
 @keyframes squish { 0% { transform: scale(1); } 35% { transform: scale(1.06, .94); } 65% { transform: scale(.97, 1.03); } 100% { transform: scale(1); } }
 @keyframes panel-in { 0% { opacity: 0; transform: translateY(-20px) scale(.95); } 100% { opacity: 1; transform: none; } }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 179, 155, .6); } 100% { box-shadow: 0 0 0 10px rgba(0, 179, 155, 0); } }
-@keyframes flash { 0% { opacity: 0; } 6% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes stripes { 0% { transform: translateX(-100%) skewX(-20deg); } 30%, 100% { transform: translateX(0) skewX(-20deg); } }
 @keyframes zoom { 0% { transform: scale(.2) rotate(-20deg); opacity: 0; } 30% { transform: scale(1.08) rotate(3deg); opacity: 1; } 42% { transform: scale(1) rotate(0); } 100% { transform: scale(1.03); } }
 @keyframes call { 0%, 35% { opacity: 0; transform: translateX(-120%) skewX(-12deg); } 50%, 100% { opacity: 1; transform: translateX(0) skewX(-12deg); } }
