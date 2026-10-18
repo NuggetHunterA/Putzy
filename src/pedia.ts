@@ -77,14 +77,14 @@ export const PEDIA: Record<string, Entry> = {
     legend: 'Spumagons Schild ist ein Schwamm, der seit tausend Jahren nicht ausgewrungen wurde. Wer ihn einmal auswringt, bekommt angeblich nie wieder eine dreckige Wanne.',
   },
   '5': {
-    sizes: ['0,35 m', '1,1 m', '3,4 m Spannweite'],
-    weights: ['4 kg', '19 kg', '31 kg'],
-    compare: ['So groß wie ein Kochtopf', 'So hoch wie ein Backofen', 'Flügel so breit wie eine ganze Küchenzeile'],
+    sizes: ['0,35 m', '1,1 m', '1,9 m'],
+    weights: ['4 kg', '19 kg', '45 kg'],
+    compare: ['So groß wie ein Kochtopf', 'So hoch wie ein Backofen', 'Mit Schweifen so lang wie eine ganze Küchenzeile'],
     room: 'Küche',
     text: [
       'Funki hält die Herdplatten warm, auch wenn niemand kocht. Eingebrannte Reste brennt es einfach noch einmal ein, bis sie aufgeben und abfallen.',
       'Glutfuchs trägt ein Halstuch, damit keine Funken in den Topf fallen. Es weiß immer genau, wann der Kuchen fertig ist, und schnüffelt so lange am Backofen, bis jemand ihn öffnet.',
-      "Infernyx' Flammen sind so heiß, dass Fettspritzer schon in der Luft verdampfen. Nach jedem Flügelschlag glänzt die ganze Küche wie neu.",
+      "Infernyx' Flammen sind so heiß, dass Fettspritzer schon in der Luft verdampfen. Ein Schwung seiner fünf Schweife, und die ganze Küche glänzt wie neu.",
     ],
     likes: 'saubere Backöfen, der Geruch von frischem Toast',
     dislikes: 'fettige Dunstabzugshauben, Wasserpistolen',
@@ -208,7 +208,7 @@ export const PEDIA: Record<string, Entry> = {
     room: 'Leseecke',
     text: [
       'Huhu schläft tagsüber zwischen zwei Buchdeckeln und wird erst wach, wenn es draußen dunkel wird. Seine Federn leuchten genau so hell, dass man noch eine Seite weiterlesen kann.',
-      'Leuchteule sitzt auf der Leselampe und knipst sie an, sobald jemand ein Buch aufschlägt. Staub auf dem Regal pustet sie mit einem einzigen Flügelschlag weg.',
+      'Leuchteule trägt den Lampenschirm wie einen Hut und knipst das Licht an, sobald jemand ein Buch aufschlägt. Mit ihrer Lesebrille entdeckt sie jedes Staubkorn auf dem Regal.',
       'Astralux trägt Sternbilder in den Flügeln und stellt nachts jedes liegen gebliebene Buch zurück ins Regal. Morgens steht alles so gerade, als hätte nie jemand darin gelesen.',
     ],
     likes: 'warmes Leselicht, Lesezeichen',
