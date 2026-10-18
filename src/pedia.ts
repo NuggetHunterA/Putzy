@@ -143,7 +143,7 @@ export const PEDIA: Record<string, Entry> = {
     ],
     likes: 'Pfannkuchen-Sonntage, ein aufgeräumter Gewürzschrank',
     dislikes: 'Kühlschranktüren, die offen stehen, angebrannte Pfannen',
-    legend: 'Salamandor trägt eine Kochmütze aus Rauch, die nie verweht. Es heißt, wer in seiner Gegenwart die Pfanne gleich spült, dem brennt nie wieder etwas an, nicht einmal Milch.',
+    legend: 'Salamandor trägt eine Kochmütze, die noch nie einen Fleck abbekommen hat. Es heißt, wer in seiner Gegenwart die Pfanne gleich spült, dem brennt nie wieder etwas an, nicht einmal Milch.',
   },
   '10': {
     sizes: ['0,1 m', '0,5 m', '1,4 m', '8,0 m'],
