@@ -2,14 +2,19 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useBack } from './back'
 import type { Snapshot } from './db'
+import { eggCost, eggFile, eggName, waiting, type Egg } from './eggs'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
+import { Sponge } from './Sponge'
 import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage, monsterStats, type Stats } from './pedia'
 
 type Props = {
   snap: Snapshot
   // Nur sichtbare Monster, geheime Reihen erst nach ihrer Freischaltung.
   monsters: Monster[]
+  // Streak-Punkte auf dem gemeinsamen Konto, zum Ausbrüten.
+  points: number
+  onHatch: (e: Egg) => void
   onBack: () => void
   onReplay: (m: Monster, stage: number) => void
   onWeeks: () => void
@@ -20,9 +25,10 @@ const stagesOf = (m: Monster) => m.stages.map((_, s) => s)
 const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.length - 1}, 1fr auto) 1fr` })
 const fmt = (n: number) => n.toLocaleString('de-DE')
 
-export function Pedia({ snap, monsters, onBack, onReplay, onWeeks }: Props) {
+export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWeeks }: Props) {
   useBack(onBack)
   const [open, setOpen] = useState<Monster | null>(null)
+  const [hatch, setHatch] = useState<Egg | null>(null)
   if (open) return <Detail m={open} snap={snap} onBack={() => setOpen(null)} onReplay={onReplay} />
 
   const found = discoveredCount(snap.seen, monsters)
@@ -34,6 +40,10 @@ export function Pedia({ snap, monsters, onBack, onReplay, onWeeks }: Props) {
           ←
         </button>
         <h1 className="bar-title">Putzy-Pedia</h1>
+        <span className="bank" aria-label={`${points} Streak-Punkte`}>
+          <Sponge size={30} />
+          {points}
+        </span>
       </div>
       <div className="dex-count">
         {found} von {total} entdeckt
@@ -58,6 +68,15 @@ export function Pedia({ snap, monsters, onBack, onReplay, onWeeks }: Props) {
         </span>
         <span className="go">›</span>
       </button>
+      {waiting(snap.eggs).length > 0 && (
+        <>
+          <h2 className="section-title">Nest</h2>
+          {waiting(snap.eggs).map((e) => (
+            <EggCard key={e.monster} egg={e} points={points} onHatch={() => setHatch(e)} />
+          ))}
+          <h2 className="section-title">Monster</h2>
+        </>
+      )}
       {PEDIA_ORDER.filter((m) => monsters.includes(m)).map((m) => {
         const level = levelFor(snap.monsterXp[m.id] ?? 0)
         return (
@@ -78,7 +97,69 @@ export function Pedia({ snap, monsters, onBack, onReplay, onWeeks }: Props) {
           </button>
         )
       })}
+      {hatch && (
+        <HatchConfirm
+          egg={hatch}
+          points={points}
+          onHatch={() => {
+            setHatch(null)
+            onHatch(hatch)
+          }}
+          onCancel={() => setHatch(null)}
+        />
+      )}
     </main>
+  )
+}
+
+// Wartendes Ei: Bild, Element, Name und Knopf zum Ausbrüten (grau mit fehlenden Punkten, solange es nicht reicht).
+function EggCard({ egg, points, onHatch }: { egg: Egg; points: number; onHatch: () => void }) {
+  const m = monsterById(egg.monster)
+  const cost = eggCost(m.id)
+  return (
+    <div className="egg-card">
+      <span className="egg-card-img" style={{ background: `radial-gradient(circle at 50% 40%, #fff 0 30%, ${ELEMENTS[m.element].soft} 80%)` }}>
+        <img src={eggFile(m.id)} alt="" />
+      </span>
+      <span className="egg-card-body">
+        <span className="dex-top">
+          <Element m={m} />
+        </span>
+        <b className="egg-card-name">{eggName(m)}</b>
+        {points >= cost ? (
+          <button className="btn egg-card-btn" onClick={onHatch}>
+            Ausbrüten · {cost}
+          </button>
+        ) : (
+          <span className="btn egg-card-btn off">
+            {cost} Punkte · noch {cost - points}
+          </span>
+        )}
+      </span>
+    </div>
+  )
+}
+
+function HatchConfirm({ egg, points, onHatch, onCancel }: { egg: Egg; points: number; onHatch: () => void; onCancel: () => void }) {
+  useBack(onCancel)
+  const m = monsterById(egg.monster)
+  const cost = eggCost(m.id)
+  return (
+    <div className="news">
+      <div className="confirm">
+        <img className="confirm-egg" src={eggFile(m.id)} alt="" />
+        <h2 className="confirm-title">{eggName(m)} ausbrüten?</h2>
+        <p className="confirm-text">
+          Das kostet {cost} Streak-Punkte von eurem gemeinsamen Konto ({points}). Danach bleiben {points - cost}.
+        </p>
+        <button className="news-btn" onClick={onHatch}>
+          Ausbrüten!
+        </button>
+        <button className="btn" onClick={onCancel}>
+          Noch nicht
+        </button>
+      </div>
+    </div>
   )
 }
 

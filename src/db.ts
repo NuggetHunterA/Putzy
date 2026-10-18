@@ -1,6 +1,8 @@
 // Datenzugriff auf Supabase. Der Schlüssel kommt aus dem Haushaltslink (#k=…), nicht aus dem Build.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Egg } from './eggs'
 import type { Effort, Element, Person } from './game'
+import type { StreakWeek } from './streak'
 
 export type Task = {
   id: string
@@ -36,6 +38,9 @@ export type Snapshot = {
   done: Done[]
   // Geheime Reihen: Monster-id → Tag der Freischaltung (src/secret.ts).
   unlocks: Record<string, string>
+  // Eier im Nest und ausgebrütete (src/eggs.ts), gespeicherte Streak-Punkte pro Woche (src/streak.ts).
+  eggs: Egg[]
+  streakWeeks: StreakWeek[]
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -69,7 +74,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, done] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -81,6 +86,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('oneoffs').select('*').order('created_at'),
     db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }),
     db().from('unlocks').select('*'),
+    db().from('eggs').select('*'),
+    db().from('streak_weeks').select('*'),
     loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
@@ -100,6 +107,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     oneoffsDone: check(oneoffsDone),
     done,
     unlocks: Object.fromEntries(check<{ monster: string; unlocked_on: string }[]>(unlocks).map((r) => [r.monster, r.unlocked_on])),
+    eggs: check(eggs),
+    streakWeeks: check(streakWeeks),
   }
 }
 
@@ -147,6 +156,21 @@ export async function unlock(monsters: string[], day: string) {
   check(await db().from('unlocks').upsert(monsters.map((monster) => ({ monster, unlocked_on: day })), { ignoreDuplicates: true }))
 }
 
+// Gefundenes Ei ins Nest. Findet das andere Handy dasselbe Ei gleichzeitig, bleibt der erste Fund.
+export async function findEgg(e: Omit<Egg, 'found_at' | 'hatched_at' | 'hatched_by'>) {
+  check(await db().from('eggs').upsert(e, { ignoreDuplicates: true }))
+}
+
+// Nur ein noch nicht ausgebrütetes Ei schlüpft, ein zweites Handy ändert nichts mehr.
+export async function hatchEgg(monster: string, person: Person) {
+  check(await db().from('eggs').update({ hatched_at: new Date().toISOString(), hatched_by: person }).eq('monster', monster).is('hatched_at', null))
+}
+
+// Punkte abgeschlossener Wochen festhalten; spätere Änderungen an Aufgaben ändern sie nicht mehr.
+export async function saveWeeks(weeks: StreakWeek[]) {
+  check(await db().from('streak_weeks').upsert(weeks, { ignoreDuplicates: true }))
+}
+
 export async function markNews(person: Person, lastId: number) {
   check(await db().from('news_seen').upsert({ person, last_id: lastId }))
 }
@@ -184,6 +208,7 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'oneoffs' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'seen' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'unlocks' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'eggs' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     db().removeChannel(channel)
