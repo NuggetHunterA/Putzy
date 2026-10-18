@@ -9,7 +9,6 @@ type Props = { task: Task | null; tasks: Task[]; onSave: (t: Task) => void; onDe
 
 export function TaskEdit({ task, tasks, onSave, onDelete, onBack }: Props) {
   useBack(onBack)
-  // Erst nach dem Verlaufseintrag nach oben: So merkt sich der Browser die Stelle in der Liste und springt beim Zurück wieder hin.
   useEffect(() => window.scrollTo(0, 0), [])
   const rooms = [...new Set(tasks.map((t) => t.room))]
   const [name, setName] = useState(task?.name ?? '')

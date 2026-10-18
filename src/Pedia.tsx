@@ -107,7 +107,6 @@ function Slot({ m, stage, snap, hint }: { m: Monster; stage: number; snap: Snaps
 
 function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
   useBack(onBack)
-  // Erst nach dem Verlaufseintrag nach oben: So merkt sich der Browser die Stelle in der Liste und springt beim Zurück wieder hin.
   useEffect(() => window.scrollTo(0, 0), [])
   const known = stagesOf(m).filter((s) => isDiscovered(snap.seen, m.id, s))
   const [stage, setStage] = useState(known[known.length - 1])
