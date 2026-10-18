@@ -1,34 +1,41 @@
 // Spielregeln von Putzy: Elemente, Monster, XP, Level und Fälligkeit.
 
 export type Element = 'wasser' | 'feuer' | 'natur' | 'luft' | 'licht'
+// Monster können zusätzlich ohne Element sein (Wichti). Aufgaben haben immer eines der fünf.
+export type MonsterElement = Element | 'ohne'
 export type Effort = 'K' | 'M' | 'G'
 export type Person = 'adrian' | 'ulrike'
 
 export const PEOPLE: Record<Person, string> = { adrian: 'Adrian', ulrike: 'Ulrike' }
 
 // soft/strong: Elementfarbe. bg/hi: Gegenfarbe als Hintergrund hinter dem Monster, damit es sich abhebt.
-export const ELEMENTS: Record<Element, { name: string; soft: string; strong: string; bg: string; hi: string }> = {
+export const ELEMENTS: Record<MonsterElement, { name: string; soft: string; strong: string; bg: string; hi: string }> = {
   wasser: { name: 'Wasser', soft: '#7FD8F7', strong: '#3EC1F3', bg: '#FFC93C', hi: '#FFE89A' },
   feuer: { name: 'Feuer', soft: '#FF8A6B', strong: '#FF5A3C', bg: '#1F2B66', hi: '#3A4C9E' },
   natur: { name: 'Natur', soft: '#B7E39A', strong: '#5BC44A', bg: '#B9A3F5', hi: '#E1D6FF' },
   luft: { name: 'Luft', soft: '#E9D5FF', strong: '#9B7BFF', bg: '#8FE3C6', hi: '#D2F7EA' },
   licht: { name: 'Licht', soft: '#FFE89A', strong: '#FFD23F', bg: '#3B2A6B', hi: '#6A52B0' },
+  ohne: { name: 'Ohne Element', soft: '#E4E6EF', strong: '#9AA1BA', bg: '#A9AFC6', hi: '#F4F1FA' },
 }
 
-export const backdrop = (e: Element) => `radial-gradient(circle at 50% 40%, ${ELEMENTS[e].hi} 0 35%, ${ELEMENTS[e].bg} 75%)`
+export const TASK_ELEMENTS: Element[] = ['wasser', 'feuer', 'natur', 'luft', 'licht']
+
+export const backdrop = (e: MonsterElement) => `radial-gradient(circle at 50% 40%, ${ELEMENTS[e].hi} 0 35%, ${ELEMENTS[e].bg} 75%)`
 
 // stages: Namen; \u00AD ist ein weiches Trennzeichen, damit lange Namen in schmalen Feldern sauber umbrechen.
 // levels: ab welchem Level die nächste Stufe kommt, also immer eine Zahl weniger als Stufen.
+// secret: geheime Reihe, erst nach der Freischaltung sichtbar (src/secret.ts).
 export type Monster = {
   id: string
-  element: Element
+  element: MonsterElement
   stages: string[]
   files: string[]
   levels: number[]
   move: string
+  secret?: true
 }
 
-const monster = (id: string, element: Element, move: string, names: string[], slugs: string[], levels = [10, 25]): Monster => ({
+const monster = (id: string, element: MonsterElement, move: string, names: string[], slugs: string[], levels = [10, 25]): Monster => ({
   id,
   element,
   move,
@@ -36,6 +43,8 @@ const monster = (id: string, element: Element, move: string, names: string[], sl
   files: slugs.map((s, i) => `/monster/${id}-${i + 1}-${s}.webp`),
   levels,
 })
+
+const secret = (...args: Parameters<typeof monster>): Monster => ({ ...monster(...args), secret: true })
 
 export const MONSTERS: Monster[] = [
   monster('2', 'wasser', 'Gezeitenstoß', ['Plitsch', 'Platschkoi', 'Tsunadra'], ['plitsch', 'platschkoi', 'tsunadra']),
@@ -50,6 +59,12 @@ export const MONSTERS: Monster[] = [
   monster('12', 'luft', 'Frischluft-Flattern', ['Raupsi', 'Kokonella', 'Papillora'], ['raupsi', 'kokonella', 'papillora']),
   monster('1', 'licht', 'Mondglanz-Pfote', ['Miezo', 'Katzelot', 'Sphinxar'], ['miezo', 'katzelot', 'sphinxar']),
   monster('8', 'licht', 'Prisma-Ordnung', ['Funkel', 'Prismabot', 'Kristallos'], ['funkel', 'prismabot', 'kristallos']),
+  secret('13', 'wasser', 'Sternenflut', ['Wali', 'Nebelwal', 'Leviara'], ['wali', 'nebelwal', 'leviara']),
+  secret('15', 'feuer', 'Aschenwiedergeburt', ['Dochti', 'Kerzen\u00ADfalke', 'Phönixa'], ['dochti', 'kerzenfalke', 'phoenixa']),
+  secret('17', 'natur', 'Waldlied', ['Kitzli', 'Farnhirsch', 'Silvarion'], ['kitzli', 'farnhirsch', 'silvarion']),
+  secret('16', 'luft', 'Rückenwind-Sturzflug', ['Pusti', 'Segel\u00ADhörnchen', 'Zephyrion'], ['pusti', 'segelhoernchen', 'zephyrion']),
+  secret('14', 'licht', 'Sternbild-Blick', ['Huhu', 'Leucht\u00ADeule', 'Astralux'], ['huhu', 'leuchteule', 'astralux']),
+  secret('18', 'ohne', 'Heinzel-Heimlichkeit', ['Wichti', 'Heinzel', 'Domovar'], ['wichti', 'heinzel', 'domovar']),
 ]
 
 export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!
@@ -69,20 +84,22 @@ export const STANDING: Standing[] = [
   { id: 'garten', name: 'Garten / Straße pflegen', short: 'Garten', element: 'natur' },
 ]
 export const STANDING_EFFORT: Effort = 'K'
-// Einmalige Aufgaben: kein Element, also auch kein Bonus.
+// Einmalige Aufgaben: kein Element, also auch kein Bonus. Monster ohne Element bekommen dafür mehr.
 export const ONEOFF_XP = 20
+export const ONEOFF_XP_OHNE = 30
 // Von Level n auf n+1 braucht ein Monster LEVEL_BASE + LEVEL_STEP × n XP.
 export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4
 export const MAX_LEVEL = 30
 
-export function xpFor(effort: Effort, taskElement: Element, monsterElement: Element) {
+export function xpFor(effort: Effort, taskElement: Element, monsterElement: MonsterElement) {
   return Math.round(EFFORT_XP[effort] * (taskElement === monsterElement ? ELEMENT_BONUS : 1))
 }
 
 // Was abgehakt wird: Aufwand und Element, oder null bei einer einmaligen Aufgabe.
 export type Work = { effort: Effort; element: Element } | null
-export const xpOf = (work: Work, monsterElement: Element) => (work ? xpFor(work.effort, work.element, monsterElement) : ONEOFF_XP)
+export const xpOf = (work: Work, monsterElement: MonsterElement) =>
+  work ? xpFor(work.effort, work.element, monsterElement) : monsterElement === 'ohne' ? ONEOFF_XP_OHNE : ONEOFF_XP
 
 // Gesamt-XP, die man für ein Level braucht: Summe von 130 + 4 × n für n = 1 … level-1.
 export const xpForLevel = (level: number) => (level - 1) * LEVEL_BASE + (LEVEL_STEP * level * (level - 1)) / 2
@@ -108,6 +125,9 @@ export function daysUntilDue(lastDone: Date | null, intervalDays: number, now: D
   }
   return dayNumber(lastDone) + intervalDays - dayNumber(now)
 }
+
+// Kalendertag als YYYY-MM-DD (lokale Zeit).
+export const dayString = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 // Montag der aktuellen Woche als YYYY-MM-DD (lokale Zeit).
 export function weekStart(now: Date) {

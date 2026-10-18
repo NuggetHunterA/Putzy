@@ -4,10 +4,12 @@ import { useBack } from './back'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, xpForLevel, type Monster, type Person } from './game'
-import { DEX_TOTAL, PEDIA, PEDIA_ORDER, UNLOCK, dexNo, discoveredCount, isDiscovered, lastStage } from './pedia'
+import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage } from './pedia'
 
 type Props = {
   snap: Snapshot
+  // Nur sichtbare Monster, geheime Reihen erst nach ihrer Freischaltung.
+  monsters: Monster[]
   onBack: () => void
   onReplay: (m: Monster, stage: number) => void
 }
@@ -17,7 +19,7 @@ const stagesOf = (m: Monster) => m.stages.map((_, s) => s)
 const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.length - 1}, 1fr auto) 1fr` })
 const fmt = (n: number) => n.toLocaleString('de-DE')
 
-export function Pedia({ snap, onBack, onReplay }: Props) {
+export function Pedia({ snap, monsters, onBack, onReplay }: Props) {
   useBack(onBack)
   const [open, setOpen] = useState<Monster | null>(null)
   const show = (m: Monster | null) => {
@@ -26,8 +28,8 @@ export function Pedia({ snap, onBack, onReplay }: Props) {
   }
   if (open) return <Detail m={open} snap={snap} onBack={() => show(null)} onReplay={onReplay} />
 
-  const found = discoveredCount(snap.seen)
-  const total = DEX_TOTAL
+  const found = discoveredCount(snap.seen, monsters)
+  const total = dexTotal(monsters)
   return (
     <main className="screen">
       <div className="bar">
@@ -42,7 +44,7 @@ export function Pedia({ snap, onBack, onReplay }: Props) {
           <span style={{ width: `${(found / total) * 100}%`, background: 'var(--accent)' }} />
         </span>
       </div>
-      {PEDIA_ORDER.map((m) => {
+      {PEDIA_ORDER.filter((m) => monsters.includes(m)).map((m) => {
         const level = levelFor(snap.monsterXp[m.id] ?? 0)
         return (
           <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => show(m)}>

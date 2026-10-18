@@ -487,6 +487,7 @@ img { display: block; }
 .p.natur { border-radius: 0 70% 0 70%; background: #5BC44A; border: 2px solid var(--ink); }
 .p.luft { border-radius: 50%; background: var(--paper); border: 2px solid #9B7BFF; }
 .p.licht { background: var(--sun); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.p.ohne { border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFFFFF, #F3D9F0 45%, #BFD8F5 80%); border: 2px solid var(--ink); }
 .p.confetti { width: 10px; height: 16px; border: 2px solid var(--ink); border-radius: 2px; }
 .xp-fly {
   position: absolute; left: 0; top: 0;
@@ -544,6 +545,17 @@ img { display: block; }
 .evo-names i { font-style: normal; color: var(--accent); }
 .evo-sub { font-size: 15px; font-weight: 700; }
 .evo-skip { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, .6); }
+
+/* Freischaltung einer geheimen Reihe: wie die Entwicklung, aber mit schwarzer Silhouette und Knopf */
+.rev-text { position: absolute; left: 16px; right: 16px; top: 9%; text-align: center; font-family: 'Bangers', sans-serif; font-size: 38px; letter-spacing: .03em; line-height: 1; color: var(--paper); }
+.rev-sub { position: absolute; left: 16px; right: 16px; top: calc(9% + 88px); text-align: center; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, .75); }
+.evo-stage img.rev-sil { filter: brightness(0) drop-shadow(0 0 2px #fff) drop-shadow(0 0 16px var(--glow)) drop-shadow(0 0 30px var(--glow)); animation: wobble 1.6s ease-in-out infinite; }
+.rev-q { position: absolute; left: 50%; top: 50%; translate: -50% -50%; font-family: 'Bangers', sans-serif; font-size: 110px; color: var(--sun); text-shadow: 4px 4px 0 var(--ink); animation: pulse-q 1.2s ease-in-out infinite; }
+.rev-banner { top: 70%; }
+.rev-chip { margin-left: 8px; padding: 3px 9px; vertical-align: middle; border: 2px solid var(--ink); border-radius: 99px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0; }
+.rev-btn { position: absolute; left: 28px; right: 28px; bottom: max(26px, env(safe-area-inset-bottom)); min-height: 54px; background: var(--sun); font-size: 18px; animation: pop-in .4s .8s both; }
+@keyframes wobble { 0%, 100% { rotate: -6deg; } 50% { rotate: 6deg; } }
+@keyframes pulse-q { 0%, 100% { scale: 1; } 50% { scale: 1.15; } }
 
 /* Was ist neu: zentrierte Karte, oben sitzt das Monster der Woche */
 .news {
