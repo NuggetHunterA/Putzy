@@ -13,6 +13,7 @@ export const NEWS: News[] = [
   { id: 8, title: 'Zuverlässiger abhaken', text: 'Putzy lädt beim Zurückkehren in die App den neuesten Stand, und Fehlermeldungen bleiben stehen, bis ihr sie antippt. Einen Haken kann nur noch zurücknehmen, wer ihn gesetzt hat.' },
   { id: 9, title: 'Wochenrückblick', text: 'Zum Wochenstart seht ihr vor der Monsterwahl, was eure Monster letzte Woche geschafft haben: XP, Level, Entwicklungen und Aufgaben pro Element. Alle Wochen findet ihr in der Putzy-Pedia.' },
   { id: 10, title: 'Listen merken sich die Stelle', text: 'Nach dem Zurück aus einer Monsterreihe oder einer Aufgabe landet ihr wieder an derselben Stelle der Liste. Auf schmalen Handys sind jetzt beide Monster auf der Startseite ganz zu sehen.' },
+  { id: 11, title: 'Mehr im Pedia', text: 'Jede Stufe hat jetzt ihren eigenen Pedia-Eintrag, und der Steckbrief verrät, wie groß ein Monster im Vergleich wirklich ist. Ab Level 5 stehen dort außerdem eure Werte: Lieblingsaufgabe, dabei seit und Rekordwoche.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

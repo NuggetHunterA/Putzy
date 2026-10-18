@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS, monsterById } from './game'
-import { dexNo, dexTotal, discoveredCount, isDiscovered, unseen } from './pedia'
+import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, monsterStats, unseen } from './pedia'
 
 const open = MONSTERS.filter((m) => !m.secret)
 
@@ -38,5 +38,34 @@ describe('Putzy-Pedia', () => {
   it('spielt bei Samsi alle drei Entwicklungen nach', () => {
     const list = unseen([], 'adrian', { '10': 5510 }).map((e) => `${e.monster.id}:${e.stage}`)
     expect(list).toEqual(['10:1', '10:2', '10:3'])
+  })
+
+  it('hat pro Stufe einen Eintrag, Größe, Gewicht und Vergleich', () => {
+    for (const m of MONSTERS) {
+      const e = PEDIA[m.id]
+      for (const list of [e.text, e.sizes, e.weights, e.compare]) expect(list).toHaveLength(m.stages.length)
+    }
+  })
+
+  it('rechnet Eure Werte aus den Erledigungen eines Monsters', () => {
+    const tasks = [{ id: 'bad', name: 'Bad putzen' }, { id: 'boden', name: 'Boden wischen' }] as Parameters<typeof monsterStats>[2]
+    const c = (task_id: string | null, done_at: string, monster = '2', standing: string | null = null) => ({ monster, task_id, standing, done_at })
+    const done = [
+      c('bad', '2026-10-06T08:00:00Z'),
+      c('boden', '2026-10-07T08:00:00Z'),
+      c(null, '2026-10-08T08:00:00Z', '2', 'kochen'),
+      c(null, '2026-10-09T08:00:00Z', '2', 'kochen'),
+      c('bad', '2026-10-14T08:00:00Z'),
+      c(null, '2026-10-01T08:00:00Z'), // einmalige Aufgabe zählt für Datum und Woche, nicht als Lieblingsaufgabe
+      c('bad', '2026-09-01T08:00:00Z', '5'),
+    ]
+    expect(monsterStats(done, '2', tasks)).toEqual({ favorite: { name: 'Bad putzen', tasks: 2 }, since: new Date('2026-10-01T08:00:00Z'), record: { tasks: 4, week: 41 } })
+    expect(monsterStats(done, '9', tasks)).toEqual({ favorite: null, since: null, record: null })
+  })
+
+  it('zählt Kalenderwochen nach ISO', () => {
+    expect(isoWeek(new Date(2026, 9, 18))).toBe(42)
+    expect(isoWeek(new Date(2027, 0, 1))).toBe(53)
+    expect(isoWeek(new Date(2025, 11, 29))).toBe(1)
   })
 })

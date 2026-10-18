@@ -15,6 +15,8 @@ export type Task = {
 export type Completion = { id: string; task_id: string | null; standing: string | null; oneoff: string | null; person: Person; monster: string; xp: number; done_at: string }
 export type Pick = { week_start: string; person: Person; monster: string }
 export type Seen = { person: Person; monster: string; stage: number }
+// Alle Erledigungen in kurz, für Eure Werte im Pedia.
+export type Done = { monster: string; task_id: string | null; standing: string | null; done_at: string }
 export type OneOff = { id: string; name: string; created_at: string }
 
 export type Snapshot = {
@@ -31,6 +33,7 @@ export type Snapshot = {
   // Einmalige Aufgaben, älteste zuerst, und ihre Erledigungen, neueste zuerst.
   oneoffs: OneOff[]
   oneoffsDone: Completion[]
+  done: Done[]
   // Geheime Reihen: Monster-id → Tag der Freischaltung (src/secret.ts).
   unlocks: Record<string, string>
 }
@@ -66,7 +69,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -78,6 +81,7 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('oneoffs').select('*').order('created_at'),
     db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }),
     db().from('unlocks').select('*'),
+    loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
@@ -94,6 +98,7 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     tasksDone,
     oneoffs: check(oneoffs),
     oneoffsDone: check(oneoffsDone),
+    done,
     unlocks: Object.fromEntries(check<{ monster: string; unlocked_on: string }[]>(unlocks).map((r) => [r.monster, r.unlocked_on])),
   }
 }
@@ -107,6 +112,16 @@ export async function loadHistory() {
     const page = check<Completion[]>(await db().from('completions').select('*').order('done_at').order('id').range(from, from + 999))
     completions.push(...page)
     if (page.length < 1000) return { picks, completions }
+  }
+}
+
+// Eure Werte im Pedia: alle Erledigungen in kurz, seitenweise wie beim Wochenrückblick.
+async function loadDone() {
+  const done: Done[] = []
+  for (let from = 0; ; from += 1000) {
+    const page = check<Done[]>(await db().from('completions').select('monster, task_id, standing, done_at').order('done_at').order('id').range(from, from + 999))
+    done.push(...page)
+    if (page.length < 1000) return done
   }
 }
 

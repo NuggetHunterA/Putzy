@@ -4,7 +4,7 @@ import { useBack } from './back'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
-import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage } from './pedia'
+import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage, monsterStats, type Stats } from './pedia'
 
 type Props = {
   snap: Snapshot
@@ -124,8 +124,8 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
   // Infoblöcke und Stufen in Level-Reihenfolge, bei gleichem Level die Stufe zuerst; Gesperrtes als Schloss-Zeile.
   const stageBlocks = m.levels.map((at, i) => ({ at, title: `Stufe ${i + 2}`, stage: i + 1 }))
   const infoBlocks = [
-    { at: UNLOCK.facts, title: 'Steckbrief', body: <Facts e={e} stage={stage} /> },
-    { at: UNLOCK.entry, title: 'Pedia-Eintrag', body: <p>{e.text}</p> },
+    { at: UNLOCK.facts, title: 'Steckbrief', body: <Facts e={e} stage={stage} stats={monsterStats(snap.done, m.id, snap.tasks)} /> },
+    { at: UNLOCK.entry, title: 'Pedia-Eintrag', body: <p>{e.text[stage]}</p> },
     {
       at: UNLOCK.quirk,
       title: 'Eigenart',
@@ -226,21 +226,41 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
   )
 }
 
-function Facts({ e, stage }: { e: (typeof PEDIA)[string]; stage: number }) {
+function Facts({ e, stage, stats }: { e: (typeof PEDIA)[string]; stage: number; stats: Stats }) {
+  const since = stats.since?.toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric', year: '2-digit' })
   return (
-    <span className="facts">
-      <span className="fact">
-        <small>Größe</small>
-        <b>{e.sizes[stage]}</b>
+    <>
+      <span className="facts">
+        <Fact label="Größe" value={e.sizes[stage]} />
+        <Fact label="Gewicht" value={e.weights[stage]} />
+        <Fact label="Liebt" value={e.room} />
       </span>
-      <span className="fact">
-        <small>Gewicht</small>
-        <b>{e.weights[stage]}</b>
+      <span className="compare">{e.compare[stage]}</span>
+      <span className="stats">
+        <small>Eure Werte</small>
+        <span>
+          Lieblingsaufgabe
+          <b>
+            {stats.favorite?.name ?? '–'}
+            {stats.favorite && <em>{stats.favorite.tasks}-mal erledigt</em>}
+          </b>
+        </span>
+        <span>
+          Dabei seit <b>{since ?? '–'}</b>
+        </span>
+        <span>
+          Rekordwoche <b>{stats.record ? `${stats.record.tasks} Aufgaben · KW ${stats.record.week}` : '–'}</b>
+        </span>
       </span>
-      <span className="fact">
-        <small>Liebt</small>
-        <b>{e.room}</b>
-      </span>
+    </>
+  )
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="fact">
+      <small>{label}</small>
+      <b>{value}</b>
     </span>
   )
 }
