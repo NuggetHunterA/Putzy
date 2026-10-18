@@ -1,12 +1,15 @@
 // Putzy-Pedia: Texte pro Monsterreihe, Freischalt-Level und was als entdeckt gilt.
-import type { Seen } from './db'
-import { MONSTERS, levelFor, stageFor, type Monster, type Person } from './game'
+import type { Done, Seen, Task } from './db'
+import { MONSTERS, STANDING, levelFor, stageFor, weekStart, type Monster, type Person } from './game'
 
 export type Entry = {
   sizes: string[]
   weights: string[]
+  // Größenvergleich mit etwas aus dem Haushalt, pro Stufe.
+  compare: string[]
   room: string
-  text: string
+  // Pedia-Eintrag pro Stufe.
+  text: string[]
   likes: string
   dislikes: string
   legend: string
@@ -20,8 +23,13 @@ export const PEDIA: Record<string, Entry> = {
   '1': {
     sizes: ['0,3 m', '0,9 m', '2,1 m'],
     weights: ['3,5 kg', '14 kg', '48 kg'],
+    compare: ['So groß wie ein Wäschekorb', 'So hoch wie eine Waschmaschine', 'So lang wie ein Sofa'],
     room: 'Wohnzimmer',
-    text: 'Miezo schläft tagsüber in Sonnenflecken und sammelt dabei Licht in seinem Fell. Nachts lässt es den Halbmond auf der Stirn leuchten und findet so jedes verlorene Haargummi unter dem Sofa.',
+    text: [
+      'Miezo schläft tagsüber in Sonnenflecken und sammelt dabei Licht in seinem Fell. Nachts lässt es den Halbmond auf der Stirn leuchten und findet so jedes verlorene Haargummi unter dem Sofa.',
+      'Katzelot trägt seinen roten Umhang nur, wenn das Wohnzimmer aufgeräumt ist. Jeden Abend dreht es eine Runde ums Sofa und schiebt jede Fernbedienung zurück an ihren Platz.',
+      'Sphinxar spricht nie, aber seine Kristalle leuchten heller, je weniger auf dem Couchtisch herumliegt. Breitet es die Flügel aus, fliegen die Staubflocken freiwillig aus dem Fenster.',
+    ],
     likes: 'frisch geleerte Katzenklos, aufgeräumte Kissen',
     dislikes: 'Krümel auf der Fensterbank, Staubsauger vor 9 Uhr',
     legend: 'Man sagt, Sphinxar habe nie ein Rätsel gestellt. Es schaut nur so lange auf eine unaufgeräumte Ecke, bis jemand freiwillig aufräumt.',
@@ -29,8 +37,13 @@ export const PEDIA: Record<string, Entry> = {
   '2': {
     sizes: ['0,25 m', '1,2 m', '6,5 m'],
     weights: ['1,5 l', '40 l', '1.200 l'],
+    compare: ['Passt in eine Salatschüssel', 'So lang wie eine Kinderbadewanne', 'So lang wie ein Kleintransporter'],
     room: 'Bad oben',
-    text: 'Plitsch besteht zu 100 % aus Wasser und zu 0 % aus Geduld. Es hüpft in jede Pfütze, die es findet, und wischt sie dabei versehentlich auf.',
+    text: [
+      'Plitsch besteht zu 100 % aus Wasser und zu 0 % aus Geduld. Es hüpft in jede Pfütze, die es findet, und wischt sie dabei versehentlich auf.',
+      'Platschkoi schwimmt am liebsten durch frisch eingelassenes Badewasser. Mit seinen langen Flossen poliert es die Fliesen, bis man sich darin spiegeln kann.',
+      'Tsunadra rollt wie eine Welle durchs Bad und lässt nichts als Glanz zurück. Ein einziges Brüllen von ihr löst selbst den hartnäckigsten Kalk.',
+    ],
     likes: 'blanke Armaturen, das Geräusch einer vollen Wanne',
     dislikes: 'Kalkflecken, Handtücher auf dem Boden',
     legend: 'Als die erste Tsunadra auftauchte, glänzte die ganze Küste. Seitdem gilt eine einzige Schuppe von ihr als bester Spiegelreiniger der Welt.',
@@ -38,8 +51,13 @@ export const PEDIA: Record<string, Entry> = {
   '3': {
     sizes: ['0,3 m', '0,8 m', '1,7 m'],
     weights: ['0,4 kg', '6 kg', '22 kg'],
+    compare: ['So groß wie ein Staubwedel', 'So hoch wie ein Schuhregal', 'So groß wie ein Erwachsener'],
     room: 'Flur',
-    text: 'Fluffi besteht überwiegend aus Luft und guter Laune. Wenn es niest, ist der Flur hinterher staubfrei, und die Fußmatte liegt im Garten.',
+    text: [
+      'Fluffi besteht überwiegend aus Luft und guter Laune. Wenn es niest, ist der Flur hinterher staubfrei, und die Fußmatte liegt im Garten.',
+      'Wirbelwusel trägt eine Fliegerbrille, weil es beim Rennen durch den Flur selbst Staub aufwirbelt. Es dreht sich so schnell um die eigene Achse, dass jede Ecke danach blitzt.',
+      'Taifunox zieht einen kleinen Wirbelsturm hinter sich her, der alles einsammelt, was auf dem Boden liegt. Schuhe, die im Weg stehen, landen dabei manchmal auf dem Dach.',
+    ],
     likes: 'offene Fenster, Wollmäuse zum Jagen',
     dislikes: 'verstopfte Staubsaugerbeutel, Windstille',
     legend: "Taifunox' Fliegerbrille stammt angeblich von einem Piloten, der nur kurz durch den Flur wollte. Er hat ihn bis heute nicht wieder gefunden, aber der Flur war noch nie so sauber.",
@@ -47,8 +65,13 @@ export const PEDIA: Record<string, Entry> = {
   '4': {
     sizes: ['0,4 m', '1,6 m', '2,8 m'],
     weights: ['0,1 kg', '2 kg', '9 kg'],
+    compare: ['So groß wie ein Putzeimer', 'So hoch wie ein Kühlschrank, aber leichter als ein Kissen', 'Stößt mit dem Kopf an die Zimmerdecke'],
     room: 'Bad unten',
-    text: 'Schaumi entsteht, wenn jemand viel zu viel Spülmittel nimmt. Jede seiner Blasen schillert in einer anderen Farbe, und wenn eine platzt, ist darunter alles sauber.',
+    text: [
+      'Schaumi entsteht, wenn jemand viel zu viel Spülmittel nimmt. Jede seiner Blasen schillert in einer anderen Farbe, und wenn eine platzt, ist darunter alles sauber.',
+      'Blubbro schrubbt mit einer Bürste, die größer ist als es selbst, und singt dabei mit seinen Quietscheentchen. Je lauter es singt, desto mehr Schaum entsteht.',
+      'Spumagon trägt eine Rüstung aus festem Seifenschaum und einen Schwamm als Schild. Es bewacht die Badewanne wie eine Burg, und kein Schmutzrand kommt an ihm vorbei.',
+    ],
     likes: 'heiße Wannenbäder, Quietscheentchen',
     dislikes: 'Kakteen, Haare im Abfluss',
     legend: 'Spumagons Schild ist ein Schwamm, der seit tausend Jahren nicht ausgewrungen wurde. Wer ihn einmal auswringt, bekommt angeblich nie wieder eine dreckige Wanne.',
@@ -56,8 +79,13 @@ export const PEDIA: Record<string, Entry> = {
   '5': {
     sizes: ['0,35 m', '1,1 m', '3,4 m Spannweite'],
     weights: ['4 kg', '19 kg', '31 kg'],
+    compare: ['So groß wie ein Kochtopf', 'So hoch wie ein Backofen', 'Flügel so breit wie eine ganze Küchenzeile'],
     room: 'Küche',
-    text: 'Funki hält die Herdplatten warm, auch wenn niemand kocht. Eingebrannte Reste brennt es einfach noch einmal ein, bis sie aufgeben und abfallen.',
+    text: [
+      'Funki hält die Herdplatten warm, auch wenn niemand kocht. Eingebrannte Reste brennt es einfach noch einmal ein, bis sie aufgeben und abfallen.',
+      'Glutfuchs trägt ein Halstuch, damit keine Funken in den Topf fallen. Es weiß immer genau, wann der Kuchen fertig ist, und schnüffelt so lange am Backofen, bis jemand ihn öffnet.',
+      "Infernyx' Flammen sind so heiß, dass Fettspritzer schon in der Luft verdampfen. Nach jedem Flügelschlag glänzt die ganze Küche wie neu.",
+    ],
     likes: 'saubere Backöfen, der Geruch von frischem Toast',
     dislikes: 'fettige Dunstabzugshauben, Wasserpistolen',
     legend: 'Infernyx steigt aus jedem Backofen, der nach Jahren endlich gereinigt wurde. Wer es sieht, darf sich ein Gericht wünschen, das nie anbrennt.',
@@ -65,8 +93,13 @@ export const PEDIA: Record<string, Entry> = {
   '6': {
     sizes: ['0,3 m', '1,0 m', '2,5 m'],
     weights: ['5 kg', '60 kg', '900 kg'],
+    compare: ['So groß wie ein Blumentopf', 'So groß wie eine Biotonne', 'So schwer wie ein Kleinwagen'],
     room: 'Ganzes Haus',
-    text: 'Krümel isst alles, was runterfällt, und macht daraus Erde. Das Blatt auf seinem Kopf wächst nur, wenn der Müll pünktlich rausgebracht wird.',
+    text: [
+      'Krümel isst alles, was runterfällt, und macht daraus Erde. Das Blatt auf seinem Kopf wächst nur, wenn der Müll pünktlich rausgebracht wird.',
+      'Kompostkröte trägt einen kleinen Garten auf dem Rücken, der von Kaffeesatz und Apfelschalen lebt. Sie sitzt am liebsten neben der Biotonne und quakt, wenn jemand sie zu spät rausstellt.',
+      'Gaiamoos bewegt sich so langsam, dass auf ihm Pilze und Bäume wachsen. Wo es sich niederlässt, riecht es nach Waldboden statt nach Mülleimer.',
+    ],
     likes: 'volle Gießkannen, sortierter Müll',
     dislikes: 'Plastik im Biomüll, vertrocknete Zimmerpflanzen',
     legend: "Auf Gaiamoos' Rücken wächst ein ganzer Wald. Forscher vermuten, dass er aus jedem Apfelgriebs entstanden ist, der jemals richtig entsorgt wurde.",
@@ -74,8 +107,13 @@ export const PEDIA: Record<string, Entry> = {
   '7': {
     sizes: ['0,35 m', '1,0 m', '1,9 m'],
     weights: ['1,2 kg', '11 kg', '18 kg'],
+    compare: ['So groß wie ein Kopfkissen', 'So hoch wie eine Kommode', 'So lang wie ein Bett'],
     room: 'Schlafzimmer',
-    text: 'Flausch schüttelt jede Nacht die Kissen auf und fliegt dabei so leise, dass niemand aufwacht. Seine Wolle riecht immer nach frisch gewaschener Bettwäsche.',
+    text: [
+      'Flausch schüttelt jede Nacht die Kissen auf und fliegt dabei so leise, dass niemand aufwacht. Seine Wolle riecht immer nach frisch gewaschener Bettwäsche.',
+      'Wollwächter hält beim Bettenmachen den Kissenbezug fest und strickt aus jeder Fluse einen neuen Schal. Ist eine Socke verschwunden, hat es sie meistens nur ausgeliehen.',
+      'Kaschmira schwebt nachts über den Betten und streicht jede Falte glatt. Wer unter ihren Flügeln schläft, wacht garantiert ausgeruht auf.',
+    ],
     likes: 'frisch bezogene Betten, warme Socken',
     dislikes: 'Staubmäuse unterm Bett, kratzige Wolldecken',
     legend: 'Kaschmiras Schal ist so lang, dass niemand je sein Ende gefunden hat. Es heißt, er reicht einmal um jedes Bett, das je ordentlich gemacht wurde.',
@@ -83,8 +121,13 @@ export const PEDIA: Record<string, Entry> = {
   '8': {
     sizes: ['0,3 m', '1,3 m', '2,6 m'],
     weights: ['2 kg', '35 kg', '300 kg'],
+    compare: ['So groß wie ein Schuhkarton', 'So groß wie ein Grundschulkind', 'Größer als ein Kleiderschrank'],
     room: 'Flur',
-    text: 'Funkel sortiert alles nach Farbe, Größe und Glanz. Wenn ein Schuh nicht im Regal steht, blinkt sein Stern so lange, bis jemand ihn wegräumt.',
+    text: [
+      'Funkel sortiert alles nach Farbe, Größe und Glanz. Wenn ein Schuh nicht im Regal steht, blinkt sein Stern so lange, bis jemand ihn wegräumt.',
+      'Prismabot hat für jede Aufgabe einen anderen Arm: Bürste, Lappen, Tasse, Socke. Es sortiert die Garderobe nach Regenbogenfarben und piept zufrieden, wenn alles passt.',
+      'Kristallos besteht aus tausend glänzenden Splittern, in denen sich jeder Raum spiegelt. Es merkt sofort, wenn irgendwo ein Fleck ist, weil es sich darin nicht mehr richtig sehen kann.',
+    ],
     likes: 'ordentliche Garderoben, gefaltete Handtücher',
     dislikes: 'einzelne Socken, verstaubte Regale',
     legend: 'Kristallos wurde aus allen verlorenen Socken der Welt zusammengesetzt, die es je wiedergefunden hat. Die fehlende linke Socke sucht es bis heute.',
@@ -92,8 +135,12 @@ export const PEDIA: Record<string, Entry> = {
   '9': {
     sizes: ['0,2 m', '1,8 m'],
     weights: ['0,8 kg', '45 kg'],
+    compare: ['So groß wie ein Toaster', 'So hoch wie eine Kühl-Gefrier-Kombi'],
     room: 'Küche',
-    text: 'Kokeli wohnt im Toaster und kommt nur raus, wenn es nach Kakao riecht. Mit seiner warmen Schwanzspitze trocknet es nasse Geschirrtücher in drei Sekunden, manchmal auch in zwei und mit kleinem Brandloch.',
+    text: [
+      'Kokeli wohnt im Toaster und kommt nur raus, wenn es nach Kakao riecht. Mit seiner warmen Schwanzspitze trocknet es nasse Geschirrtücher in drei Sekunden, manchmal auch in zwei und mit kleinem Brandloch.',
+      'Salamandor kocht mit einem Pfannenwender und heizt die Pfanne mit seiner Schwanzflamme vor. Nach dem Essen wischt es den Herd ab, bevor jemand überhaupt fragen kann.',
+    ],
     likes: 'blitzblanke Herdplatten, Pfannkuchen-Sonntage',
     dislikes: 'Kühlschranktüren, die offen stehen, Spritzer auf dem Ceranfeld',
     legend: 'Salamandor trägt eine Kochmütze aus Rauch, die nie verweht. Es heißt, wer in seiner Gegenwart den Herd abwischt, dem brennt nie wieder etwas an, nicht einmal Milch.',
@@ -101,8 +148,14 @@ export const PEDIA: Record<string, Entry> = {
   '10': {
     sizes: ['0,1 m', '0,5 m', '1,4 m', '8,0 m'],
     weights: ['0,2 kg', '3 kg', '40 kg', '2,5 t'],
+    compare: ['So groß wie ein Joghurtbecher', 'So groß wie eine Gießkanne', 'So groß wie ein Gartenbesen', 'So hoch wie ein zweistöckiges Haus'],
     room: 'Draußen',
-    text: 'Samsi ist ein Samenkorn, das beschlossen hat, nicht zu warten. Es rollt nachts durch die Wohnung, sucht sich den hellsten Platz am Fenster und schläft dort ein. Jedes Mal, wenn jemand die Pflanzen gießt, wächst es ein kleines bisschen.',
+    text: [
+      'Samsi ist ein Samenkorn, das beschlossen hat, nicht zu warten. Es rollt nachts durch die Wohnung, sucht sich den hellsten Platz am Fenster und schläft dort ein. Jedes Mal, wenn jemand die Pflanzen gießt, wächst es ein kleines bisschen.',
+      'Sprössli trägt seine Schale noch als Mütze und hat immer eine kleine Gießkanne dabei. Es gießt jede Pflanze, an der es vorbeikommt, manchmal auch die künstlichen.',
+      'Blattwart fegt mit einem Besen aus Zweigen den Gehweg und lässt dabei Blüten wachsen. Laub im Gully kann es nicht ausstehen und sammelt es sofort ein.',
+      'Arborius ist so alt und groß, dass Vögel in seinem Bart wohnen. Mit einem Besen in jeder Hand fegt er den ganzen Garten in einem einzigen Schwung.',
+    ],
     likes: 'volle Gießkannen, gefegte Gehwege',
     dislikes: 'vergessene Topfpflanzen, Laub im Gully',
     legend: 'Arborius war einmal ein winziges Samsi in einem Joghurtbecher auf einer Fensterbank. Man sagt, in seinen Ringen steht jede Aufgabe, die je in diesem Haus erledigt wurde, und wer ihm zuhört, hört das Rascheln von hundert Besen.',
@@ -110,8 +163,12 @@ export const PEDIA: Record<string, Entry> = {
   '11': {
     sizes: ['0,4 m', '3,2 m'],
     weights: ['0,6 kg', '55 kg'],
+    compare: ['So lang wie eine Klobürste', 'So lang wie zwei Badewannen'],
     room: 'Bad',
-    text: 'Aali wohnt im Abfluss der Dusche und frisst alles, was dort nicht hingehört. Wenn das Wasser gurgelnd abläuft, ist das Aali, das sich bedankt.',
+    text: [
+      'Aali wohnt im Abfluss der Dusche und frisst alles, was dort nicht hingehört. Wenn das Wasser gurgelnd abläuft, ist das Aali, das sich bedankt.',
+      'Siphonix schlängelt sich durch jedes Rohr und trägt einen Pümpel wie ein Zepter. Ein kurzes Gurgeln, und der Abfluss ist wieder frei.',
+    ],
     likes: 'blanke Armaturen, Haare im Sieb (zum Frühstück)',
     dislikes: 'Rohrreiniger aus der Flasche, Kalkränder',
     legend: 'Siphonix soll durch alle Rohre des Hauses gleichzeitig schwimmen können. Wer nachts ein leises Plätschern im Waschbecken hört, weiß: Hier verstopft so schnell nichts mehr.',
@@ -119,8 +176,13 @@ export const PEDIA: Record<string, Entry> = {
   '12': {
     sizes: ['0,2 m', '0,5 m', '1,6 m'],
     weights: ['0,3 kg', '2 kg', '4 kg'],
+    compare: ['So groß wie eine Socke', 'So groß wie ein eingerolltes Badetuch', 'So groß wie ein Wäscheständer'],
     room: 'Waschküche',
-    text: 'Raupsi wohnt im Wäschekorb und knabbert nur an Fusseln. Es riecht immer nach frischem Weichspüler, und wer eine Socke ohne Partner findet, findet meistens auch Raupsi.',
+    text: [
+      'Raupsi wohnt im Wäschekorb und knabbert nur an Fusseln. Es riecht immer nach frischem Weichspüler, und wer eine Socke ohne Partner findet, findet meistens auch Raupsi.',
+      'Kokonella hängt an einer Wäscheklammer und wickelt sich in ein frisch gewaschenes Handtuch. Sie schläft, bis die Wäsche trocken ist, und keine Minute länger.',
+      'Papillora faltet als Erstes die Wäsche, aus der sie geschlüpft ist. Ihr Flügelstaub riecht nach Weichspüler und hält jedes T-Shirt knitterfrei.',
+    ],
     likes: 'warme Wäsche aus dem Trockner, Wäscheklammern',
     dislikes: 'volle Wäschekörbe, die tagelang stehen, Knitterfalten',
     legend: 'Papillora fliegt nur an Tagen, an denen die Wäsche draußen hängt. Wo ihre Flügel ein Laken streifen, ist es danach glatt wie gebügelt.',
@@ -154,4 +216,32 @@ export function unseen(seen: Seen[], person: Person, monsterXp: Record<string, n
       .filter((stage) => !seen.some((s) => s.person === person && s.monster === m.id && s.stage === stage))
       .map((stage) => ({ monster: m, stage })),
   )
+}
+
+export type Stats = { favorite: string | null; since: Date | null; record: { tasks: number; week: number } | null }
+
+// Kalenderwoche nach ISO (Woche mit dem ersten Donnerstag ist KW 1).
+export function isoWeek(date: Date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 3 - ((date.getDay() + 6) % 7))
+  const jan4 = new Date(d.getFullYear(), 0, 4)
+  return 1 + Math.round((d.getTime() - jan4.getTime()) / 864e5 / 7 - (3 - ((jan4.getDay() + 6) % 7)) / 7)
+}
+
+// Eure Werte im Steckbrief: häufigste Aufgabe (ohne einmalige), erste Erledigung und die Woche mit den meisten.
+export function monsterStats(done: Done[], monster: string, tasks: Task[]): Stats {
+  const mine = done.filter((c) => c.monster === monster)
+  const names = new Map<string, number>()
+  const weeks = new Map<string, { tasks: number; at: Date }>()
+  let since: Date | null = null
+  for (const c of mine) {
+    const at = new Date(c.done_at)
+    if (!since || at < since) since = at
+    const name = c.standing ? STANDING.find((s) => s.id === c.standing)?.name : tasks.find((t) => t.id === c.task_id)?.name
+    if (name) names.set(name, (names.get(name) ?? 0) + 1)
+    const w = weekStart(at)
+    weeks.set(w, { tasks: (weeks.get(w)?.tasks ?? 0) + 1, at })
+  }
+  const favorite = [...names].reduce<[string, number] | null>((a, b) => (!a || b[1] > a[1] ? b : a), null)
+  const best = [...weeks.values()].reduce<{ tasks: number; at: Date } | null>((a, b) => (!a || b.tasks > a.tasks ? b : a), null)
+  return { favorite: favorite?.[0] ?? null, since, record: best && { tasks: best.tasks, week: isoWeek(best.at) } }
 }

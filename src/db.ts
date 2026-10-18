@@ -15,6 +15,8 @@ export type Task = {
 export type Completion = { id: string; task_id: string | null; standing: string | null; oneoff: string | null; person: Person; monster: string; xp: number; done_at: string }
 export type Pick = { week_start: string; person: Person; monster: string }
 export type Seen = { person: Person; monster: string; stage: number }
+// Alle Erledigungen in kurz, für Eure Werte im Pedia.
+export type Done = { monster: string; task_id: string | null; standing: string | null; done_at: string }
 export type OneOff = { id: string; name: string; created_at: string }
 
 export type Snapshot = {
@@ -31,6 +33,7 @@ export type Snapshot = {
   // Einmalige Aufgaben, älteste zuerst, und ihre Erledigungen, neueste zuerst.
   oneoffs: OneOff[]
   oneoffsDone: Completion[]
+  done: Done[]
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -64,7 +67,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -75,6 +78,7 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('news_seen').select('*'),
     db().from('oneoffs').select('*').order('created_at'),
     db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }),
+    db().from('completions').select('monster, task_id, standing, done_at'),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
@@ -91,6 +95,7 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     tasksDone,
     oneoffs: check(oneoffs),
     oneoffsDone: check(oneoffsDone),
+    done: check(done),
   }
 }
 
