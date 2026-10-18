@@ -1,5 +1,5 @@
 // Eine Aufgabe anlegen, ändern oder löschen.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ElementIcon } from './ElementIcon'
 import { EFFORT_LABEL, EFFORT_XP, ELEMENTS, TASK_ELEMENTS, firstDue, intervalLabel, nextInterval, type Effort, type Element } from './game'
 import type { Task } from './db'
@@ -9,6 +9,8 @@ type Props = { task: Task | null; tasks: Task[]; onSave: (t: Task) => void; onDe
 
 export function TaskEdit({ task, tasks, onSave, onDelete, onBack }: Props) {
   useBack(onBack)
+  // Erst nach dem Verlaufseintrag nach oben: So merkt sich der Browser die Stelle in der Liste und springt beim Zurück wieder hin.
+  useEffect(() => window.scrollTo(0, 0), [])
   const rooms = [...new Set(tasks.map((t) => t.room))]
   const [name, setName] = useState(task?.name ?? '')
   const [room, setRoom] = useState(task?.room ?? '')

@@ -18,10 +18,6 @@ export function Intervals({ tasks, onChange, onSave, onDelete, onBack }: Props) 
   useBack(onBack)
   // null: Liste, 'new': neue Aufgabe, sonst die Aufgabe in Bearbeitung.
   const [editing, setEditing] = useState<Task | 'new' | null>(null)
-  const edit = (t: Task | 'new' | null) => {
-    setEditing(t)
-    window.scrollTo(0, 0)
-  }
   if (editing)
     return (
       <TaskEdit
@@ -29,13 +25,13 @@ export function Intervals({ tasks, onChange, onSave, onDelete, onBack }: Props) 
         tasks={tasks}
         onSave={(t) => {
           onSave(t)
-          edit(null)
+          setEditing(null)
         }}
         onDelete={(t) => {
           onDelete(t)
-          edit(null)
+          setEditing(null)
         }}
-        onBack={() => edit(null)}
+        onBack={() => setEditing(null)}
       />
     )
 
@@ -48,7 +44,7 @@ export function Intervals({ tasks, onChange, onSave, onDelete, onBack }: Props) 
         </button>
         <h1 className="bar-title">Aufgaben</h1>
       </header>
-      <button className="btn new-task" onClick={() => edit('new')}>
+      <button className="btn new-task" onClick={() => setEditing('new')}>
         + Neue Aufgabe
       </button>
       {rooms.map((room) => (
@@ -61,7 +57,7 @@ export function Intervals({ tasks, onChange, onSave, onDelete, onBack }: Props) 
                 <span className="dot" style={{ background: ELEMENTS[t.element].soft }}>
                   <ElementIcon element={t.element} size={18} />
                 </span>
-                <button className="iv-name iv-edit" onClick={() => edit(t)}>
+                <button className="iv-name iv-edit" onClick={() => setEditing(t)}>
                   {t.name}
                   <small>
                     {intervalLabel(t.interval_days)} · {EFFORT_LABEL[t.effort]}

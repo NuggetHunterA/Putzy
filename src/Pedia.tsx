@@ -1,5 +1,5 @@
 // Putzy-Pedia: Übersicht aller Reihen und Detailseite mit Infos, die alle 5 Level freigeschaltet werden.
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useBack } from './back'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
@@ -23,11 +23,7 @@ const fmt = (n: number) => n.toLocaleString('de-DE')
 export function Pedia({ snap, monsters, onBack, onReplay, onWeeks }: Props) {
   useBack(onBack)
   const [open, setOpen] = useState<Monster | null>(null)
-  const show = (m: Monster | null) => {
-    setOpen(m)
-    window.scrollTo(0, 0)
-  }
-  if (open) return <Detail m={open} snap={snap} onBack={() => show(null)} onReplay={onReplay} />
+  if (open) return <Detail m={open} snap={snap} onBack={() => setOpen(null)} onReplay={onReplay} />
 
   const found = discoveredCount(snap.seen, monsters)
   const total = dexTotal(monsters)
@@ -65,7 +61,7 @@ export function Pedia({ snap, monsters, onBack, onReplay, onWeeks }: Props) {
       {PEDIA_ORDER.filter((m) => monsters.includes(m)).map((m) => {
         const level = levelFor(snap.monsterXp[m.id] ?? 0)
         return (
-          <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => show(m)}>
+          <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => setOpen(m)}>
             <span className="dex-top">
               #{dexNo(m, 0)}–{dexNo(m, lastStage(m))}
               <Element m={m} />
@@ -111,6 +107,8 @@ function Slot({ m, stage, snap, hint }: { m: Monster; stage: number; snap: Snaps
 
 function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
   useBack(onBack)
+  // Erst nach dem Verlaufseintrag nach oben: So merkt sich der Browser die Stelle in der Liste und springt beim Zurück wieder hin.
+  useEffect(() => window.scrollTo(0, 0), [])
   const known = stagesOf(m).filter((s) => isDiscovered(snap.seen, m.id, s))
   const [stage, setStage] = useState(known[known.length - 1])
   const xp = snap.monsterXp[m.id] ?? 0
