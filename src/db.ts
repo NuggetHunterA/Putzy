@@ -98,6 +98,18 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
   }
 }
 
+// Wochenrückblick: alle Monsterwahlen und Erledigungen. Supabase liefert höchstens 1000 Zeilen pro Abfrage,
+// deshalb werden die Erledigungen seitenweise geholt.
+export async function loadHistory() {
+  const picks = check<Pick[]>(await db().from('picks').select('*'))
+  const completions: Completion[] = []
+  for (let from = 0; ; from += 1000) {
+    const page = check<Completion[]>(await db().from('completions').select('*').order('done_at').order('id').range(from, from + 999))
+    completions.push(...page)
+    if (page.length < 1000) return { picks, completions }
+  }
+}
+
 // standing nur bei ständigen, oneoff nur bei einmaligen Aufgaben mitschicken, normale Erledigungen bleiben wie bisher.
 export async function complete(c: Omit<Completion, 'id' | 'done_at' | 'standing' | 'oneoff'> & { standing?: string; oneoff?: string }) {
   check(await db().from('completions').insert(c))
