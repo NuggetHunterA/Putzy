@@ -15,6 +15,7 @@ export const NEWS: News[] = [
   { id: 10, title: 'Listen merken sich die Stelle', text: 'Nach dem Zurück aus einer Monsterreihe oder einer Aufgabe landet ihr wieder an derselben Stelle der Liste. Auf schmalen Handys sind jetzt beide Monster auf der Startseite ganz zu sehen.' },
   { id: 11, title: 'Mehr im Pedia', text: 'Jede Stufe hat jetzt ihren eigenen Pedia-Eintrag, und der Steckbrief verrät, wie groß ein Monster im Vergleich wirklich ist. Ab Level 5 stehen dort außerdem eure Werte: Lieblingsaufgabe, dabei seit und Rekordwoche.' },
   { id: 12, title: 'Neue Namen und Bilder', text: 'Funkel heißt jetzt Glitzi und Fluffi heißt Brisi, damit man sie nicht mehr mit Funki und Flausch verwechselt. Infernyx, Brisis Reihe, Salamandor, Sprössli und Papillora haben neue Bilder, und einige Pedia-Texte wiederholen sich nicht mehr.' },
+  { id: 13, title: 'Streaks und Monster-Eier', text: 'Der Schwamm am Logo zählt die Tage dieser Woche, an denen alle fälligen Aufgaben erledigt waren. Die längste Streak gibt montags Punkte für euer gemeinsames Konto, damit brütet ihr im Pedia Eier aus. Das erste Ei liegt schon im Nest, weitere tauchen beim Abhaken ganz selten auf.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

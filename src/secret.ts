@@ -2,6 +2,7 @@
 // einer mindestens dreistufigen Reihe erreicht (Aali und Kokeli zählen also nicht, bei Samsi erst Arborius).
 // Wichti (ohne Element) kommt mit der letzten der fünf. Sichtbar ist eine Reihe erst ab dem Tag danach.
 import type { Seen } from './db'
+import { isHatched, type Egg } from './eggs'
 import { MONSTERS, levelFor, stageFor, type Monster, type Person } from './game'
 
 // Freischaltungen: Monster-id → Tag (YYYY-MM-DD), an dem die Bedingung erfüllt war.
@@ -29,7 +30,9 @@ export function isVisible(m: Monster, unlocks: Unlocks, today: string) {
   return !!on && on < today
 }
 
-export const visibleMonsters = (unlocks: Unlocks, today: string) => MONSTERS.filter((m) => isVisible(m, unlocks, today))
+// Reihen aus Eiern erst nach dem Ausbrüten.
+export const visibleMonsters = (unlocks: Unlocks, today: string, eggs: Egg[]) =>
+  MONSTERS.filter((m) => (m.egg ? isHatched(m, eggs) : isVisible(m, unlocks, today)))
 
 // Sichtbare geheime Reihen, deren Freischaltung diese Person noch nicht gesehen hat (seen mit Stufe 0),
 // nach Tag und Nummer sortiert, damit Wichti zuletzt kommt.

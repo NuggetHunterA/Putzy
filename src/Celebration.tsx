@@ -1,5 +1,4 @@
-// Vollbild beim Level-Up. Die Entwicklung hat eine eigene Szene (Evolution.tsx).
-import { useEffect } from 'react'
+// Vollbild beim Level-Up, bleibt stehen, bis man tippt. Die Entwicklung hat eine eigene Szene (Evolution.tsx).
 import { useBack } from './back'
 import { ELEMENTS, MAX_LEVEL, type Monster } from './game'
 import { UNLOCK_LEVELS } from './pedia'
@@ -14,18 +13,12 @@ export type Cel = {
   bonus: boolean
 }
 
-const DURATION = 2700
-
 export function Celebration({ cel, onDone }: { cel: Cel; onDone: () => void }) {
   useBack(onDone)
-  useEffect(() => {
-    const t = setTimeout(onDone, DURATION)
-    return () => clearTimeout(t)
-  }, [cel.key, onDone])
 
   const { monster } = cel
   return (
-    <button className="cel" style={{ background: ELEMENTS[monster.element].strong, animationDuration: `${DURATION}ms` }} onClick={onDone} aria-label="Schließen">
+    <button className="cel" style={{ background: ELEMENTS[monster.element].strong }} onClick={onDone} aria-label="Schließen">
       <div className="cel-stripes" aria-hidden="true" />
       <span className="cel-ring" aria-hidden="true" />
       <div className="cel-stage">
@@ -38,6 +31,7 @@ export function Celebration({ cel, onDone }: { cel: Cel; onDone: () => void }) {
         </span>
         {UNLOCK_LEVELS.includes(cel.level) && <span className="cel-sub">Neuer Pedia-Eintrag freigeschaltet</span>}
       </div>
+      <span className="evo-skip cel-skip">Tippen zum Schließen</span>
     </button>
   )
 }

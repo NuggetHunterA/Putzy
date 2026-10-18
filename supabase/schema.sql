@@ -52,11 +52,11 @@ create table picks (
 );
 
 -- Putzy-Pedia: wer welche Entwicklung schon gesehen hat (Stufe 1 = zweite Form, 2 = dritte Form).
--- Stufe 0: hat die Freischaltung einer geheimen Reihe gesehen.
+-- Stufe 0: hat die Freischaltung einer geheimen Reihe bzw. das Schlüpfen aus einem Ei gesehen, Stufe -1: den Fund eines Eis.
 create table seen (
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
-  stage int not null check (stage between 0 and 3),
+  stage int not null check (stage between -1 and 3),
   seen_at timestamptz not null default now(),
   primary key (person, monster, stage)
 );
@@ -65,6 +65,23 @@ create table seen (
 create table unlocks (
   monster text primary key,
   unlocked_on date not null
+);
+
+-- Eier (src/eggs.ts): zu Beginn das Wasser-Ei der Schwamm-Reihe. Ausgebrütet, sobald hatched_at gesetzt ist.
+create table eggs (
+  monster text primary key,
+  found_at timestamptz not null default now(),
+  found_by text check (found_by in ('adrian', 'ulrike')),
+  found_task text,
+  hatched_at timestamptz,
+  hatched_by text check (hatched_by in ('adrian', 'ulrike'))
+);
+insert into eggs (monster) values ('19');
+
+-- Streak-Punkte abgeschlossener Wochen (src/streak.ts).
+create table streak_weeks (
+  week_start date primary key,
+  points int not null check (points between 0 and 7)
 );
 
 -- Was ist neu: höchste Neuigkeit (src/news.ts), die eine Person schon gesehen hat.
@@ -89,6 +106,8 @@ alter table picks enable row level security;
 alter table seen enable row level security;
 alter table news_seen enable row level security;
 alter table unlocks enable row level security;
+alter table eggs enable row level security;
+alter table streak_weeks enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
@@ -97,5 +116,7 @@ create policy household on picks for all to anon using (true) with check (true);
 create policy household on seen for all to anon using (true) with check (true);
 create policy household on news_seen for all to anon using (true) with check (true);
 create policy household on unlocks for all to anon using (true) with check (true);
+create policy household on eggs for all to anon using (true) with check (true);
+create policy household on streak_weeks for all to anon using (true) with check (true);
 
-alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs;

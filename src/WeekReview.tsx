@@ -4,6 +4,7 @@ import { useBack } from './back'
 import { loadHistory, type Completion, type Pick, type Task } from './db'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, PEOPLE, backdrop } from './game'
+import { Sponge } from './Sponge'
 import { KINDS, reviewWeeks, weekLabel, weekReview, type Kind, type MonsterWeek } from './review'
 
 type Props = {
@@ -12,12 +13,14 @@ type Props = {
   week: string
   // Archiv: mit Blättern und „Diese Woche · bisher“. Sonst wird eine Woche ohne Monster übersprungen.
   archive?: boolean
+  // Montags: Streak-Punkte der Vorwoche und Kontostand danach.
+  streak?: { earned: number; bank: number }
   onDone: () => void
 }
 
 const ONEOFF_COLOR = '#8C82A8'
 
-export function WeekReview({ tasks, week: start, archive, onDone }: Props) {
+export function WeekReview({ tasks, week: start, archive, streak, onDone }: Props) {
   useBack(onDone)
   const [history, setHistory] = useState<{ picks: Pick[]; completions: Completion[] } | null>(null)
   const [failed, setFailed] = useState(false)
@@ -64,6 +67,14 @@ export function WeekReview({ tasks, week: start, archive, onDone }: Props) {
         )}
       </header>
       <h1 className="wr-title">Wochenrückblick</h1>
+      {streak && (
+        <div className="wr-streak">
+          <Sponge n={streak.earned} size={34} />
+          <span>
+            +{streak.earned} Streak-Punkte · Konto jetzt {streak.bank}
+          </span>
+        </div>
+      )}
       <div className="wr-cols" style={{ gridTemplateColumns: cards.length > 1 ? '1fr 1fr' : 'minmax(0, 50%)' }}>
         {cards.map((c) => (
           <Card key={c.person} c={c} max={max} />

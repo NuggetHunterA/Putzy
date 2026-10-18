@@ -3,7 +3,9 @@ import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
 import { eventFor } from './events'
 import './events.css'
-import { complete, connect, deleteOneOff, deleteTask, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
+import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, pickMonster, saveOneOff, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
+import { balance, nextEggScene, rollEgg, type Egg } from './eggs'
+import { EggScene, type Scene } from './EggScene'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
@@ -16,7 +18,8 @@ import { unseen } from './pedia'
 import { Reveal } from './Reveal'
 import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
-import { PEOPLE, STANDING_EFFORT, dayString, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type Person, type Standing, type Work } from './game'
+import { PEOPLE, STANDING_EFFORT, dayString, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
+import { weekPoints } from './streak'
 
 const PERSON_STORAGE = 'putzy.person'
 const LOAD_ERROR = 'Keine Verbindung zur Datenbank.'
@@ -54,6 +57,9 @@ export default function App() {
   // Freischaltung einer geheimen Reihe, die gerade gezeigt wird.
   const [secret, setSecret] = useState<Monster | null>(null)
   const closeSecret = useCallback(() => setSecret(null), [])
+  // Fund oder Schlüpfen eines Eis, das gerade gezeigt wird.
+  const [eggShown, setEggShown] = useState<Scene | null>(null)
+  const closeEgg = useCallback(() => setEggShown(null), [])
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
@@ -114,15 +120,36 @@ export default function App() {
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
   }, [reveal, person, secret, evo, cel, attacking, refresh])
 
+  // Eier: Fund (Stufe -1) und Schlüpfen (Stufe 0) zeigen, nach geheimen Reihen und vor Entwicklungen.
+  const eggScene = snap && person && !reveal ? nextEggScene(snap.eggs, snap.seen, person) : undefined
+  useEffect(() => {
+    if (!eggScene || !person || secret || eggShown || evo || cel || attacking) return
+    const seen = { person, monster: eggScene.monster.id, stage: eggScene.kind === 'found' ? -1 : 0 }
+    setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
+    setEggShown(eggScene)
+    markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [eggScene, person, secret, eggShown, evo, cel, attacking, refresh])
+
+  // Streak-Punkte abgeschlossener Wochen, die noch nicht gespeichert sind, festhalten. Einmal pro Woche je Start.
+  const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done) : []
+  const weeksSaved = useRef<string | null>(null)
+  useEffect(() => {
+    if (!snap || weeksSaved.current === week) return
+    const unsaved = weekPoints(week, snap.streakWeeks, snap.tasks, snap.done).filter((w) => !snap.streakWeeks.some((s) => s.week_start === w.week_start))
+    if (unsaved.length === 0) return
+    weeksSaved.current = week
+    saveWeeks(unsaved).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [snap, week, refresh])
+
   // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken.
   const next = snap && person ? unseen(snap.seen, person, snap.monsterXp)[0] : undefined
   useEffect(() => {
-    if (!next || !person || reveal || secret || evo || cel || attacking) return
+    if (!next || !person || reveal || secret || eggScene || eggShown || evo || cel || attacking) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, reveal, secret, evo, cel, attacking, refresh])
+  }, [next, person, reveal, secret, eggScene, eggShown, evo, cel, attacking, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -179,12 +206,14 @@ export default function App() {
   if (!snap) return <Message title="Putzy lädt …" text={error ?? ''} />
 
   const myPick = snap.picks.find((p) => p.person === person)
-  const monsters = visibleMonsters(snap.unlocks, today)
+  const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
+  const bank = balance(points, snap.eggs)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !reveal && !secret && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
+  const news = myPick && view === 'home' && !reveal && !secret && !eggScene && !eggShown && !next && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
-  const award = (work: Work, save: (monster: string, xp: number) => Promise<void>) => {
+  // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
+  const award = (work: Work, save: (monster: string, xp: number) => Promise<void>, find: { key: string; element: MonsterElement; task: string }) => {
     const monster = monsterById(myPick!.monster)
     const xp = xpOf(work, monster.element)
     const before = snap.monsterXp[monster.id] ?? 0
@@ -202,8 +231,9 @@ export default function App() {
         bonus: work?.element === monster.element,
       }
     }
+    const egg = rollEgg(find.key, find.element, snap.eggs)
     run(
-      save(monster.id, xp).catch((e) => {
+      save(monster.id, xp).then(() => egg ? findEgg({ monster: egg, found_by: person, found_task: find.task }) : undefined, (e) => {
         pendingCel.current = null
         // 23505: Die andere Person hat die Aufgabe heute schon abgehakt. Das Neuladen zeigt, wer.
         if (e?.code === '23505') return setError('Das war heute schon erledigt.')
@@ -214,19 +244,23 @@ export default function App() {
 
   const onToggle = (row: Row) => {
     if (row.done) return run(undo(row.done.id))
-    award(row.task, (monster, xp) => complete({ task_id: row.task.id, person, monster, xp }))
+    award(row.task, (monster, xp) => complete({ task_id: row.task.id, person, monster, xp }), { key: `${today}|${row.task.id}`, element: row.task.element, task: row.task.name })
   }
 
   // Ständige Aufgabe: done ist der eigene Haken von heute, nur der lässt sich zurücknehmen.
   const onStanding = (s: Standing, done?: Completion) => {
     if (done) return run(undo(done.id))
-    award({ effort: STANDING_EFFORT, element: s.element }, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }))
+    award({ effort: STANDING_EFFORT, element: s.element }, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }), {
+      key: `${today}|${s.id}|${person}`,
+      element: s.element,
+      task: s.name,
+    })
   }
 
   // Einmalige Aufgabe: done ist ihre Erledigung, rückgängig nur die eigene am selben Tag (siehe OneOffs).
   const onOneOff = (o: OneOff, done?: Completion) => {
     if (done) return run(undo(done.id))
-    award(null, (monster, xp) => complete({ task_id: null, oneoff: o.id, person, monster, xp }))
+    award(null, (monster, xp) => complete({ task_id: null, oneoff: o.id, person, monster, xp }), { key: o.id, element: 'ohne', task: o.name })
   }
 
   const onAddOneOff = (name: string) => {
@@ -244,6 +278,8 @@ export default function App() {
     setSnap({ ...snap, oneoffs: snap.oneoffs.filter((x) => x.id !== o.id) })
     run(deleteOneOff(o.id))
   }
+
+  const onHatch = (e: Egg) => run(hatchEgg(e.monster, person))
 
   const onAttackEnd = () => {
     setCel(pendingCel.current)
@@ -271,7 +307,13 @@ export default function App() {
   return (
     <>
       {!myPick && reviewed !== week ? (
-        <WeekReview key={week} tasks={snap.tasks} week={previousWeek(week)} onDone={doneReview} />
+        <WeekReview
+          key={week}
+          tasks={snap.tasks}
+          week={previousWeek(week)}
+          streak={points.length > 0 ? { earned: points.at(-1)!.points, bank } : undefined}
+          onDone={doneReview}
+        />
       ) : !myPick ? (
         <MonsterPick person={person} monsters={monsters} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
       ) : view === 'intervals' ? (
@@ -289,7 +331,7 @@ export default function App() {
           onBack={() => setView('home')}
         />
       ) : view === 'pedia' ? (
-        <Pedia snap={snap} monsters={monsters} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} onWeeks={() => setView('weeks')} />
+        <Pedia snap={snap} monsters={monsters} points={bank} onHatch={onHatch} onBack={() => setView('home')} onReplay={(m, stage) => setEvo(evolution(m, stage))} onWeeks={() => setView('weeks')} />
       ) : view === 'weeks' ? (
         <WeekReview tasks={snap.tasks} week={week} archive onDone={() => setView('pedia')} />
       ) : (
@@ -298,6 +340,7 @@ export default function App() {
           person={person}
           monsters={monsters}
           now={now}
+          points={bank}
           live={live}
           onToggle={onToggle}
           onStanding={onStanding}
@@ -316,6 +359,7 @@ export default function App() {
       {cel && <Celebration cel={cel} onDone={closeCel} />}
       {evo && <Evolution cel={evo} onDone={closeEvo} />}
       {secret && <Reveal monster={secret} canPick={!myPick} onDone={closeSecret} />}
+      {eggShown && <EggScene scene={eggShown} person={person} canPick={!myPick} onDone={closeEgg} />}
     </>
   )
 }

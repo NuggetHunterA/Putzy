@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MONSTERS, monsterById } from './game'
 import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, monsterStats, unseen } from './pedia'
 
-const open = MONSTERS.filter((m) => !m.secret)
+const open = MONSTERS.filter((m) => !m.secret && !m.egg)
 
 describe('Putzy-Pedia', () => {
   it('zeigt Stufe 1 immer, spätere erst wenn jemand sie gesehen hat', () => {
@@ -21,9 +21,11 @@ describe('Putzy-Pedia', () => {
     expect(list('ulrike')).toEqual(['2:1', '2:2', '5:1'])
   })
 
-  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35, geheime Reihen danach bis 53', () => {
+  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35, geheime Reihen bis 53, Reihen aus Eiern bis 74', () => {
     expect(dexTotal(open)).toBe(35)
-    expect(dexTotal(MONSTERS)).toBe(53)
+    expect(dexTotal(MONSTERS)).toBe(74)
+    expect(dexNo(monsterById('19'), 0)).toBe('54')
+    expect(dexNo(monsterById('25'), 2)).toBe('74')
     expect(dexNo(monsterById('13'), 0)).toBe('36')
     expect(dexNo(monsterById('18'), 2)).toBe('53')
     expect(dexNo(monsterById('8'), 2)).toBe('24')

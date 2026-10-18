@@ -24,7 +24,7 @@ describe('Geheime Reihen', () => {
     expect(isVisible(wali, { '13': '2026-10-20' }, '2026-10-20')).toBe(false)
     expect(isVisible(wali, { '13': '2026-10-20' }, '2026-10-21')).toBe(true)
     expect(isVisible(monsterById('2'), {}, '2026-10-21')).toBe(true)
-    expect(visibleMonsters({}, '2026-10-21')).toHaveLength(12)
+    expect(visibleMonsters({}, '2026-10-21', [])).toHaveLength(12)
   })
 
   it('schalten Wichti mit der letzten der fünf Elementreihen frei', () => {

@@ -25,6 +25,7 @@ export const backdrop = (e: MonsterElement) => `radial-gradient(circle at 50% 40
 // stages: Namen; \u00AD ist ein weiches Trennzeichen, damit lange Namen in schmalen Feldern sauber umbrechen.
 // levels: ab welchem Level die nächste Stufe kommt, also immer eine Zahl weniger als Stufen.
 // secret: geheime Reihe, erst nach der Freischaltung sichtbar (src/secret.ts).
+// egg: schlüpft aus einem Ei, erst nach dem Ausbrüten sichtbar (src/eggs.ts).
 export type Monster = {
   id: string
   element: MonsterElement
@@ -33,6 +34,7 @@ export type Monster = {
   levels: number[]
   move: string
   secret?: true
+  egg?: true
 }
 
 const monster = (id: string, element: MonsterElement, move: string, names: string[], slugs: string[], levels = [10, 25]): Monster => ({
@@ -45,6 +47,7 @@ const monster = (id: string, element: MonsterElement, move: string, names: strin
 })
 
 const secret = (...args: Parameters<typeof monster>): Monster => ({ ...monster(...args), secret: true })
+const egg = (...args: Parameters<typeof monster>): Monster => ({ ...monster(...args), egg: true })
 
 export const MONSTERS: Monster[] = [
   monster('2', 'wasser', 'Gezeitenstoß', ['Plitsch', 'Platschkoi', 'Tsunadra'], ['plitsch', 'platschkoi', 'tsunadra']),
@@ -65,6 +68,13 @@ export const MONSTERS: Monster[] = [
   secret('16', 'luft', 'Rückenwind-Sturzflug', ['Pusti', 'Segel\u00ADhörnchen', 'Zephyrion'], ['pusti', 'segelhoernchen', 'zephyrion']),
   secret('14', 'licht', 'Sternbild-Blick', ['Huhu', 'Leucht\u00ADeule', 'Astralux'], ['huhu', 'leuchteule', 'astralux']),
   secret('18', 'ohne', 'Heinzel-Heimlichkeit', ['Wichti', 'Heinzel', 'Domovar'], ['wichti', 'heinzel', 'domovar']),
+  egg('19', 'wasser', 'Saugschwall', ['Porli', 'Riffling', 'Korall\u00ADgard'], ['porli', 'riffling', 'korallgard']),
+  egg('20', 'wasser', 'Zangengriff', ['Knacki', 'Scheren\u00ADritter', 'Abyssor'], ['knacki', 'scherenritter', 'abyssor']),
+  egg('21', 'feuer', 'Sonnenhals', ['Tupfi', 'Steppen\u00ADhals', 'Serengo'], ['tupfi', 'steppenhals', 'serengo']),
+  egg('24', 'natur', 'Taunetz', ['Tauli', 'Moos\u00ADweber', 'Florachne'], ['tauli', 'moosweber', 'florachne']),
+  egg('23', 'luft', 'Looping-Böe', ['Faltli', 'Propello', 'Strato\u00ADnaut'], ['faltli', 'propello', 'stratonaut']),
+  egg('22', 'licht', 'Volldampf-Signal', ['Bimmli', 'Signalok', 'Aurorail'], ['bimmli', 'signalok', 'aurorail']),
+  egg('25', 'ohne', 'Bollwerk', ['Kiesli', 'Ziegel\u00ADbert', 'Zitadell'], ['kiesli', 'ziegelbert', 'zitadell']),
 ]
 
 export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!
