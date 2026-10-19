@@ -52,11 +52,12 @@ create table picks (
 );
 
 -- Putzy-Pedia: wer welche Entwicklung schon gesehen hat (Stufe 1 = zweite Form, 2 = dritte Form).
--- Stufe 0: hat die Freischaltung einer geheimen Reihe bzw. das Schlüpfen aus einem Ei gesehen, Stufe -1: den Fund eines Eis.
+-- Stufe 0: hat die Freischaltung einer geheimen Reihe bzw. das Schlüpfen aus einem Ei gesehen, Stufe -1: den Fund eines Eis,
+-- Stufe 30: die Legenden-Szene auf Level 30.
 create table seen (
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
-  stage int not null check (stage between -1 and 3),
+  stage int not null check (stage between -1 and 3 or stage = 30),
   seen_at timestamptz not null default now(),
   primary key (person, monster, stage)
 );

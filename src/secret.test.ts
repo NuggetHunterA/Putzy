@@ -14,8 +14,8 @@ describe('Geheime Reihen', () => {
 
   it('zählen Aali und Kokeli nicht und bei Samsi erst Arborius', () => {
     expect(ids(newUnlocks({ '11': xpForLevel(30), '9': xpForLevel(30) }, {}))).toEqual([])
-    expect(ids(newUnlocks({ '10': xpForLevel(29) }, {}))).toEqual([])
-    expect(ids(newUnlocks({ '10': xpForLevel(30) }, {}))).toEqual(['17'])
+    expect(ids(newUnlocks({ '10': xpForLevel(27) }, {}))).toEqual([])
+    expect(ids(newUnlocks({ '10': xpForLevel(28) }, {}))).toEqual(['17'])
   })
 
   it('zeigen eine Reihe erst ab dem Tag nach der Freischaltung', () => {

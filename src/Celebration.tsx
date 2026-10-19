@@ -1,6 +1,6 @@
-// Vollbild beim Level-Up, bleibt stehen, bis man tippt. Die Entwicklung hat eine eigene Szene (Evolution.tsx).
+// Vollbild beim Level-Up, bleibt stehen, bis man tippt. Entwicklung und Level 30 haben eigene Szenen (Evolution.tsx, Legend.tsx).
 import { useBack } from './back'
-import { ELEMENTS, MAX_LEVEL, type Monster } from './game'
+import { ELEMENTS, type Monster } from './game'
 import { UNLOCK_LEVELS } from './pedia'
 
 export type Cel = {
@@ -27,7 +27,7 @@ export function Celebration({ cel, onDone }: { cel: Cel; onDone: () => void }) {
       <div className="cel-call" role="status">
         <span className="cel-move">{monster.move}!</span>
         <span className="cel-sub">
-          {cel.level === MAX_LEVEL ? 'MAX-Level erreicht' : `Level ${cel.level} erreicht`} · +{cel.xp} XP{cel.bonus ? ' · Element-Bonus' : ''}
+          Level {cel.level} erreicht · +{cel.xp} XP{cel.bonus ? ' · Element-Bonus' : ''}
         </span>
         {UNLOCK_LEVELS.includes(cel.level) && <span className="cel-sub">Neuer Pedia-Eintrag freigeschaltet</span>}
       </div>
