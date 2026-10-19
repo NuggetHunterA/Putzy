@@ -56,13 +56,13 @@ describe('Level', () => {
     expect(stageFor(m, 24)).toBe(1)
     expect(stageFor(m, 25)).toBe(2)
   })
-  it('entwickelt Kokeli auf Level 15 und Samsi auf 10, 20 und 30', () => {
+  it('entwickelt Kokeli auf Level 15 und Samsi auf 10, 20 und 28', () => {
     const kokeli = monsterById('9')
     expect(stageFor(kokeli, 14)).toBe(0)
     expect(stageFor(kokeli, 15)).toBe(1)
     expect(stageFor(kokeli, 30)).toBe(1)
     const samsi = monsterById('10')
-    expect([9, 10, 19, 20, 29, 30].map((l) => stageFor(samsi, l))).toEqual([0, 1, 1, 2, 2, 3])
+    expect([9, 10, 19, 20, 27, 28].map((l) => stageFor(samsi, l))).toEqual([0, 1, 1, 2, 2, 3])
     const aali = monsterById('11')
     expect([19, 20, 30].map((l) => stageFor(aali, l))).toEqual([0, 1, 1])
   })

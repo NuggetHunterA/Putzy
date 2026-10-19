@@ -21,6 +21,7 @@ export const NEWS: News[] = [
   { id: 16, title: 'Doppelelemente', text: 'Aurorail, Korallgard und Papillora bekommen mit der Endstufe ein zweites Element: Aurorail Feuer, Korallgard und Papillora Natur. Dann gibt es den Element-Bonus für Aufgaben aus beiden Elementen.' },
   { id: 18, title: 'Event-Upgrade', text: 'Events sind jetzt wertvoller. Sie bieten Boni und manche Events sogar zusätzliche Überraschungen.' },
   { id: 17, title: 'Listenansicht im Pedia', text: 'Über den Schalter „Reihen | Liste“ zeigt das Pedia jede Stufe als kleine Kachel, so seht ihr viel mehr Monster auf einmal. In der Liste könnt ihr nach Element filtern.' },
+  { id: 19, title: 'Arborius kommt früher', text: 'Blattwart entwickelt sich jetzt schon auf Level 28 zu Arborius statt erst auf Level 30.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

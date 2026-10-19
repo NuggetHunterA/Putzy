@@ -58,7 +58,7 @@ export const MONSTERS: Monster[] = [
   monster('5', 'feuer', 'Glut-Schrubb', ['Funki', 'Glutfuchs', 'Infernyx'], ['funki', 'glutfuchs', 'infernyx']),
   monster('9', 'feuer', 'Brutzel-Blitz', ['Kokeli', 'Salamandor'], ['kokeli', 'salamandor'], [15]),
   monster('6', 'natur', 'Moos-Sammler', ['Krümel', 'Kompost\u00ADkröte', 'Gaiamoos'], ['kruemel', 'kompostkroete', 'gaiamoos']),
-  monster('10', 'natur', 'Gießkannen-Segen', ['Samsi', 'Sprössli', 'Blattwart', 'Arborius'], ['samsi', 'sproessli', 'blattwart', 'arborius'], [10, 20, 30]),
+  monster('10', 'natur', 'Gießkannen-Segen', ['Samsi', 'Sprössli', 'Blattwart', 'Arborius'], ['samsi', 'sproessli', 'blattwart', 'arborius'], [10, 20, 28]),
   monster('3', 'luft', 'Taifun-Sog', ['Brisi', 'Wirbel\u00ADwusel', 'Taifunox'], ['brisi', 'wirbelwusel', 'taifunox']),
   monster('7', 'luft', 'Kuschel-Zyklon', ['Flausch', 'Woll\u00ADwächter', 'Kaschmira'], ['flausch', 'wollwaechter', 'kaschmira']),
   { ...monster('12', 'luft', 'Frischluft-Flattern', ['Raupsi', 'Kokonella', 'Papillora'], ['raupsi', 'kokonella', 'papillora']), second: 'natur' },
