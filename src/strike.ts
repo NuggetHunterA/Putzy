@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { attack } from './fx'
+import { eventBonus } from './events'
 import { elementsOf, levelFor, monsterById, stageFor, xpOf, type Person, type Work } from './game'
 import type { Snapshot } from './db'
 
@@ -23,7 +24,7 @@ export function useStrike(snap: Snapshot, person: Person, onAttackEnd: () => voi
         src: m.files[stageFor(m, levelFor(snap.monsterXp[m.id] ?? 0))],
         element: m.element,
         taskElement: work?.element,
-        xp: xpOf(work, elementsOf(m, snap.monsterXp[m.id] ?? 0)),
+        xp: xpOf(work, elementsOf(m, snap.monsterXp[m.id] ?? 0), eventBonus(new Date())),
         onHit: hit,
       })
     } finally {

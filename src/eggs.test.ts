@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balance, eggName, nextEggScene, rollEgg, type Egg } from './eggs'
+import { balance, dueEventEgg, eggCost, eggName, nextEggScene, rollEgg, type Egg } from './eggs'
 import { monsterById } from './game'
 
 const egg = (monster: string, more: Partial<Egg> = {}): Egg => ({ monster, found_at: '2026-10-19T10:00:00Z', found_by: null, found_task: null, hatched_at: null, hatched_by: null, ...more })
@@ -46,5 +46,16 @@ describe('Eier', () => {
     expect(scene([{ person: 'adrian', monster: '19', stage: -1 }])).toBe('found:21')
     expect(scene([{ person: 'adrian', monster: '19', stage: -1 }, { person: 'adrian', monster: '21', stage: -1 }])).toBe('hatch:19')
     expect(scene([{ person: 'adrian', monster: '19', stage: -1 }, { person: 'adrian', monster: '21', stage: -1 }, { person: 'adrian', monster: '19', stage: 0 }])).toBeUndefined()
+  })
+
+  it('legt Event-Eier auch bei vollem Nest und macht sie billiger', () => {
+    const full = [egg('19'), egg('21'), egg('22')]
+    expect(dueEventEgg('halloween', full)).toBe('26')
+    expect(dueEventEgg('halloween', [...full, egg('26')])).toBeNull()
+    expect(dueEventEgg('ostern', full)).toBeNull()
+    expect(dueEventEgg(null, full)).toBeNull()
+    expect(eggCost('26')).toBe(15)
+    expect(eggCost('21')).toBe(75)
+    expect(eggName(monsterById('28'))).toBe('Drachen-Ei')
   })
 })

@@ -77,6 +77,11 @@ img { display: block; }
 .logo::before { width: 14px; height: 14px; right: -22px; top: -4px; }
 .logo::after { width: 9px; height: 9px; right: -30px; top: 14px; }
 
+/* Event-Bonus: klein neben „Heute“, antippen öffnet die Erklärung wie bei der Streak. */
+.event-badge { display: flex; align-items: center; gap: 3px; padding: 1px 6px 1px 1px; border: 2px solid var(--ink); border-radius: 99px; background: var(--ev-pop, var(--sun)); color: var(--paper); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.event-badge-dot { display: flex; width: 17px; height: 17px; padding: 2px; border: 1.5px solid var(--ink); border-radius: 50%; color: var(--ink); }
+.event-badge-dot svg { width: 100%; height: 100%; }
+
 /* Streak: Seifenblase und Tage klein neben dem Datum, die Erklärung klappt unter dem Kopf auf. */
 .home-head { position: relative; }
 .kicker-row { display: flex; align-items: center; gap: 10px; }
@@ -173,6 +178,8 @@ img { display: block; }
 
 /* Aufgabenliste */
 .section { display: flex; flex-direction: column; gap: 8px; }
+.section-head { position: relative; display: flex; align-items: center; gap: 10px; margin: 6px 0 0; }
+.section-head .section-title { margin: 0; }
 .section-title { margin: 6px 0 0; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .03em; }
 .row {
   display: flex; align-items: center; gap: 12px;
@@ -200,6 +207,7 @@ img { display: block; }
 .row-meta { font-size: 12px; font-weight: 500; }
 .row-side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .row-xp { font-size: 12px; font-weight: 800; white-space: nowrap; opacity: .55; }
+.row-xp.bonus { opacity: 1; padding: 1px 7px; border-radius: 99px; background: var(--ev-pop, var(--sun)); color: var(--paper); }
 .row-due { font-size: 12px; font-weight: 800; white-space: nowrap; }
 .row-due.late { padding: 2px 8px; border-radius: 99px; background: var(--accent); color: var(--paper); }
 

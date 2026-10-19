@@ -369,6 +369,48 @@ export const PEDIA: Record<string, Entry> = {
     dislikes: 'Risse im Putz, Graffiti',
     legend: 'Zitadell soll jede Burg der Welt einmal besucht und von jeder einen Stein mitgenommen haben. Darum passt keiner seiner Steine zum anderen, und trotzdem hält er stärker als jede Mauer.',
   },
+  '26': {
+    sizes: ['0,15 m', '0,6 m (Spannweite 1,4 m)', '1,8 m (Spannweite 5 m)'],
+    weights: ['0,08 kg', '3 kg', '45 kg'],
+    compare: ['So groß wie eine Kaffeetasse', 'So breit wie ein Bügelbrett', 'So breit wie ein Carport'],
+    room: 'Dachboden',
+    text: [
+      'Mondi schaukelt nachts kopfüber an einer kleinen Mondsichel und schläft tagsüber hinter dem Dachbalken. Wo es hängt, liegt am Morgen kein einziges Spinnennetz mehr.',
+      'Sichelflatter leuchtet von innen wie Mondlicht und fliegt nachts durch die Flure, ohne irgendwo anzustoßen. Den Kürbis trägt es das ganze Jahr, falls jemand im Dunkeln den Lichtschalter sucht.',
+      'Noctiluna breitet die Flügel aus, und hinter ihr geht der Vollmond auf. Ein Flügelschlag weht das ganze Herbstlaub vom Hof, ein zweiter lüftet das Haus bis in die letzte Ecke.',
+    ],
+    likes: 'Vollmondnächte, offene Dachfenster',
+    dislikes: 'grelle Deckenlampen, Spinnweben im Gebälk',
+    legend: 'Man sagt, Noctiluna habe den Mond einmal eine ganze Nacht lang festgehalten, damit ein verirrtes Kind nach Hause fand. Seitdem ist es an Halloween nie ganz dunkel.',
+  },
+  '27': {
+    sizes: ['0,15 m', '0,7 m', '2,2 m'],
+    weights: ['0,4 kg', '9 kg', '160 kg'],
+    compare: ['So groß wie ein Tannenzapfen', 'So hoch wie ein Adventskranz-Ständer', 'So hoch wie ein Weihnachtsbaum im Wohnzimmer'],
+    room: 'Vorgarten',
+    text: [
+      'Zapfi rollt sich bei Kälte zu einem Tannenzapfen zusammen und wartet im Schnee, bis jemand die Haustür öffnet. Dann kugelt es hinein und fegt dabei den Matsch von der Fußmatte.',
+      'Nadelpelz trägt einen Mantel aus Tannenzweigen und einen Schal, den es selbst gestrickt hat. Es sammelt Zapfen für den Kamin und lässt dabei nie eine Nadel auf dem Teppich liegen.',
+      'Lichterborst ist ein wandelnder Weihnachtsbaum. In seinen Kugeln brennt ein warmes Feuer, und wo es sich zur Ruhe legt, wird das ganze Zimmer gemütlich warm.',
+    ],
+    likes: 'Pulverschnee, Plätzchenduft',
+    dislikes: 'nadelnde Billigbäume, Staubsauger unter dem Christbaum',
+    legend: 'Lichterborst soll jedes Jahr in der Heiligen Nacht durch den Wald gehen und allen Tannen ein Licht schenken. Wer am Weihnachtsmorgen einen leuchtenden Zapfen findet, hat seine Spur entdeckt.',
+  },
+  '28': {
+    sizes: ['0,3 m', '2,5 m', '12 m'],
+    weights: ['2 kg', '60 kg', '900 kg'],
+    compare: ['So groß wie ein Reiskocher', 'So lang wie ein Sofa', 'So lang wie ein Linienbus'],
+    room: 'Küche',
+    text: [
+      'Zündi trägt seine Laterne überallhin und pustet kleine Flammen, wenn es sich freut. Den Herd heizt es lieber selbst vor, als den Knopf zu drehen.',
+      'Lampionlong windet sich durch die Wohnung und hängt dabei Lampions auf, wo es dunkel ist. Rote Umschläge verteilt es an jeden, der seine Aufgaben geschafft hat.',
+      'Wolkenkaiser reitet auf Wolken und hält eine Feuerperle in der Klaue. Wenn es über das Haus zieht, weht der alte Staub hinaus und das Glück für das neue Jahr herein.',
+    ],
+    likes: 'Feuerwerk, frisch geputzte Fenster zum neuen Jahr',
+    dislikes: 'Besen am Neujahrstag, kalte Herdplatten',
+    legend: 'Man sagt, Wolkenkaiser bringe jedes Jahr zum neuen Mond eine Perle vom Himmel mit. Wer am Neujahrsmorgen das Haus geputzt hat, findet ihr Leuchten in der Fensterscheibe.',
+  },
 }
 
 // Pedia-Reihenfolge nach Nummer, nicht nach Element wie in der Monsterwahl.

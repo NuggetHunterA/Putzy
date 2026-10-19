@@ -2,6 +2,7 @@
 // Ausbrüten kostet Streak-Punkte vom gemeinsamen Konto und macht die Reihe ab Stufe 1 sichtbar.
 // seen mit Stufe -1: Fund gesehen, mit Stufe 0: Schlüpfen gesehen (beide Animationen sieht jede Person einmal).
 import type { Seen } from './db'
+import type { AppEvent } from './events'
 import { ELEMENTS, MONSTERS, type Monster, type MonsterElement, type Person } from './game'
 import type { StreakWeek } from './streak'
 
@@ -23,9 +24,22 @@ export const ONEOFF_EGG_CHANCE = 0.01
 // Gewürfelt wird nur, solange höchstens so viele Eier auf das Ausbrüten warten.
 export const MAX_WAITING = 1
 
-export const eggCost = (monster: string) => (monster === START_EGG ? 35 : 75)
+// Event-Eier: Zum Event liegt das Ei ohne Zufall im Nest, auch wenn dort schon Eier warten, und ist billiger.
+export const EVENT_EGGS: Partial<Record<AppEvent, { monster: string; name: string }>> = {
+  halloween: { monster: '26', name: 'Mond-Ei' },
+  weihnachten: { monster: '27', name: 'Tannen-Ei' },
+  neujahr_cn: { monster: '28', name: 'Drachen-Ei' },
+}
+export const eventEgg = (monster: string) => Object.values(EVENT_EGGS).find((e) => e.monster === monster)
+// Event-Ei, das heute ins Nest gehört und noch fehlt.
+export const dueEventEgg = (event: AppEvent | null, eggs: Egg[]) => {
+  const e = event && EVENT_EGGS[event]
+  return e && !eggs.some((x) => x.monster === e.monster) ? e.monster : null
+}
+
+export const eggCost = (monster: string) => (monster === START_EGG ? 35 : eventEgg(monster) ? 15 : 75)
 export const eggFile = (monster: string) => `/monster/${monster}-0-ei.webp`
-export const eggName = (m: Monster) => (m.element === 'ohne' ? 'Ei ohne Element' : `${ELEMENTS[m.element].name}-Ei`)
+export const eggName = (m: Monster) => eventEgg(m.id)?.name ?? (m.element === 'ohne' ? 'Ei ohne Element' : `${ELEMENTS[m.element].name}-Ei`)
 
 export const waiting = (eggs: Egg[]) => eggs.filter((e) => !e.hatched_at)
 export const isHatched = (m: Monster, eggs: Egg[]) => eggs.some((e) => e.monster === m.id && e.hatched_at)
