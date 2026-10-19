@@ -13,7 +13,7 @@
   animation: ev-sky 9s ease-in-out infinite alternate;
 }
 [data-event] .screen { position: relative; z-index: 1; }
-[data-event] .kicker, [data-event] .section-title, [data-event] .live, [data-event] .home-head .gear { color: var(--ev-text); border-color: var(--ev-text); }
+[data-event] .kicker, [data-event] .streak, [data-event] .section-title, [data-event] .live, [data-event] .home-head .gear { color: var(--ev-text); border-color: var(--ev-text); }
 /* Wortmarke: Mütze statt Seifenblasen */
 [data-event] .logo { color: var(--ev-text); text-shadow: 3px 3px 0 var(--ev-pop), 5px 5px 0 var(--ink); }
 [data-event] .logo::before { border: 0; border-radius: 0; width: 36px; height: 32px; right: -30px; top: -16px; rotate: 20deg; background: var(--ev-hat) no-repeat center / contain; }

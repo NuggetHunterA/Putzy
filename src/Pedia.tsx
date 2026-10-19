@@ -74,8 +74,8 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
           })}
         </span>
         <span>
-          <b>Rückblicke</b>
-          <small>Alle Wochen</small>
+          <b>Wochen</b>
+          <small>Rückblick</small>
         </span>
       </button>
       <button className="wr-entry sh-entry" onClick={onStamps}>

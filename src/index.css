@@ -73,22 +73,24 @@ img { display: block; }
 
 /* Wortmarke wie im App-Icon: dunkel mit gelbem Versatz. */
 .logo { position: relative; align-self: flex-start; margin: 2px 0 0; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 52px; letter-spacing: .04em; line-height: .9; text-shadow: 3px 3px 0 var(--sun); }
-.logo::before, .logo::after { content: ''; position: absolute; }
+.logo::before, .logo::after { content: ''; position: absolute; border: 2.5px solid #3EC1F3; border-radius: 50%; }
+.logo::before { width: 14px; height: 14px; right: -22px; top: -4px; }
+.logo::after { width: 9px; height: 9px; right: -30px; top: 14px; }
 
-/* Streak: Schwamm hochgestellt am Logo, darunter sieben Punkte für Mo bis So. Bei Events sitzt dazwischen die Mütze. */
-.logo-row { position: relative; display: flex; align-items: flex-start; gap: 6px; }
-.streak { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: -10px; padding: 0; border: 0; background: none; }
-[data-event] .streak { margin-left: 26px; }
-.sponge { display: block; rotate: -8deg; overflow: visible; }
+/* Streak: Seifenblase und Tage klein neben dem Datum, die Erklärung klappt unter dem Kopf auf. */
+.home-head { position: relative; }
+.kicker-row { display: flex; align-items: center; gap: 10px; }
+.streak { display: flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+.streak::before { content: ''; width: 11px; height: 11px; border: 2px solid #3EC1F3; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #3EC1F3 1.5px, transparent 2px); }
 .streak-hop { display: block; animation: news-hop .7s ease-out; }
-.streak-days { display: flex; gap: 2px; }
-.streak-days i { width: 6px; height: 6px; border: 1.5px solid var(--ink); border-radius: 50%; }
+.streak-days { display: flex; gap: 3px; }
+.streak-days i { width: 9px; height: 9px; border: 1.5px solid var(--ink); border-radius: 50%; }
 .streak-days .ok { background: var(--sun); }
 .streak-days .miss { background: var(--ink); }
 .streak-days .later { opacity: .3; }
-.streak-days .today { box-shadow: 0 0 0 1.5px var(--ground), 0 0 0 3px var(--ink); }
+.streak-days .today { box-shadow: 0 0 0 1.5px var(--paper), 0 0 0 3px var(--ink); }
 .streak-info { position: absolute; z-index: 5; top: calc(100% + 8px); left: 0; width: min(340px, calc(100vw - 36px)); display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 4px solid var(--ink); border-radius: 20px; background: var(--paper); box-shadow: 5px 5px 0 var(--ink); text-align: left; font-size: 15px; font-weight: 600; animation: pop-in .3s cubic-bezier(.3, 1.4, .5, 1) both; }
-.streak-info-head { display: flex; align-items: center; gap: 10px; }
+.streak-info-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .streak-info-head b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .03em; }
 .streak-info small { font-size: 14px; font-weight: 700; opacity: .6; }
 
@@ -723,6 +725,11 @@ img { display: block; }
 .pd-pair .wr-pair .wr-old + .wr-old { margin-left: -16px; }
 .pd-pair .wr-entry b { font-size: 20px; letter-spacing: .02em; }
 .pd-pair .wr-entry small { font-size: 12px; }
+/* Schmale Handys: Monster dichter zusammen, damit „Wochen“ ganz hineinpasst. */
+@media (max-width: 389px) {
+  .pd-pair .wr-pair .wr-old { width: 34px; height: 34px; }
+  .pd-pair .wr-pair .wr-old + .wr-old { margin-left: -22px; }
+}
 .sh-entry { background: var(--paper); }
 .sh-entry .stamp-mark { flex: none; }
 .sh-new { position: absolute; right: -6px; top: -10px; padding: 1px 7px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--accent); color: var(--paper); font-size: 11px; font-weight: 800; }
