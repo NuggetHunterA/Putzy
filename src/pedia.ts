@@ -1,6 +1,6 @@
 // Putzy-Pedia: Texte pro Monsterreihe, Freischalt-Level und was als entdeckt gilt.
 import type { Done, Seen, Task } from './db'
-import { MONSTERS, STANDING, elementsOf, levelFor, stageFor, weekStart, type Monster, type MonsterElement, type Person } from './game'
+import { MAX_LEVEL, MONSTERS, STANDING, elementsOf, levelFor, stageFor, weekStart, type Monster, type MonsterElement, type Person } from './game'
 
 export type Entry = {
   sizes: string[]
@@ -454,6 +454,12 @@ export function unseen(seen: Seen[], person: Person, monsterXp: Record<string, n
       .map((stage) => ({ monster: m, stage })),
   )
 }
+
+// Legenden-Szene auf Level 30: in seen als eigene Stufe gemerkt, damit jede Person sie einmal sieht.
+export const LEGEND_STAGE = 30
+
+export const unseenLegends = (seen: Seen[], person: Person, monsterXp: Record<string, number>) =>
+  PEDIA_ORDER.filter((m) => levelFor(monsterXp[m.id] ?? 0) === MAX_LEVEL && !seen.some((s) => s.person === person && s.monster === m.id && s.stage === LEGEND_STAGE))
 
 export type Stats = { favorite: { name: string; tasks: number } | null; since: Date | null; record: { tasks: number; week: number } | null }
 

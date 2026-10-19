@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MONSTERS, monsterById, xpForLevel } from './game'
-import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, listStages, monsterStats, unseen } from './pedia'
+import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, listStages, monsterStats, unseen, unseenLegends } from './pedia'
 
 const open = MONSTERS.filter((m) => !m.secret && !m.egg)
 
@@ -11,6 +11,13 @@ describe('Putzy-Pedia', () => {
     expect(isDiscovered(seen, '2', 1)).toBe(true)
     expect(isDiscovered(seen, '2', 2)).toBe(false)
     expect(discoveredCount(seen, open)).toBe(13)
+  })
+
+  it('zeigt die Legende auf Level 30 jeder Person einmal', () => {
+    const xp = { '2': xpForLevel(30), '5': xpForLevel(30) - 1 }
+    const seen = [{ person: 'adrian' as const, monster: '2', stage: 30 }]
+    expect(unseenLegends(seen, 'adrian', xp).map((m) => m.id)).toEqual([])
+    expect(unseenLegends(seen, 'ulrike', xp).map((m) => m.id)).toEqual(['2'])
   })
 
   it('spielt erreichte Entwicklungen nach, die diese Person noch nicht gesehen hat', () => {

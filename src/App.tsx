@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
+import { Legend } from './Legend'
 import { eventBonus, eventFor, eventStart } from './events'
 import { EventIntro } from './EventIntro'
 import './events.css'
@@ -15,14 +16,14 @@ import { LATEST_NEWS, unread } from './news'
 import { NewsBox } from './NewsBox'
 import { Pedia } from './Pedia'
 import { previousWeek } from './review'
-import { unseen } from './pedia'
+import { LEGEND_STAGE, unseen, unseenLegends } from './pedia'
 import { Reveal } from './Reveal'
 import { newStamps, stamps, unseenStamps, xpBeforeUnseen, type Earned, type Facts } from './stamps'
 import { StampScene } from './StampScene'
 import { Stamps } from './Stamps'
 import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
-import { PEOPLE, STANDING_EFFORT, dayString, elementsOf, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
+import { MAX_LEVEL, PEOPLE, STANDING_EFFORT, dayString, elementsOf, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
 import { weekPoints } from './streak'
 
 const PERSON_STORAGE = 'putzy.person'
@@ -61,6 +62,9 @@ export default function App() {
   // Entwicklungen laufen aus der Warteschlange (unseen), nie während eines Angriffs.
   const [evo, setEvo] = useState<Cel | null>(null)
   const closeEvo = useCallback(() => setEvo(null), [])
+  // Legenden-Szene auf Level 30, ebenfalls aus der Warteschlange (unseenLegends), für beide Personen.
+  const [legend, setLegend] = useState<Monster | null>(null)
+  const closeLegend = useCallback(() => setLegend(null), [])
   const [attacking, setAttacking] = useState(false)
   // Freischaltung einer geheimen Reihe, die gerade gezeigt wird.
   const [secret, setSecret] = useState<Monster | null>(null)
@@ -145,22 +149,22 @@ export default function App() {
   // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
   const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined
   useEffect(() => {
-    if (!reveal || !person || intro || secret || evo || cel || attacking) return
+    if (!reveal || !person || intro || secret || evo || legend || cel || attacking) return
     const seen = { person, monster: reveal.id, stage: 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setSecret(reveal)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [reveal, person, intro, secret, evo, cel, attacking, refresh])
+  }, [reveal, person, intro, secret, evo, legend, cel, attacking, refresh])
 
   // Eier: Fund (Stufe -1) und Schlüpfen (Stufe 0) zeigen, nach geheimen Reihen und vor Entwicklungen.
   const eggScene = snap && person && !reveal ? nextEggScene(snap.eggs, snap.seen, person) : undefined
   useEffect(() => {
-    if (!eggScene || !person || intro || secret || eggShown || evo || cel || attacking) return
+    if (!eggScene || !person || intro || secret || eggShown || evo || legend || cel || attacking) return
     const seen = { person, monster: eggScene.monster.id, stage: eggScene.kind === 'found' ? -1 : 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEggShown(eggScene)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [eggScene, person, intro, secret, eggShown, evo, cel, attacking, refresh])
+  }, [eggScene, person, intro, secret, eggShown, evo, legend, cel, attacking, refresh])
 
   // Streak-Punkte abgeschlossener Wochen, die noch nicht gespeichert sind, festhalten. Einmal pro Woche je Start.
   const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done) : []
@@ -191,21 +195,31 @@ export default function App() {
   // noch nicht gesehener Stempel ausgelöst hat, warten bis nach seiner Animation.
   const next = snap && person ? unseen(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
+    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
+  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, refresh])
 
-  // Stempel nach den Entwicklungen zeigen, ältester zuerst, und sofort als gesehen merken.
-  const stampNext = snap && person && !next ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
+  // Legenden nach den Entwicklungen zeigen und sofort als gesehen merken.
+  const legendNext = snap && person && !next ? unseenLegends(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
+    if (!legendNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking) return
+    const seen = { person, monster: legendNext.id, stage: LEGEND_STAGE }
+    setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
+    setLegend(legendNext)
+    markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [legendNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, refresh])
+
+  // Stempel nach den Entwicklungen und Legenden zeigen, ältester zuerst, und sofort als gesehen merken.
+  const stampNext = snap && person && !next && !legendNext ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
+  useEffect(() => {
+    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking) return
     setSnap((s) => s && { ...s, stampsSeen: [...s.stampsSeen, { person, stamp: stampNext.id }] })
     setStampShown(stampNext)
     markStampSeen(person, stampNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
+  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -265,7 +279,7 @@ export default function App() {
   const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
   const bank = balance(points, snap.eggs)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !evo && !cel && !attacking ? unread(newsSeen) : []
+  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
@@ -276,8 +290,8 @@ export default function App() {
     const xp = xpOf(work, elements, eventBonus(now))
     const level = levelFor(before + xp)
     setAttacking(true)
-    // Bei einer Entwicklung übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.
-    if (level > levelFor(before) && stageFor(monster, level) === stageFor(monster, levelFor(before))) {
+    // Bei einer Entwicklung oder Level 30 übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.
+    if (level > levelFor(before) && level < MAX_LEVEL && stageFor(monster, level) === stageFor(monster, levelFor(before))) {
       pendingCel.current = {
         key: Date.now(),
         monster,
@@ -434,6 +448,7 @@ export default function App() {
       {news.length > 0 && <NewsBox news={news} monsterImg={weekImg(monsterById(myPick!.monster), snap.monsterXp)} onDone={() => seeNews(person)} />}
       {cel && <Celebration cel={cel} onDone={closeCel} />}
       {evo && <Evolution cel={evo} onDone={closeEvo} />}
+      {legend && <Legend monster={legend} onDone={closeLegend} />}
       {secret && <Reveal monster={secret} canPick={!myPick} onDone={closeSecret} />}
       {stampShownDef && (
         <StampScene
