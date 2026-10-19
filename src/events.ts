@@ -68,7 +68,7 @@ const EVENTS: [AppEvent, (d: Date) => boolean, Element][] = [
   ['neujahr_cn', neujahrCn, 'feuer'],
   ['fruehjahrsputz', fixed(320, 326), 'wasser'],
   ['maifeiertag', fixed(430, 501), 'natur'],
-  ['sonnenwende', fixed(621), 'licht'],
+  ['sonnenwende', fixed(618, 622), 'licht'],
   ['jahrestag', fixed(601), 'licht'],
   ['hochsommer', fixed(801, 804), 'wasser'],
   ['herbstanfang', fixed(922, 923), 'luft'],
