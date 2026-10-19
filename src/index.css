@@ -392,6 +392,23 @@ img { display: block; }
 .stages.many .slot-img { width: 54px; height: 54px; }
 .many .slot b { font-size: 15px; }
 
+/* Putzy-Pedia: Listenansicht mit jeder Stufe als Kachel und Element-Filter */
+.seg.two { grid-template-columns: 1fr 1fr; }
+.el-filter { display: flex; gap: 6px; }
+.el-filter button { flex: 1; min-width: 0; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--paper); font-weight: 800; font-size: 13px; opacity: .75; }
+.el-filter button:first-child { flex: 1.6; }
+.el-filter button.on { background: var(--sun); box-shadow: 0 0 0 2px var(--ink); opacity: 1; }
+.dex-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 8px; }
+.dex-tile { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 6px 4px 8px; border: 2.5px solid var(--ink); border-radius: 14px; background: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
+.dex-tile:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.dex-tile.gold { border-color: #C99A00; box-shadow: 3px 3px 0 #C99A00, 0 0 0 2px var(--sun) inset; background: linear-gradient(160deg, #FFF8D6, var(--paper) 60%); }
+.dex-tile .slot-img { width: 100%; height: auto; aspect-ratio: 1; border-width: 2.5px; }
+.dex-tile .slot-img.hidden::after { font-size: 28px; }
+.dex-tile-no { display: flex; align-items: center; gap: 3px; height: 18px; font-size: 11px; font-weight: 800; }
+.dex-tile-el { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 1.5px solid var(--ink); border-radius: 50%; }
+/* Schrift wächst mit der Breite, damit Namen auf schmalen Handys nicht mitten im Wort umbrechen. */
+.dex-tile b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: clamp(11px, 3.6vw, 14px); letter-spacing: .03em; line-height: 1; text-align: center; }
+
 /* Putzy-Pedia: Detailseite */
 .stage-btn { padding: 0; border: 0; background: none; justify-self: center; }
 .stages .slot { gap: 11px; } /* Platz für den Auswahlring (7px) über dem Namen */

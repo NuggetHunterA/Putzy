@@ -1,6 +1,6 @@
 // Putzy-Pedia: Texte pro Monsterreihe, Freischalt-Level und was als entdeckt gilt.
 import type { Done, Seen, Task } from './db'
-import { MONSTERS, STANDING, levelFor, stageFor, weekStart, type Monster, type Person } from './game'
+import { MONSTERS, STANDING, elementsOf, levelFor, stageFor, weekStart, type Monster, type MonsterElement, type Person } from './game'
 
 export type Entry = {
   sizes: string[]
@@ -390,6 +390,17 @@ export const isDiscovered = (seen: Seen[], monster: string, stage: number) =>
 
 export const discoveredCount = (seen: Seen[], monsters: Monster[]) =>
   monsters.reduce((n, m) => n + m.stages.filter((_, s) => isDiscovered(seen, m.id, s)).length, 0)
+
+// Listenansicht: jede Stufe einzeln. Ein Zweitelement gehört nur zur Endstufe und erst, wenn die Reihe sie erreicht hat.
+export type DexFilter = MonsterElement | 'alle'
+export type ListStage = { m: Monster; stage: number; elements: MonsterElement[] }
+
+export const stageElements = (m: Monster, stage: number, xp: number) => (stage === lastStage(m) ? elementsOf(m, xp) : [m.element])
+
+export const listStages = (monsters: Monster[], monsterXp: Record<string, number>, filter: DexFilter): ListStage[] =>
+  PEDIA_ORDER.filter((m) => monsters.includes(m))
+    .flatMap((m) => m.stages.map((_, stage) => ({ m, stage, elements: stageElements(m, stage, monsterXp[m.id] ?? 0) })))
+    .filter((s) => filter === 'alle' || s.elements.includes(filter))
 
 // Erreichte Entwicklungen, die diese Person noch nicht gesehen hat, in Abspiel-Reihenfolge.
 export function unseen(seen: Seen[], person: Person, monsterXp: Record<string, number>) {
