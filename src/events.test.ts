@@ -54,11 +54,15 @@ describe('Event-Designs', () => {
     expect(on('2027-05-01')).toBe('maifeiertag')
     expect(on('2027-05-02')).toBeNull()
     expect(on('2026-09-22')).toBe('herbstanfang')
-    expect(on('2026-09-23')).toBe('herbstanfang')
+    expect(on('2026-09-24')).toBe('herbstanfang')
+    expect(on('2026-09-25')).toBeNull()
+    expect(on('2026-10-01')).toBeNull()
+    expect(on('2026-10-02')).toBe('erntedank')
     expect(on('2026-10-03')).toBe('erntedank') // erster Oktober-Sonntag ist der 4.
     expect(on('2026-10-04')).toBe('erntedank')
     expect(on('2026-10-05')).toBeNull()
-    expect(on('2028-09-30')).toBe('erntedank') // 1.10.2028 ist ein Sonntag
+    expect(on('2028-09-29')).toBe('erntedank') // 1.10.2028 ist ein Sonntag
+    expect(on('2028-09-28')).toBeNull()
     expect(on('2028-10-01')).toBe('erntedank')
   })
 

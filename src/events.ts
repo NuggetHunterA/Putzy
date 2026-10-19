@@ -54,11 +54,11 @@ const neujahrCn = (d: Date) => {
   const diff = daysFrom(new Date(d.getFullYear(), md[0] - 1, md[1]), d)
   return diff >= 0 && diff <= 3
 }
-// Erster Sonntag im Oktober und der Samstag davor.
+// Erster Sonntag im Oktober und die zwei Tage davor.
 const erntedank = (d: Date) => {
   const sunday = new Date(d.getFullYear(), 9, 1 + ((7 - new Date(d.getFullYear(), 9, 1).getDay()) % 7))
   const diff = daysFrom(sunday, d)
-  return diff === -1 || diff === 0
+  return diff >= -2 && diff <= 0
 }
 
 // Reihenfolge = Vorrang, wenn zwei Events auf denselben Tag fallen.
@@ -71,7 +71,7 @@ const EVENTS: [AppEvent, (d: Date) => boolean, Element][] = [
   ['sonnenwende', fixed(618, 622), 'licht'],
   ['jahrestag', fixed(601), 'licht'],
   ['hochsommer', fixed(801, 804), 'wasser'],
-  ['herbstanfang', fixed(922, 923), 'luft'],
+  ['herbstanfang', fixed(922, 924), 'luft'],
   ['erntedank', erntedank, 'natur'],
   ['halloween', fixed(1028, 1031), 'licht'],
   ['weihnachten', fixed(1220, 1226), 'natur'],
