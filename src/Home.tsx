@@ -6,7 +6,6 @@ import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, backdrop, dayString, daysUntilDue, dueLabel, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Monster, type Person, type Standing } from './game'
 import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
-import { Sponge } from './Sponge'
 import { STREAK_START, addDays, current, longest, weekDays } from './streak'
 
 const SOON_DAYS = 7
@@ -59,11 +58,11 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
     <main className="screen">
       <header className="home-head">
         <div className="col">
-          <span className="kicker">{now.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).toUpperCase()}</span>
-          <span className="logo-row">
-            <h1 className="logo">Putzy</h1>
+          <span className="kicker-row">
+            <span className="kicker">{now.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).toUpperCase()}</span>
             <StreakBadge snap={snap} now={now} points={points} />
           </span>
+          <h1 className="logo">Putzy</h1>
         </div>
         <span className="head-btns">
           <button className={`gear${oneoffs > 0 ? ' has-count' : ''}`} onClick={onOneOffs} aria-label={`Einmalige Aufgaben, ${oneoffs} offen`}>
@@ -127,8 +126,8 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
   )
 }
 
-// Schwamm mit der Streak dieser Woche, darunter ein Punkt pro Tag (gelb geschafft, dunkel gerissen, Ring heute).
-// Antippen zeigt kurz, was eine Streak ist und wie viele Punkte auf dem Konto sind.
+// Streak dieser Woche klein neben dem Datum: Seifenblase und „4 TAGE“.
+// Antippen zeigt kurz, was eine Streak ist, einen Punkt pro Tag (gelb geschafft, dunkel gerissen, Ring heute) und den Kontostand.
 function StreakBadge({ snap, now, points }: { snap: Snapshot; now: Date; points: number }) {
   const [open, setOpen] = useState(false)
   const today = dayString(now)
@@ -147,19 +146,18 @@ function StreakBadge({ snap, now, points }: { snap: Snapshot; now: Date; points:
     <>
       <button className="streak" onClick={() => setOpen(!open)} aria-label={`Streak: ${streak} Tage am Stück`}>
         <span key={hop} className={hop ? 'streak-hop' : ''}>
-          <Sponge n={streak} size={46} />
-        </span>
-        <span className="streak-days" aria-hidden="true">
-          {days.map((ok, i) => (
-            <i key={i} className={dot(ok, i)} />
-          ))}
+          {streak === 1 ? '1 Tag' : `${streak} Tage`}
         </span>
       </button>
       {open && (
         <button className="streak-info" onClick={() => setOpen(false)}>
           <span className="streak-info-head">
-            <Sponge n={streak} size={38} />
             <b>{streak === 1 ? '1 Tag' : `${streak} Tage`} am Stück!</b>
+            <span className="streak-days" aria-hidden="true">
+              {days.map((ok, i) => (
+                <i key={i} className={dot(ok, i)} />
+              ))}
+            </span>
           </span>
           <span>Ein Tag zählt, wenn alle fälligen Aufgaben abgehakt sind. Die längste Streak der Woche gibt am Montag Punkte für euer Konto (jetzt {points}).</span>
           <small>Diese Woche bisher: {longest(days)} Punkte</small>

@@ -17,6 +17,7 @@ export const NEWS: News[] = [
   { id: 12, title: 'Neue Namen und Bilder', text: 'Funkel heißt jetzt Glitzi und Fluffi heißt Brisi, damit man sie nicht mehr mit Funki und Flausch verwechselt. Infernyx, Brisis Reihe, Salamandor, Sprössli und Papillora haben neue Bilder, und einige Pedia-Texte wiederholen sich nicht mehr.' },
   { id: 13, title: 'Streaks und Monster-Eier', text: 'Der Schwamm am Logo zählt die Tage dieser Woche, an denen alle fälligen Aufgaben erledigt waren. Die längste Streak gibt montags Punkte für euer gemeinsames Konto, damit brütet ihr im Pedia Eier aus. Das erste Ei liegt schon im Nest, weitere tauchen beim Abhaken ganz selten auf.' },
   { id: 14, title: 'Stempelheft', text: 'Für Meilensteine, Elemente und jede Aufgabe, die ihr 25× erledigt, gibt es jetzt Stempel, oft mit Bonus-XP für eure Monster. Ihr findet das Stempelheft im Pedia neben den Rückblicken.' },
+  { id: 15, title: 'Streak neben dem Datum', text: 'Die Streak steht jetzt klein neben dem Datum, und das Logo hat wieder seine Seifenblasen. Antippen zeigt wie bisher die Erklärung, jetzt mit den Punkten für jeden Tag der Woche. Im Pedia heißen die Rückblicke jetzt „Wochen“.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
