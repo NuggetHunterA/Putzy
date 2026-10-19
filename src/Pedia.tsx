@@ -4,7 +4,7 @@ import { useBack } from './back'
 import type { Snapshot } from './db'
 import { eggCost, eggFile, eggName, waiting, type Egg } from './eggs'
 import { ElementIcon } from './ElementIcon'
-import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
+import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, elementsOf, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
 import { Sponge } from './Sponge'
 import { StampMark } from './StampMark'
 import { tilt } from './Stamps'
@@ -104,7 +104,7 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
           <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => setOpen(m)}>
             <span className="dex-top">
               #{dexNo(m, 0)}–{dexNo(m, lastStage(m))}
-              <Element m={m} />
+              <Element m={m} xp={snap.monsterXp[m.id] ?? 0} />
               <span className="lv">{level === MAX_LEVEL ? 'Lv 30 · MAX ★' : `Lv ${level}`}</span>
             </span>
             <span className={`dex-line ${m.stages.length > 3 ? 'many' : ''}`} style={stageGrid(m)}>
@@ -184,11 +184,19 @@ function HatchConfirm({ egg, points, onHatch, onCancel }: { egg: Egg; points: nu
   )
 }
 
-function Element({ m }: { m: Monster }) {
+// Element-Chip; mit xp ab der Endstufe auch das Zweitelement, dann nur als Symbole, damit die Zeile auf schmale Handys passt.
+function Element({ m, xp = 0 }: { m: Monster; xp?: number }) {
+  const [main, second] = elementsOf(m, xp)
   return (
-    <span className="dex-el" style={{ background: ELEMENTS[m.element].soft }}>
-      <ElementIcon element={m.element} size={14} />
-      {ELEMENTS[m.element].name}
+    <span className="dex-el" style={{ background: ELEMENTS[main].soft }} aria-label={second && `${ELEMENTS[main].name} + ${ELEMENTS[second].name}`}>
+      <ElementIcon element={main} size={14} />
+      {second ? (
+        <>
+          +<ElementIcon element={second} size={14} />
+        </>
+      ) : (
+        ELEMENTS[main].name
+      )}
     </span>
   )
 }
@@ -271,7 +279,14 @@ function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onB
         ))}
       </div>
       <div className={`detail-hero ${max ? 'gold' : ''}`} style={{ background: backdrop(m.element) }}>
-        <span className="chip">{ELEMENTS[m.element].name}</span>
+        <span className="chips">
+          <span className="chip">{elementsOf(m, xp).map((e) => ELEMENTS[e].name).join(' + ')}</span>
+          {m.second && stageFor(m, level) < m.levels.length && (
+            <span className="chip later">
+              + {ELEMENTS[m.second].name} ab Lv {m.levels[m.levels.length - 1]}
+            </span>
+          )}
+        </span>
         <span className="dex-no">#{dexNo(m, stage)}</span>
         <img src={m.files[stage]} alt={m.stages[stage]} />
       </div>

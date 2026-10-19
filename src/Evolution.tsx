@@ -78,6 +78,7 @@ export function Evolution({ cel, onDone }: { cel: Cel; onDone: () => void }) {
         <span className="evo-sub">
           Level {cel.level} · Attacke: {monster.move}
         </span>
+        {monster.second && cel.stageAfter === monster.levels.length && <span className="evo-sub">Neues Element: {ELEMENTS[monster.second].name}!</span>}
       </div>
       <span className="evo-skip">Tippen zum Schließen</span>
     </button>

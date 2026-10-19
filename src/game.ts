@@ -26,9 +26,11 @@ export const backdrop = (e: MonsterElement) => `radial-gradient(circle at 50% 40
 // levels: ab welchem Level die nächste Stufe kommt, also immer eine Zahl weniger als Stufen.
 // secret: geheime Reihe, erst nach der Freischaltung sichtbar (src/secret.ts).
 // egg: schlüpft aus einem Ei, erst nach dem Ausbrüten sichtbar (src/eggs.ts).
+// second: Zweitelement, das die Reihe mit der Endstufe dazubekommt (Bonus dann für beide).
 export type Monster = {
   id: string
   element: MonsterElement
+  second?: Element
   stages: string[]
   files: string[]
   levels: number[]
@@ -59,7 +61,7 @@ export const MONSTERS: Monster[] = [
   monster('10', 'natur', 'Gießkannen-Segen', ['Samsi', 'Sprössli', 'Blattwart', 'Arborius'], ['samsi', 'sproessli', 'blattwart', 'arborius'], [10, 20, 30]),
   monster('3', 'luft', 'Taifun-Sog', ['Brisi', 'Wirbel\u00ADwusel', 'Taifunox'], ['brisi', 'wirbelwusel', 'taifunox']),
   monster('7', 'luft', 'Kuschel-Zyklon', ['Flausch', 'Woll\u00ADwächter', 'Kaschmira'], ['flausch', 'wollwaechter', 'kaschmira']),
-  monster('12', 'luft', 'Frischluft-Flattern', ['Raupsi', 'Kokonella', 'Papillora'], ['raupsi', 'kokonella', 'papillora']),
+  { ...monster('12', 'luft', 'Frischluft-Flattern', ['Raupsi', 'Kokonella', 'Papillora'], ['raupsi', 'kokonella', 'papillora']), second: 'natur' },
   monster('1', 'licht', 'Mondglanz-Pfote', ['Miezo', 'Katzelot', 'Sphinxar'], ['miezo', 'katzelot', 'sphinxar']),
   monster('8', 'licht', 'Prisma-Ordnung', ['Glitzi', 'Prismabot', 'Kristallos'], ['glitzi', 'prismabot', 'kristallos']),
   secret('13', 'wasser', 'Sternenflut', ['Tassi', 'Nebelwal', 'Leviara'], ['tassi', 'nebelwal', 'leviara']),
@@ -68,12 +70,12 @@ export const MONSTERS: Monster[] = [
   secret('16', 'luft', 'Rückenwind-Sturzflug', ['Pusti', 'Segel\u00ADhörnchen', 'Zephyrion'], ['pusti', 'segelhoernchen', 'zephyrion']),
   secret('14', 'licht', 'Sternbild-Blick', ['Huhu', 'Leucht\u00ADeule', 'Astralux'], ['huhu', 'leuchteule', 'astralux']),
   secret('18', 'ohne', 'Heinzel-Heimlichkeit', ['Wichti', 'Heinzel', 'Domovar'], ['wichti', 'heinzel', 'domovar']),
-  egg('19', 'wasser', 'Saugschwall', ['Porli', 'Riffling', 'Korall\u00ADgard'], ['porli', 'riffling', 'korallgard']),
+  { ...egg('19', 'wasser', 'Saugschwall', ['Porli', 'Riffling', 'Korall\u00ADgard'], ['porli', 'riffling', 'korallgard']), second: 'natur' },
   egg('20', 'wasser', 'Zangengriff', ['Knacki', 'Scheren\u00ADritter', 'Abyssor'], ['knacki', 'scherenritter', 'abyssor']),
   egg('21', 'feuer', 'Sonnenhals', ['Tupfi', 'Steppen\u00ADhals', 'Serengo'], ['tupfi', 'steppenhals', 'serengo']),
   egg('24', 'natur', 'Taunetz', ['Tauli', 'Moos\u00ADweber', 'Florachne'], ['tauli', 'moosweber', 'florachne']),
   egg('23', 'luft', 'Looping-Böe', ['Faltli', 'Propello', 'Strato\u00ADnaut'], ['faltli', 'propello', 'stratonaut']),
-  egg('22', 'licht', 'Volldampf-Signal', ['Bimmli', 'Signalok', 'Aurorail'], ['bimmli', 'signalok', 'aurorail']),
+  { ...egg('22', 'licht', 'Volldampf-Signal', ['Bimmli', 'Signalok', 'Aurorail'], ['bimmli', 'signalok', 'aurorail']), second: 'feuer' },
   egg('25', 'ohne', 'Bollwerk', ['Kiesli', 'Ziegel\u00ADbert', 'Zitadell'], ['kiesli', 'ziegelbert', 'zitadell']),
 ]
 
@@ -102,14 +104,14 @@ export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4
 export const MAX_LEVEL = 30
 
-export function xpFor(effort: Effort, taskElement: Element, monsterElement: MonsterElement) {
-  return Math.round(EFFORT_XP[effort] * (taskElement === monsterElement ? ELEMENT_BONUS : 1))
+export function xpFor(effort: Effort, taskElement: Element, monsterElements: MonsterElement[]) {
+  return Math.round(EFFORT_XP[effort] * (monsterElements.includes(taskElement) ? ELEMENT_BONUS : 1))
 }
 
 // Was abgehakt wird: Aufwand und Element, oder null bei einer einmaligen Aufgabe.
 export type Work = { effort: Effort; element: Element } | null
-export const xpOf = (work: Work, monsterElement: MonsterElement) =>
-  work ? xpFor(work.effort, work.element, monsterElement) : monsterElement === 'ohne' ? ONEOFF_XP_OHNE : ONEOFF_XP
+export const xpOf = (work: Work, monsterElements: MonsterElement[]) =>
+  work ? xpFor(work.effort, work.element, monsterElements) : monsterElements.includes('ohne') ? ONEOFF_XP_OHNE : ONEOFF_XP
 
 // Gesamt-XP, die man für ein Level braucht: Summe von 130 + 4 × n für n = 1 … level-1.
 export const xpForLevel = (level: number) => (level - 1) * LEVEL_BASE + (LEVEL_STEP * level * (level - 1)) / 2
@@ -121,6 +123,10 @@ export function levelFor(xp: number) {
 }
 
 export const stageFor = (m: Monster, level: number) => m.levels.filter((at) => level >= at).length
+
+// Elemente, für die ein Monster bei diesen XP den Bonus bekommt: das Zweitelement erst ab der Endstufe.
+export const elementsOf = (m: Monster, xp: number): MonsterElement[] =>
+  m.second && stageFor(m, levelFor(xp)) === m.levels.length ? [m.element, m.second] : [m.element]
 
 // Kalendertag (lokal) als Zahl, damit Tagesdifferenzen nicht an Sommerzeit scheitern.
 const dayNumber = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000)
