@@ -425,8 +425,8 @@ img { display: block; }
 .detail-hero { position: relative; border: 4px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); overflow: hidden; }
 .detail-hero.gold { border-color: #C99A00; box-shadow: 6px 6px 0 #C99A00; }
 .detail-hero img { width: 100%; aspect-ratio: 1.15; object-fit: contain; padding: 10px; }
-.chips { position: absolute; top: 8px; left: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
-.chips .chip { position: static; }
+.detail-hero .chips { position: absolute; top: 8px; left: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.detail-hero .chips .chip { position: static; }
 .chip.later { background: var(--paper); border-style: dashed; opacity: .75; }
 .dex-no { position: absolute; top: 8px; right: 12px; font-family: 'Bangers', sans-serif; font-size: 26px; color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
 .detail-name { margin: 0; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 44px; letter-spacing: .02em; line-height: .9; }
