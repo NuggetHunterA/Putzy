@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { MONSTERS, monsterById } from './game'
-import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, monsterStats, unseen } from './pedia'
+import { MONSTERS, monsterById, xpForLevel } from './game'
+import { PEDIA, dexNo, dexTotal, discoveredCount, isDiscovered, isoWeek, listStages, monsterStats, unseen } from './pedia'
 
 const open = MONSTERS.filter((m) => !m.secret && !m.egg)
 
@@ -69,5 +69,16 @@ describe('Putzy-Pedia', () => {
     expect(isoWeek(new Date(2026, 9, 18))).toBe(42)
     expect(isoWeek(new Date(2027, 0, 1))).toBe(53)
     expect(isoWeek(new Date(2025, 11, 29))).toBe(1)
+  })
+
+  it('listet jede Stufe einzeln und filtert nach Element, Zweitelement erst mit der Endstufe', () => {
+    const ids = (filter: Parameters<typeof listStages>[2], xp = {}) => listStages(open, xp, filter).map((s) => `${s.m.id}:${s.stage}`)
+    expect(ids('alle')).toHaveLength(35)
+    expect(ids('alle').slice(0, 4)).toEqual(['1:0', '1:1', '1:2', '2:0'])
+    expect(ids('wasser')).toEqual(['2:0', '2:1', '2:2', '4:0', '4:1', '4:2', '11:0', '11:1'])
+    expect(ids('natur')).not.toContain('12:2')
+    expect(ids('natur', { '12': xpForLevel(25) })).toContain('12:2')
+    expect(ids('natur', { '12': xpForLevel(25) })).not.toContain('12:1')
+    expect(ids('ohne')).toEqual([])
   })
 })

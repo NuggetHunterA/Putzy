@@ -19,6 +19,7 @@ export const NEWS: News[] = [
   { id: 14, title: 'Stempelheft', text: 'Für Meilensteine, Elemente und jede Aufgabe, die ihr 25× erledigt, gibt es jetzt Stempel, oft mit Bonus-XP für eure Monster. Ihr findet das Stempelheft im Pedia neben den Rückblicken.' },
   { id: 15, title: 'Streak neben dem Datum', text: 'Die Streak steht jetzt klein neben dem Datum, und das Logo hat wieder seine Seifenblasen. Antippen zeigt wie bisher die Erklärung, jetzt mit den Punkten für jeden Tag der Woche. Im Pedia heißen die Rückblicke jetzt „Wochen“.' },
   { id: 16, title: 'Doppelelemente', text: 'Aurorail, Korallgard und Papillora bekommen mit der Endstufe ein zweites Element: Aurorail Feuer, Korallgard und Papillora Natur. Dann gibt es den Element-Bonus für Aufgaben aus beiden Elementen.' },
+  { id: 17, title: 'Listenansicht im Pedia', text: 'Über den Schalter „Reihen | Liste“ zeigt das Pedia jede Stufe als kleine Kachel, so seht ihr viel mehr Monster auf einmal. In der Liste könnt ihr nach Element filtern.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

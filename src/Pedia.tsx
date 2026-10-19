@@ -9,7 +9,7 @@ import { Sponge } from './Sponge'
 import { StampMark } from './StampMark'
 import { tilt } from './Stamps'
 import { stamps } from './stamps'
-import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage, monsterStats, type Stats } from './pedia'
+import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage, listStages, monsterStats, type DexFilter, type Stats } from './pedia'
 
 type Props = {
   snap: Snapshot
@@ -30,19 +30,30 @@ type Props = {
 const stagesOf = (m: Monster) => m.stages.map((_, s) => s)
 const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.length - 1}, 1fr auto) 1fr` })
 const fmt = (n: number) => n.toLocaleString('de-DE')
+// Welche Ansicht zuletzt offen war, „liste“ oder „reihen“.
+const VIEW_STORAGE = 'putzy.pediaView'
+const FILTERS: DexFilter[] = ['alle', 'wasser', 'feuer', 'natur', 'luft', 'licht', 'ohne']
 
 export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps }: Props) {
   useBack(onBack)
-  const [open, setOpen] = useState<Monster | null>(null)
+  const [open, setOpen] = useState<{ m: Monster; stage?: number } | null>(null)
   const [hatch, setHatch] = useState<Egg | null>(null)
-  if (open) return <Detail m={open} snap={snap} onBack={() => setOpen(null)} onReplay={onReplay} />
+  const [list, setList] = useState(() => localStorage.getItem(VIEW_STORAGE) === 'liste')
+  const [filter, setFilter] = useState<DexFilter>('alle')
+  if (open) return <Detail m={open.m} start={open.stage} snap={snap} onBack={() => setOpen(null)} onReplay={onReplay} />
 
   const all = stamps(snap.tasks, snap.stamps)
   // Neuester Stempel als Bild auf der Kachel, solange keiner verdient ist ein offener.
   const newest = [...snap.stamps].sort((a, b) => b.earned_at.localeCompare(a.earned_at))[0]
   const latest = all.find((s) => s.id === newest?.id)
-  const found = discoveredCount(snap.seen, monsters)
-  const total = dexTotal(monsters)
+  const showList = (on: boolean) => {
+    setList(on)
+    localStorage.setItem(VIEW_STORAGE, on ? 'liste' : 'reihen')
+  }
+  const shown = list ? listStages(monsters, snap.monsterXp, filter) : []
+  const filtered = list && filter !== 'alle'
+  const found = filtered ? shown.filter((s) => isDiscovered(snap.seen, s.m.id, s.stage)).length : discoveredCount(snap.seen, monsters)
+  const total = filtered ? shown.length : dexTotal(monsters)
   return (
     <main className="screen">
       <div className="bar">
@@ -53,12 +64,6 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
         <span className="bank" aria-label={`${points} Streak-Punkte`}>
           <Sponge size={30} />
           {points}
-        </span>
-      </div>
-      <div className="dex-count">
-        {found} von {total} entdeckt
-        <span className="xpbar">
-          <span style={{ width: `${(found / total) * 100}%`, background: 'var(--accent)' }} />
         </span>
       </div>
       <div className="pd-pair">
@@ -98,10 +103,65 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
           <h2 className="section-title">Monster</h2>
         </>
       )}
-      {PEDIA_ORDER.filter((m) => monsters.includes(m)).map((m) => {
+      <div className="seg two">
+        <button className={list ? '' : 'on'} onClick={() => showList(false)}>
+          Reihen
+        </button>
+        <button className={list ? 'on' : ''} onClick={() => showList(true)}>
+          Liste
+        </button>
+      </div>
+      {list && (
+        <div className="el-filter">
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              className={f === filter ? 'on' : ''}
+              style={f === 'alle' ? undefined : { background: f === filter ? ELEMENTS[f].soft : undefined }}
+              aria-label={f === 'alle' ? undefined : ELEMENTS[f].name}
+              aria-pressed={f === filter}
+              onClick={() => setFilter(f)}
+            >
+              {f === 'alle' ? 'Alle' : <ElementIcon element={f} size={16} />}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="dex-count">
+        {filtered && `${ELEMENTS[filter].name}: `}
+        {found} von {total} entdeckt
+        <span className="xpbar">
+          <span style={{ width: `${total ? (found / total) * 100 : 0}%`, background: 'var(--accent)' }} />
+        </span>
+      </div>
+      {list && (
+        <div className="dex-grid">
+          {shown.map(({ m, stage, elements }) => {
+            const known = isDiscovered(snap.seen, m.id, stage)
+            const gold = levelFor(snap.monsterXp[m.id] ?? 0) === MAX_LEVEL
+            return (
+              <button key={`${m.id}-${stage}`} className={`dex-tile ${gold ? 'gold' : ''}`} onClick={() => setOpen({ m, stage })}>
+                <span className={`slot-img ${known ? '' : 'hidden'}`} style={known ? { background: backdrop(m.element) } : undefined}>
+                  <img src={m.files[stage]} alt="" />
+                </span>
+                <span className="dex-tile-no">
+                  #{dexNo(m, stage)}
+                  {elements.map((e) => (
+                    <span key={e} className="dex-tile-el" style={{ background: ELEMENTS[e].soft }} aria-label={ELEMENTS[e].name}>
+                      <ElementIcon element={e} size={11} />
+                    </span>
+                  ))}
+                </span>
+                <b>{known ? m.stages[stage] : '???'}</b>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {!list && PEDIA_ORDER.filter((m) => monsters.includes(m)).map((m) => {
         const level = levelFor(snap.monsterXp[m.id] ?? 0)
         return (
-          <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => setOpen(m)}>
+          <button key={m.id} className={`dex-card ${level === MAX_LEVEL ? 'gold' : ''}`} onClick={() => setOpen({ m })}>
             <span className="dex-top">
               #{dexNo(m, 0)}–{dexNo(m, lastStage(m))}
               <Element m={m} xp={snap.monsterXp[m.id] ?? 0} />
@@ -215,14 +275,15 @@ function Slot({ m, stage, snap, hint }: { m: Monster; stage: number; snap: Snaps
   )
 }
 
-function Detail({ m, snap, onBack, onReplay }: { m: Monster; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
+// start: Stufe, die vorausgewählt sein soll (aus der Listenansicht); unentdeckt oder ohne Angabe die letzte entdeckte.
+function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: number; snap: Snapshot; onBack: () => void; onReplay: Props['onReplay'] }) {
   useBack(onBack)
   // Geschweifte Klammern: Neuere Browser geben bei scrollTo ein Promise zurück, React hielte es sonst für die Aufräumfunktion.
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
   const known = stagesOf(m).filter((s) => isDiscovered(snap.seen, m.id, s))
-  const [stage, setStage] = useState(known[known.length - 1])
+  const [stage, setStage] = useState(start !== undefined && known.includes(start) ? start : known[known.length - 1])
   const xp = snap.monsterXp[m.id] ?? 0
   const level = levelFor(xp)
   const max = level === MAX_LEVEL
