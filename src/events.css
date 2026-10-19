@@ -16,7 +16,7 @@
 [data-event] .kicker, [data-event] .streak, [data-event] .section-title, [data-event] .live, [data-event] .home-head .gear { color: var(--ev-text); border-color: var(--ev-text); }
 /* Wortmarke: Mütze statt Seifenblasen */
 [data-event] .logo { color: var(--ev-text); text-shadow: 3px 3px 0 var(--ev-pop), 5px 5px 0 var(--ink); }
-[data-event] .logo::before { border: 0; border-radius: 0; width: 36px; height: 32px; right: -30px; top: -6px; rotate: 20deg; background: var(--ev-hat) no-repeat center / contain; }
+[data-event] .logo::before { border: 0; border-radius: 0; width: 36px; height: 32px; right: -30px; top: -16px; rotate: 20deg; background: var(--ev-hat) no-repeat center / contain; }
 [data-event] .logo::after { display: none; }
 [data-event] .water, [data-event] .wave path { background: var(--ev-water); fill: var(--ev-water); }
 [data-event] .panel::after { content: ''; position: absolute; top: -2px; left: -2px; width: 46px; height: 46px; pointer-events: none; background: var(--ev-corner) no-repeat; }
