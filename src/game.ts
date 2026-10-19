@@ -77,6 +77,10 @@ export const MONSTERS: Monster[] = [
   egg('23', 'luft', 'Looping-Böe', ['Faltli', 'Propello', 'Strato\u00ADnaut'], ['faltli', 'propello', 'stratonaut']),
   { ...egg('22', 'licht', 'Volldampf-Signal', ['Bimmli', 'Signalok', 'Aurorail'], ['bimmli', 'signalok', 'aurorail']), second: 'feuer' },
   egg('25', 'ohne', 'Bollwerk', ['Kiesli', 'Ziegel\u00ADbert', 'Zitadell'], ['kiesli', 'ziegelbert', 'zitadell']),
+  // Event-Eier: liegen zum Event im Nest (EVENT_EGGS in eggs.ts).
+  { ...egg('26', 'licht', 'Sichelschimmer', ['Mondi', 'Sichel\u00ADflatter', 'Noctiluna'], ['mondi', 'sichelflatter', 'noctiluna']), second: 'luft' },
+  { ...egg('27', 'natur', 'Nadelfunkeln', ['Zapfi', 'Nadelpelz', 'Lichter\u00ADborst'], ['zapfi', 'nadelpelz', 'lichterborst']), second: 'feuer' },
+  { ...egg('28', 'feuer', 'Glücksfeuer', ['Zündi', 'Lampion\u00ADlong', 'Wolken\u00ADkaiser'], ['zuendi', 'lampionlong', 'wolkenkaiser']), second: 'luft' },
 ]
 
 export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!

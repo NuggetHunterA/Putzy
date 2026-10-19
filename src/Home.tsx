@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
-import { eventBonus } from './events'
-import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Monster, type Person, type Standing } from './game'
+import { EVENT_LABEL, eventBonus, eventEnd, eventFor } from './events'
+import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Element, type Monster, type Person, type Standing } from './game'
 import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
 import { STREAK_START, addDays, current, longest, weekDays } from './streak'
@@ -116,10 +116,10 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
 
       <PediaBanner snap={snap} monsters={monsters} onClick={onPedia} />
 
-      <TaskSection title="Heute" rows={today} person={person} xp={xpFor} onToggle={toggle}>
+      <TaskSection title="Heute" badge={<EventBadge now={now} />} rows={today} person={person} xp={xpFor} bonus={bonus} onToggle={toggle}>
         <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
       </TaskSection>
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} onToggle={toggle} />}
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} onToggle={toggle} />}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -164,6 +164,37 @@ function StreakBadge({ snap, now, points }: { snap: Snapshot; now: Date; points:
           </span>
           <span>Ein Tag zählt, wenn alle fälligen Aufgaben abgehakt sind. Die längste Streak der Woche gibt am Montag Punkte für euer Konto (jetzt {points}).</span>
           <small>Diese Woche bisher: {longest(days)} Punkte</small>
+        </button>
+      )}
+    </>
+  )
+}
+
+// Während eines Events: Bonus-Element klein neben „Heute“, antippen zeigt Event und Laufzeit.
+function EventBadge({ now }: { now: Date }) {
+  const [open, setOpen] = useState(false)
+  const event = eventFor(now)
+  const bonus = eventBonus(now)
+  if (!event || !bonus) return null
+  const end = eventEnd(now)
+  const left = Math.round((end.getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 864e5)
+  return (
+    <>
+      <button className="event-badge" onClick={() => setOpen(!open)} aria-label={`${EVENT_LABEL[event]}: ${ELEMENTS[bonus].name} +50 % XP`}>
+        <span className="event-badge-dot" style={{ background: ELEMENTS[bonus].soft }}>
+          <ElementIcon element={bonus} />
+        </span>
+        +50%
+      </button>
+      {open && (
+        <button className="streak-info" onClick={() => setOpen(false)}>
+          <span className="streak-info-head">
+            <b>{EVENT_LABEL[event]}</b>
+          </span>
+          <span>
+            {ELEMENTS[bonus].name}-Aufgaben bringen 50 % mehr XP, zusätzlich zum Element-Bonus deines Monsters.
+          </span>
+          <small>{left === 0 ? 'Nur noch heute' : `Noch bis ${end.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })}`}</small>
         </button>
       )}
     </>
@@ -271,10 +302,13 @@ function StandingStrip({ today, person, onToggle }: { today: Completion[]; perso
 }
 
 // Erledigte Zeilen lassen sich nur von der Person zurücknehmen, die sie abgehakt hat.
-function TaskSection({ title, rows, person, xp, onToggle, children }: { title: string; rows: Row[]; person: Person; xp: (t: Task) => number; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
+function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
-      <h2 className="section-title">{title}</h2>
+      <div className="section-head">
+        <h2 className="section-title">{title}</h2>
+        {badge}
+      </div>
       {children}
       <AnimatePresence initial={false}>
         {rows.map((r, i) => (
@@ -300,7 +334,7 @@ function TaskSection({ title, rows, person, xp, onToggle, children }: { title: s
             </span>
             <span className="row-side">
               <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
-              <span className="row-xp">{r.done ? r.done.xp : xp(r.task)} XP</span>
+              <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
             </span>
           </motion.button>
         ))}

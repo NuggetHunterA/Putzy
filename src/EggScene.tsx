@@ -3,7 +3,7 @@
 // Schlüpfen: Drei Tipper knacken das Ei, dann fliegen die Schalen weg und Stufe 1 steht da.
 import { useRef, useState } from 'react'
 import { useBack } from './back'
-import { eggCost, eggFile, eggName, type Egg } from './eggs'
+import { eggCost, eggFile, eggName, eventEgg, type Egg } from './eggs'
 import { burst, confetti } from './fx'
 import { ELEMENTS, PEOPLE, type Monster, type Person } from './game'
 
@@ -39,7 +39,9 @@ function Found({ scene, person, onDone }: { scene: Scene; person: Person; onDone
   }
   const sub = egg.found_by
     ? `${who(egg.found_by, person, `bei „${egg.found_task}“ gefunden`)}. Ausbrüten im Pedia für ${eggCost(m.id)} Streak-Punkte.`
-    : `Euer erstes Ei! Ausbrüten im Pedia für ${eggCost(m.id)} Streak-Punkte.`
+    : eventEgg(m.id)
+      ? `Ein Event-Ei! Ausbrüten im Pedia für nur ${eggCost(m.id)} Streak-Punkte.`
+      : `Euer erstes Ei! Ausbrüten im Pedia für ${eggCost(m.id)} Streak-Punkte.`
 
   return (
     <div className={`evo rev ${open ? 'evo-reveal' : 'evo-charge'}`} style={{ ['--glow' as string]: look.soft }} onClick={show}>

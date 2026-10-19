@@ -4,7 +4,7 @@ import { Evolution } from './Evolution'
 import { eventBonus, eventFor } from './events'
 import './events.css'
 import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, markStampSeen, pickMonster, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
-import { balance, nextEggScene, rollEgg, type Egg } from './eggs'
+import { balance, dueEventEgg, nextEggScene, rollEgg, type Egg } from './eggs'
 import { EggScene, type Scene } from './EggScene'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
@@ -117,6 +117,15 @@ export default function App() {
     ids.forEach((id) => unlockTried.current.add(id))
     unlock(ids, today).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
   }, [fresh, today, refresh])
+
+  // Event-Ei: Während des Events ins Nest legen, falls es noch fehlt. Ein Versuch je Start.
+  const eventEggDue = snap ? dueEventEgg(eventFor(now), snap.eggs) : null
+  const eventEggTried = useRef<string | null>(null)
+  useEffect(() => {
+    if (!eventEggDue || eventEggTried.current === eventEggDue) return
+    eventEggTried.current = eventEggDue
+    findEgg({ monster: eventEggDue, found_by: null, found_task: null }).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [eventEggDue, refresh])
 
   // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
   const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined

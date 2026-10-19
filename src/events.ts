@@ -79,6 +79,31 @@ const EVENTS: [AppEvent, (d: Date) => boolean, Element][] = [
   ['silvester', (d) => fixed(1231)(d) || fixed(101)(d), 'luft'], // bis Neujahr
 ]
 
+// Name für die Bonus-Plakette auf der Startseite.
+export const EVENT_LABEL: Record<AppEvent, string> = {
+  hochzeitstag: '💍 Hochzeitstag',
+  ostern: '🐣 Ostern',
+  neujahr_cn: '🐉 Chin. Neujahr',
+  fruehjahrsputz: '🧽 Frühjahrsputz',
+  maifeiertag: '🌼 Maifeiertag',
+  sonnenwende: '☀️ Sonnenwende',
+  jahrestag: '💛 Jahrestag',
+  hochsommer: '🏖️ Hochsommer',
+  herbstanfang: '🍂 Herbstanfang',
+  erntedank: '🌾 Erntedank',
+  halloween: '🎃 Halloween',
+  weihnachten: '🎄 Weihnachten',
+  advent: '🕯️ Advent',
+  silvester: '🎆 Silvester',
+}
+
 const find = (date: Date) => EVENTS.find(([, on]) => on(date))
 export const eventFor = (date: Date): AppEvent | null => find(date)?.[0] ?? null
 export const eventBonus = (date: Date): Element | null => find(date)?.[2] ?? null
+// Letzter Tag des Events, das an date läuft.
+export function eventEnd(date: Date) {
+  const event = eventFor(date)
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  while (event && eventFor(new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1)) === event) end.setDate(end.getDate() + 1)
+  return end
+}
