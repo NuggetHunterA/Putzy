@@ -297,7 +297,7 @@ function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: numb
   // Event-Monster: aus welchem Event und Jahr das Ei stammt.
   const event = eventEgg(m.id)
   const eventEggFound = event && snap.eggs.find((x) => x.monster === m.id)
-  const origin = eventEggFound && `Von ${EVENT_LABEL[event].replace(/^\S+ /, '')} ${eventEggFound.found_at.slice(0, 4)}`
+  const origin = eventEggFound && `${EVENT_LABEL[event]} ${eventEggFound.found_at.slice(0, 4)}`
 
   // Infoblöcke und Stufen in Level-Reihenfolge, bei gleichem Level die Stufe zuerst; Gesperrtes als Schloss-Zeile.
   const stageBlocks = m.levels.map((at, i) => ({ at, title: `Stufe ${i + 2}`, stage: i + 1 }))
@@ -347,7 +347,6 @@ function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: numb
       <div className={`detail-hero ${max ? 'gold' : ''}`} style={{ background: backdrop(m.element) }}>
         <span className="chips">
           <span className="chip">{elementsOf(m, xp).map((e) => ELEMENTS[e].name).join(' + ')}</span>
-          {origin && <span className="chip">{origin}</span>}
           {m.second && stageFor(m, level) < m.levels.length && (
             <span className="chip later">
               + {ELEMENTS[m.second].name} ab Lv {m.levels[m.levels.length - 1]}
@@ -358,7 +357,10 @@ function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: numb
         <img src={m.files[stage]} alt={m.stages[stage]} />
       </div>
       <div className="col">
-        <h2 className="detail-name">{m.stages[stage]}</h2>
+        <span className="detail-head">
+          <h2 className="detail-name">{m.stages[stage]}</h2>
+          {origin && <span className="origin-sticker">{origin}</span>}
+        </span>
         <span className="detail-sub">Attacke: {m.move}</span>
       </div>
       <div className="lvbox">

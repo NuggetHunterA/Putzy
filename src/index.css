@@ -431,6 +431,9 @@ img { display: block; }
 .dex-no { position: absolute; top: 8px; right: 12px; font-family: 'Bangers', sans-serif; font-size: 26px; color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
 .detail-name { margin: 0; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 44px; letter-spacing: .02em; line-height: .9; }
 .detail-sub { font-size: 14px; font-weight: 700; }
+.detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+/* Event-Monster: aus welchem Event das Ei stammt, als schräger Sticker neben dem Namen */
+.origin-sticker { padding: 4px 10px; border: 3px solid var(--ink); border-radius: 10px; background: var(--sun); box-shadow: 3px 3px 0 var(--ink); font-size: 13px; font-weight: 800; white-space: nowrap; rotate: -4deg; }
 .lvbox { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 16px; background: var(--paper); }
 .lvrow { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 800; }
 .lvrow .big { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .03em; }
