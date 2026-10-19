@@ -1,22 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import { daysUntilDue, firstDue, levelFor, monsterById, nextInterval, stageFor, weekStart, xpFor, xpForLevel, xpOf } from './game'
+import { daysUntilDue, firstDue, levelFor, monsterById, elementsOf, nextInterval, stageFor, weekStart, xpFor, xpForLevel, xpOf } from './game'
 
 describe('XP', () => {
   it('gibt 125 % beim passenden Element', () => {
-    expect(xpFor('M', 'wasser', 'wasser')).toBe(31)
-    expect(xpFor('M', 'wasser', 'feuer')).toBe(25)
-    expect(xpFor('K', 'licht', 'licht')).toBe(13)
-    expect(xpFor('G', 'luft', 'luft')).toBe(63)
+    expect(xpFor('M', 'wasser', ['wasser'])).toBe(31)
+    expect(xpFor('M', 'wasser', ['feuer'])).toBe(25)
+    expect(xpFor('K', 'licht', ['licht'])).toBe(13)
+    expect(xpFor('G', 'luft', ['luft'])).toBe(63)
+  })
+
+  it('gibt Doppelelement-Monstern den Bonus für beide Elemente, aber erst ab der Endstufe', () => {
+    const aurorail = monsterById('22')
+    expect(elementsOf(aurorail, xpForLevel(25) - 1)).toEqual(['licht'])
+    expect(elementsOf(aurorail, xpForLevel(25))).toEqual(['licht', 'feuer'])
+    expect(xpFor('M', 'feuer', elementsOf(aurorail, xpForLevel(25)))).toBe(31)
+    expect(elementsOf(monsterById('1'), 99_999)).toEqual(['licht'])
   })
 
   it('gibt für einmalige Aufgaben immer 20, ohne Bonus', () => {
-    expect(xpOf(null, 'wasser')).toBe(20)
-    expect(xpOf({ effort: 'M', element: 'wasser' }, 'wasser')).toBe(31)
+    expect(xpOf(null, ['wasser'])).toBe(20)
+    expect(xpOf({ effort: 'M', element: 'wasser' }, ['wasser'])).toBe(31)
   })
 
   it('gibt Monstern ohne Element 30 XP für einmalige Aufgaben und nie den Bonus', () => {
-    expect(xpOf(null, 'ohne')).toBe(30)
-    expect(xpOf({ effort: 'M', element: 'wasser' }, 'ohne')).toBe(25)
+    expect(xpOf(null, ['ohne'])).toBe(30)
+    expect(xpOf({ effort: 'M', element: 'wasser' }, ['ohne'])).toBe(25)
   })
 })
 

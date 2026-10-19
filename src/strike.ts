@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { attack } from './fx'
-import { levelFor, monsterById, stageFor, xpOf, type Person, type Work } from './game'
+import { elementsOf, levelFor, monsterById, stageFor, xpOf, type Person, type Work } from './game'
 import type { Snapshot } from './db'
 
 // Abhaken mit Angriff: Offene Aufgabe: erst greift dein Monster aus myBadge an, beim Treffer wird sie abgehakt (hit).
@@ -23,7 +23,7 @@ export function useStrike(snap: Snapshot, person: Person, onAttackEnd: () => voi
         src: m.files[stageFor(m, levelFor(snap.monsterXp[m.id] ?? 0))],
         element: m.element,
         taskElement: work?.element,
-        xp: xpOf(work, m.element),
+        xp: xpOf(work, elementsOf(m, snap.monsterXp[m.id] ?? 0)),
         onHit: hit,
       })
     } finally {

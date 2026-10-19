@@ -21,7 +21,7 @@ import { StampScene } from './StampScene'
 import { Stamps } from './Stamps'
 import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
-import { PEOPLE, STANDING_EFFORT, dayString, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
+import { PEOPLE, STANDING_EFFORT, dayString, elementsOf, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
 import { weekPoints } from './streak'
 
 const PERSON_STORAGE = 'putzy.person'
@@ -247,8 +247,9 @@ export default function App() {
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
   const award = (work: Work, save: (monster: string, xp: number) => Promise<void>, find: { key: string; element: MonsterElement; task: string }) => {
     const monster = monsterById(myPick!.monster)
-    const xp = xpOf(work, monster.element)
     const before = snap.monsterXp[monster.id] ?? 0
+    const elements = elementsOf(monster, before)
+    const xp = xpOf(work, elements)
     const level = levelFor(before + xp)
     setAttacking(true)
     // Bei einer Entwicklung übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.
@@ -260,7 +261,7 @@ export default function App() {
         stageAfter: stageFor(monster, level),
         level,
         xp,
-        bonus: work?.element === monster.element,
+        bonus: !!work && elements.includes(work.element),
       }
     }
     const egg = rollEgg(find.key, find.element, snap.eggs)
