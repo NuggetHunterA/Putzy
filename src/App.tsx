@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { eventFor } from './events'
+import { eventBonus, eventFor } from './events'
 import './events.css'
 import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, markStampSeen, pickMonster, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
 import { balance, nextEggScene, rollEgg, type Egg } from './eggs'
@@ -243,13 +243,13 @@ export default function App() {
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
   const news = myPick && view === 'home' && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !evo && !cel && !attacking ? unread(newsSeen) : []
 
-  // Abhaken: XP mit Element-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
+  // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
   const award = (work: Work, save: (monster: string, xp: number) => Promise<void>, find: { key: string; element: MonsterElement; task: string }) => {
     const monster = monsterById(myPick!.monster)
     const before = snap.monsterXp[monster.id] ?? 0
     const elements = elementsOf(monster, before)
-    const xp = xpOf(work, elements)
+    const xp = xpOf(work, elements, eventBonus(now))
     const level = levelFor(before + xp)
     setAttacking(true)
     // Bei einer Entwicklung übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.

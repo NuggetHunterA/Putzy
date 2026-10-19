@@ -85,6 +85,8 @@ export const EFFORT_XP: Record<Effort, number> = { K: 10, M: 25, G: 50 }
 // In der App heißt der Aufwand S/M/L, in der Datenbank K/M/G.
 export const EFFORT_LABEL: Record<Effort, string> = { K: 'S', M: 'M', G: 'L' }
 export const ELEMENT_BONUS = 1.25
+// Während eines Events: Aufgaben des Event-Elements bringen zusätzlich so viel mehr (siehe events.ts).
+export const EVENT_BONUS = 1.5
 
 // Ständige Aufgaben: ohne Fälligkeit, Aufwand S, jede Person hakt sie einmal pro Tag ab.
 export type Standing = { id: string; name: string; short: string; element: Element }
@@ -104,14 +106,14 @@ export const LEVEL_BASE = 130
 export const LEVEL_STEP = 4
 export const MAX_LEVEL = 30
 
-export function xpFor(effort: Effort, taskElement: Element, monsterElements: MonsterElement[]) {
-  return Math.round(EFFORT_XP[effort] * (monsterElements.includes(taskElement) ? ELEMENT_BONUS : 1))
+export function xpFor(effort: Effort, taskElement: Element, monsterElements: MonsterElement[], eventElement: Element | null = null) {
+  return Math.round(EFFORT_XP[effort] * (monsterElements.includes(taskElement) ? ELEMENT_BONUS : 1) * (taskElement === eventElement ? EVENT_BONUS : 1))
 }
 
 // Was abgehakt wird: Aufwand und Element, oder null bei einer einmaligen Aufgabe.
 export type Work = { effort: Effort; element: Element } | null
-export const xpOf = (work: Work, monsterElements: MonsterElement[]) =>
-  work ? xpFor(work.effort, work.element, monsterElements) : monsterElements.includes('ohne') ? ONEOFF_XP_OHNE : ONEOFF_XP
+export const xpOf = (work: Work, monsterElements: MonsterElement[], eventElement: Element | null = null) =>
+  work ? xpFor(work.effort, work.element, monsterElements, eventElement) : monsterElements.includes('ohne') ? ONEOFF_XP_OHNE : ONEOFF_XP
 
 // Gesamt-XP, die man für ein Level braucht: Summe von 130 + 4 × n für n = 1 … level-1.
 export const xpForLevel = (level: number) => (level - 1) * LEVEL_BASE + (LEVEL_STEP * level * (level - 1)) / 2

@@ -7,6 +7,10 @@ describe('XP', () => {
     expect(xpFor('M', 'wasser', ['feuer'])).toBe(25)
     expect(xpFor('K', 'licht', ['licht'])).toBe(13)
     expect(xpFor('G', 'luft', ['luft'])).toBe(63)
+    // Event-Bonus kommt zum Element-Bonus dazu, gilt aber nur fürs Event-Element.
+    expect(xpFor('M', 'feuer', ['wasser'], 'feuer')).toBe(38)
+    expect(xpFor('M', 'feuer', ['feuer'], 'feuer')).toBe(47)
+    expect(xpFor('M', 'wasser', ['wasser'], 'feuer')).toBe(31)
   })
 
   it('gibt Doppelelement-Monstern den Bonus für beide Elemente, aber erst ab der Endstufe', () => {
@@ -24,6 +28,7 @@ describe('XP', () => {
 
   it('gibt Monstern ohne Element 30 XP für einmalige Aufgaben und nie den Bonus', () => {
     expect(xpOf(null, ['ohne'])).toBe(30)
+    expect(xpOf(null, ['wasser'], 'wasser')).toBe(20)
     expect(xpOf({ effort: 'M', element: 'wasser' }, ['ohne'])).toBe(25)
   })
 })

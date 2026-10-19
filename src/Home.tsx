@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
+import { eventBonus } from './events'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Monster, type Person, type Standing } from './game'
 import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
@@ -45,10 +46,11 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
   const other: Person = person === 'adrian' ? 'ulrike' : 'adrian'
   const oneoffs = openOneOffs(snap).length
 
-  // XP, die dein Monster für eine Aufgabe bekäme, mit Element-Bonus.
+  // XP, die dein Monster für eine Aufgabe bekäme, mit Element- und Event-Bonus.
   const myMonster = monsterById(snap.picks.find((p) => p.person === person)!.monster)
   const myElements = elementsOf(myMonster, snap.monsterXp[myMonster.id] ?? 0)
-  const xpFor = (t: Task) => xpOf(t, myElements)
+  const bonus = eventBonus(now)
+  const xpFor = (t: Task) => xpOf(t, myElements, bonus)
   const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task, dot, () => onToggle(row))
   const toggleStanding = (s: Standing, dot: HTMLElement) => {
     const mine = snap.today.find((c) => c.standing === s.id && c.person === person)

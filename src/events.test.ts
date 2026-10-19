@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { easter, eventFor } from './events'
+import { easter, eventBonus, eventFor } from './events'
 
 describe('Event-Designs', () => {
   const on = (d: string) => eventFor(new Date(`${d}T12:00:00`))
@@ -30,15 +30,40 @@ describe('Event-Designs', () => {
     expect(easter(2027).toDateString()).toBe(new Date(2027, 2, 28).toDateString())
   })
 
-  it('legt Ostern und Fasching um den Ostersonntag', () => {
+  it('legt Ostern um den Ostersonntag', () => {
     expect(on('2026-04-02')).toBeNull()
     expect(on('2026-04-03')).toBe('ostern')
     expect(on('2026-04-06')).toBe('ostern')
     expect(on('2026-04-07')).toBeNull()
-    expect(on('2026-02-11')).toBeNull()
-    expect(on('2026-02-12')).toBe('fasching')
-    expect(on('2026-02-18')).toBe('fasching')
-    expect(on('2026-02-19')).toBeNull()
+  })
+
+  it('kennt Chinesisches Neujahr aus der Liste', () => {
+    expect(on('2027-02-05')).toBeNull()
+    expect(on('2027-02-06')).toBe('neujahr_cn')
+    expect(on('2027-02-09')).toBe('neujahr_cn')
+    expect(on('2027-02-10')).toBeNull()
+    expect(on('2028-01-26')).toBe('neujahr_cn')
+    expect(on('2026-02-14')).toBeNull() // kein Valentinstag und kein Fasching mehr
+  })
+
+  it('erkennt Maifeiertag, Herbstanfang und Erntedank', () => {
+    expect(on('2027-04-30')).toBe('maifeiertag')
+    expect(on('2027-05-01')).toBe('maifeiertag')
+    expect(on('2027-05-02')).toBeNull()
+    expect(on('2026-09-22')).toBe('herbstanfang')
+    expect(on('2026-09-23')).toBe('herbstanfang')
+    expect(on('2026-10-03')).toBe('erntedank') // erster Oktober-Sonntag ist der 4.
+    expect(on('2026-10-04')).toBe('erntedank')
+    expect(on('2026-10-05')).toBeNull()
+    expect(on('2028-09-30')).toBe('erntedank') // 1.10.2028 ist ein Sonntag
+    expect(on('2028-10-01')).toBe('erntedank')
+  })
+
+  it('gibt jedem Event ein Bonus-Element', () => {
+    expect(eventBonus(new Date('2026-10-30T12:00:00'))).toBe('licht')
+    expect(eventBonus(new Date('2026-12-24T12:00:00'))).toBe('natur')
+    expect(eventBonus(new Date('2027-02-07T12:00:00'))).toBe('feuer')
+    expect(eventBonus(new Date('2026-11-02T12:00:00'))).toBeNull()
   })
 
   it('zeigt Advent nur an den vier Adventssonntagen', () => {
@@ -48,9 +73,8 @@ describe('Event-Designs', () => {
     expect(on('2026-12-20')).toBe('weihnachten')
   })
 
-  it('gibt Hochzeitstag und Valentinstag Vorrang', () => {
+  it('gibt Hochzeitstag und Ostern Vorrang', () => {
     expect(on('2028-04-14')).toBe('hochzeitstag') // Karfreitag 2028
-    expect(on('2026-02-14')).toBe('valentinstag') // mitten im Fasching
     expect(on('2027-03-26')).toBe('ostern') // Karfreitag im Frühjahrsputz
   })
 })
