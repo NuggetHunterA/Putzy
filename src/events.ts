@@ -100,10 +100,12 @@ export const EVENT_LABEL: Record<AppEvent, string> = {
 const find = (date: Date) => EVENTS.find(([, on]) => on(date))
 export const eventFor = (date: Date): AppEvent | null => find(date)?.[0] ?? null
 export const eventBonus = (date: Date): Element | null => find(date)?.[2] ?? null
-// Letzter Tag des Events, das an date läuft.
-export function eventEnd(date: Date) {
+// Erster bzw. letzter Tag des Events, das an date läuft.
+const edge = (date: Date, step: 1 | -1) => {
   const event = eventFor(date)
-  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  while (event && eventFor(new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1)) === event) end.setDate(end.getDate() + 1)
-  return end
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  while (event && eventFor(new Date(day.getFullYear(), day.getMonth(), day.getDate() + step)) === event) day.setDate(day.getDate() + step)
+  return day
 }
+export const eventStart = (date: Date) => edge(date, -1)
+export const eventEnd = (date: Date) => edge(date, 1)

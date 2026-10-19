@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { easter, eventBonus, eventFor } from './events'
+import { easter, eventBonus, eventEnd, eventFor, eventStart } from './events'
 
 describe('Event-Designs', () => {
   const on = (d: string) => eventFor(new Date(`${d}T12:00:00`))
@@ -83,5 +83,12 @@ describe('Event-Designs', () => {
   it('gibt Hochzeitstag und Ostern Vorrang', () => {
     expect(on('2028-04-14')).toBe('hochzeitstag') // Karfreitag 2028
     expect(on('2027-03-26')).toBe('ostern') // Karfreitag im Frühjahrsputz
+  })
+
+  it('findet ersten und letzten Tag, auch über den Jahreswechsel', () => {
+    const day = (d: Date) => d.toDateString()
+    expect(day(eventStart(new Date('2026-10-30T12:00:00')))).toBe(day(new Date(2026, 9, 28)))
+    expect(day(eventEnd(new Date('2026-10-30T12:00:00')))).toBe(day(new Date(2026, 9, 31)))
+    expect(day(eventStart(new Date('2027-01-01T12:00:00')))).toBe(day(new Date(2026, 11, 31)))
   })
 })
