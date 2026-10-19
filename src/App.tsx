@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
 import { Evolution } from './Evolution'
-import { eventBonus, eventFor } from './events'
+import { eventBonus, eventFor, eventStart } from './events'
+import { EventIntro } from './EventIntro'
 import './events.css'
 import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, markStampSeen, pickMonster, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
-import { balance, dueEventEgg, nextEggScene, rollEgg, type Egg } from './eggs'
+import { balance, dueEventEgg, EVENT_EGGS, nextEggScene, rollEgg, type Egg } from './eggs'
 import { EggScene, type Scene } from './EggScene'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
@@ -27,6 +28,8 @@ import { weekPoints } from './streak'
 const PERSON_STORAGE = 'putzy.person'
 // Wann diese Person das Stempelheft zuletzt geöffnet hat; neuere Stempel zählen im Pedia als „neu“.
 const STAMPS_STORAGE = 'putzy.stampsOpened'
+// Zuletzt gesehene Event-Begrüßung als Event und erster Tag, einmal je Gerät.
+const INTRO_STORAGE = 'putzy.eventIntro'
 const LOAD_ERROR = 'Keine Verbindung zur Datenbank.'
 const connected = connect()
 
@@ -127,25 +130,37 @@ export default function App() {
     findEgg({ monster: eventEggDue, found_by: null, found_task: null }).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
   }, [eventEggDue, refresh])
 
+  // Event-Begrüßung: auf der Startseite, sobald dort ein Event läuft, das auf diesem Gerät noch nicht begrüßt wurde.
+  // Vor allen anderen Szenen. Das Ei kommt nur mit, wenn es nicht schon in einem früheren Jahr gefunden wurde.
+  const introKey = homeEvent && `${homeEvent}-${dayString(eventStart(now))}`
+  const [introSeen, setIntroSeen] = useState(() => localStorage.getItem(INTRO_STORAGE))
+  const intro = homeEvent && introKey !== introSeen ? homeEvent : null
+  const introEggId = intro && EVENT_EGGS[intro]
+  const introEgg = introEggId && !snap!.eggs.some((e) => e.monster === introEggId && e.found_at < dayString(eventStart(now))) ? monsterById(introEggId) : null
+  const closeIntro = () => {
+    localStorage.setItem(INTRO_STORAGE, introKey!)
+    setIntroSeen(introKey)
+  }
+
   // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
   const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined
   useEffect(() => {
-    if (!reveal || !person || secret || evo || cel || attacking) return
+    if (!reveal || !person || intro || secret || evo || cel || attacking) return
     const seen = { person, monster: reveal.id, stage: 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setSecret(reveal)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [reveal, person, secret, evo, cel, attacking, refresh])
+  }, [reveal, person, intro, secret, evo, cel, attacking, refresh])
 
   // Eier: Fund (Stufe -1) und Schlüpfen (Stufe 0) zeigen, nach geheimen Reihen und vor Entwicklungen.
   const eggScene = snap && person && !reveal ? nextEggScene(snap.eggs, snap.seen, person) : undefined
   useEffect(() => {
-    if (!eggScene || !person || secret || eggShown || evo || cel || attacking) return
+    if (!eggScene || !person || intro || secret || eggShown || evo || cel || attacking) return
     const seen = { person, monster: eggScene.monster.id, stage: eggScene.kind === 'found' ? -1 : 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEggShown(eggScene)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [eggScene, person, secret, eggShown, evo, cel, attacking, refresh])
+  }, [eggScene, person, intro, secret, eggShown, evo, cel, attacking, refresh])
 
   // Streak-Punkte abgeschlossener Wochen, die noch nicht gespeichert sind, festhalten. Einmal pro Woche je Start.
   const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done) : []
@@ -176,21 +191,21 @@ export default function App() {
   // noch nicht gesehener Stempel ausgelöst hat, warten bis nach seiner Animation.
   const next = snap && person ? unseen(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!next || !person || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
+    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
+  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
 
   // Stempel nach den Entwicklungen zeigen, ältester zuerst, und sofort als gesehen merken.
   const stampNext = snap && person && !next ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
   useEffect(() => {
-    if (!stampNext || !person || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
+    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || cel || attacking) return
     setSnap((s) => s && { ...s, stampsSeen: [...s.stampsSeen, { person, stamp: stampNext.id }] })
     setStampShown(stampNext)
     markStampSeen(person, stampNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [stampNext, person, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
+  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, cel, attacking, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -250,7 +265,7 @@ export default function App() {
   const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
   const bank = balance(points, snap.eggs)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !evo && !cel && !attacking ? unread(newsSeen) : []
+  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !evo && !cel && !attacking ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
@@ -429,6 +444,7 @@ export default function App() {
           onDone={closeStamp}
         />
       )}
+      {intro && <EventIntro event={intro} now={now} egg={introEgg} onDone={closeIntro} />}
       {eggShown && <EggScene scene={eggShown} person={person} canPick={!myPick} onDone={closeEgg} />}
     </>
   )

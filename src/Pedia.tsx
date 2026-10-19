@@ -2,7 +2,8 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useBack } from './back'
 import type { Snapshot } from './db'
-import { eggCost, eggFile, eggName, waiting, type Egg } from './eggs'
+import { eggCost, eggFile, eggName, eventEgg, waiting, type Egg } from './eggs'
+import { EVENT_LABEL } from './events'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, elementsOf, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
 import { Sponge } from './Sponge'
@@ -293,6 +294,10 @@ function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: numb
   const tasks = people.reduce((n, p) => n + (done[p] ?? 0), 0)
   const share = (p: Person) => (tasks ? Math.round(((done[p] ?? 0) / tasks) * 100) : 0)
   const e = PEDIA[m.id]
+  // Event-Monster: aus welchem Event und Jahr das Ei stammt.
+  const event = eventEgg(m.id)
+  const eventEggFound = event && snap.eggs.find((x) => x.monster === m.id)
+  const origin = eventEggFound && `Von ${EVENT_LABEL[event].replace(/^\S+ /, '')} ${eventEggFound.found_at.slice(0, 4)}`
 
   // Infoblöcke und Stufen in Level-Reihenfolge, bei gleichem Level die Stufe zuerst; Gesperrtes als Schloss-Zeile.
   const stageBlocks = m.levels.map((at, i) => ({ at, title: `Stufe ${i + 2}`, stage: i + 1 }))
@@ -342,6 +347,7 @@ function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: numb
       <div className={`detail-hero ${max ? 'gold' : ''}`} style={{ background: backdrop(m.element) }}>
         <span className="chips">
           <span className="chip">{elementsOf(m, xp).map((e) => ELEMENTS[e].name).join(' + ')}</span>
+          {origin && <span className="chip">{origin}</span>}
           {m.second && stageFor(m, level) < m.levels.length && (
             <span className="chip later">
               + {ELEMENTS[m.second].name} ab Lv {m.levels[m.levels.length - 1]}

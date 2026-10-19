@@ -56,6 +56,11 @@ describe('Eier', () => {
     expect(dueEventEgg(null, full)).toBeNull()
     expect(eggCost('26')).toBe(15)
     expect(eggCost('21')).toBe(75)
-    expect(eggName(monsterById('28'))).toBe('Drachen-Ei')
+    expect(eggName(monsterById('26'))).toBe('Licht-Ei')
+  })
+
+  it('zeigt für Event-Eier keine Fund-Szene, das übernimmt die Event-Begrüßung', () => {
+    const eggs = [egg('26', { hatched_at: '2026-10-29T10:00:00Z', hatched_by: 'adrian' })]
+    expect(nextEggScene(eggs, [], 'adrian')?.kind).toBe('hatch')
   })
 })

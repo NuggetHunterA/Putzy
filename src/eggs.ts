@@ -25,21 +25,19 @@ export const ONEOFF_EGG_CHANCE = 0.01
 export const MAX_WAITING = 1
 
 // Event-Eier: Zum Event liegt das Ei ohne Zufall im Nest, auch wenn dort schon Eier warten, und ist billiger.
-export const EVENT_EGGS: Partial<Record<AppEvent, { monster: string; name: string }>> = {
-  halloween: { monster: '26', name: 'Mond-Ei' },
-  weihnachten: { monster: '27', name: 'Tannen-Ei' },
-  neujahr_cn: { monster: '28', name: 'Drachen-Ei' },
-}
-export const eventEgg = (monster: string) => Object.values(EVENT_EGGS).find((e) => e.monster === monster)
+// Den Fund zeigt die Event-Begrüßung (EventIntro.tsx), nicht die Ei-Szene.
+export const EVENT_EGGS: Partial<Record<AppEvent, string>> = { halloween: '26', weihnachten: '27', neujahr_cn: '28' }
+// Event, zu dem dieses Ei gehört.
+export const eventEgg = (monster: string) => (Object.keys(EVENT_EGGS) as AppEvent[]).find((e) => EVENT_EGGS[e] === monster)
 // Event-Ei, das heute ins Nest gehört und noch fehlt.
 export const dueEventEgg = (event: AppEvent | null, eggs: Egg[]) => {
-  const e = event && EVENT_EGGS[event]
-  return e && !eggs.some((x) => x.monster === e.monster) ? e.monster : null
+  const id = event && EVENT_EGGS[event]
+  return id && !eggs.some((x) => x.monster === id) ? id : null
 }
 
 export const eggCost = (monster: string) => (monster === START_EGG ? 35 : eventEgg(monster) ? 15 : 75)
 export const eggFile = (monster: string) => `/monster/${monster}-0-ei.webp`
-export const eggName = (m: Monster) => eventEgg(m.id)?.name ?? (m.element === 'ohne' ? 'Ei ohne Element' : `${ELEMENTS[m.element].name}-Ei`)
+export const eggName = (m: Monster) => (m.element === 'ohne' ? 'Ei ohne Element' : `${ELEMENTS[m.element].name}-Ei`)
 
 export const waiting = (eggs: Egg[]) => eggs.filter((e) => !e.hatched_at)
 export const isHatched = (m: Monster, eggs: Egg[]) => eggs.some((e) => e.monster === m.id && e.hatched_at)
@@ -66,10 +64,10 @@ export function rollEgg(key: string, element: MonsterElement, eggs: Egg[]) {
 const sawIt = (seen: Seen[], person: Person, monster: string, stage: number) =>
   seen.some((s) => s.person === person && s.monster === monster && s.stage === stage)
 
-// Nächste Animation, die diese Person noch nicht gesehen hat: erst Funde, dann Schlüpfen, jeweils älteste zuerst.
+// Nächste Animation, die diese Person noch nicht gesehen hat: erst Funde (ohne Event-Eier), dann Schlüpfen, jeweils älteste zuerst.
 export function nextEggScene(eggs: Egg[], seen: Seen[], person: Person) {
   const byTime = (at: (e: Egg) => string) => [...eggs].sort((a, b) => at(a).localeCompare(at(b)))
-  const found = byTime((e) => e.found_at).find((e) => !sawIt(seen, person, e.monster, -1))
+  const found = byTime((e) => e.found_at).find((e) => !eventEgg(e.monster) && !sawIt(seen, person, e.monster, -1))
   if (found) return { egg: found, kind: 'found' as const, monster: MONSTERS.find((m) => m.id === found.monster)! }
   const hatched = byTime((e) => e.hatched_at ?? '').find((e) => e.hatched_at && !sawIt(seen, person, e.monster, 0))
   return hatched && { egg: hatched, kind: 'hatch' as const, monster: MONSTERS.find((m) => m.id === hatched.monster)! }
