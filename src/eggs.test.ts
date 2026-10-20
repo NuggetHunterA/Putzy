@@ -54,7 +54,7 @@ describe('Eier', () => {
     expect(dueEventEgg('halloween', [...full, egg('26')])).toBeNull()
     expect(dueEventEgg('ostern', full)).toBeNull()
     expect(dueEventEgg(null, full)).toBeNull()
-    expect(eggCost('26')).toBe(15)
+    expect(eggCost('26')).toBe(10)
     expect(eggCost('21')).toBe(75)
     expect(eggName(monsterById('26'))).toBe('Licht-Ei')
   })
