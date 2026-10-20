@@ -22,7 +22,6 @@ export const NEWS: News[] = [
   { id: 18, title: 'Event-Upgrade', text: 'Events sind jetzt wertvoller. Sie bieten Boni und manche Events sogar zusätzliche Überraschungen.' },
   { id: 17, title: 'Listenansicht im Pedia', text: 'Über den Schalter „Reihen | Liste“ zeigt das Pedia jede Stufe als kleine Kachel, so seht ihr viel mehr Monster auf einmal. In der Liste könnt ihr nach Element filtern.' },
   { id: 20, title: 'Legenden auf Level 30', text: 'Erreicht ein Monster Level 30, füllt es sich mit Gold und erzählt seine Legende. Diese Szene seht ihr beide, egal wer die Aufgabe abgehakt hat.' },
-  { id: 21, title: 'Günstigere Eier', text: 'Eier aus Zufallsfunden kosten zum Ausbrüten jetzt nur noch 60 Streak-Punkte statt 75.' },
   { id: 19, title: 'Neue Entwicklungs-Level', text: 'Blattwart entwickelt sich jetzt schon auf Level 28 zu Arborius statt erst auf Level 30. Monster mit zwei Stufen, also Aali und Kokeli, entwickeln sich jetzt beide auf Level 18.' },
 ]
 
