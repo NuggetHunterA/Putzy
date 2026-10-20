@@ -91,6 +91,8 @@ export const EFFORT_LABEL: Record<Effort, string> = { K: 'S', M: 'M', G: 'L' }
 export const ELEMENT_BONUS = 1.25
 // Während eines Events: Aufgaben des Event-Elements bringen zusätzlich so viel mehr (siehe events.ts).
 export const EVENT_BONUS = 1.5
+// Team-Bonus im Event: Jede Aufgabe des Event-Elements gibt außerdem allen freigeschalteten Monstern dieses Elements so viele XP.
+export const TEAM_BONUS = 5
 
 // Ständige Aufgaben: ohne Fälligkeit, Aufwand S, jede Person hakt sie einmal pro Tag ab.
 export type Standing = { id: string; name: string; short: string; element: Element }
@@ -133,6 +135,10 @@ export const stageFor = (m: Monster, level: number) => m.levels.filter((at) => l
 // Elemente, für die ein Monster bei diesen XP den Bonus bekommt: das Zweitelement erst ab der Endstufe.
 export const elementsOf = (m: Monster, xp: number): MonsterElement[] =>
   m.second && stageFor(m, levelFor(xp)) === m.levels.length ? [m.element, m.second] : [m.element]
+
+// Monster, die für work den Team-Bonus bekommen: alle aus monsters mit dem Event-Element, das Zweitelement ab der Endstufe.
+export const teamFor = (work: Work, eventElement: Element | null, monsters: Monster[], monsterXp: Record<string, number>) =>
+  work && work.element === eventElement ? monsters.filter((m) => elementsOf(m, monsterXp[m.id] ?? 0).includes(work.element)) : []
 
 // Kalendertag (lokal) als Zahl, damit Tagesdifferenzen nicht an Sommerzeit scheitern.
 const dayNumber = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000)

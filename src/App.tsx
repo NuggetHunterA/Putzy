@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Celebration, type Cel } from './Celebration'
+import { TeamBar, type Team } from './TeamBar'
 import { Evolution } from './Evolution'
 import { Legend } from './Legend'
 import { eventBonus, eventFor, eventStart } from './events'
@@ -23,7 +24,7 @@ import { StampScene } from './StampScene'
 import { Stamps } from './Stamps'
 import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
-import { MAX_LEVEL, PEOPLE, STANDING_EFFORT, dayString, elementsOf, levelFor, monsterById, stageFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
+import { MAX_LEVEL, PEOPLE, STANDING_EFFORT, TEAM_BONUS, dayString, elementsOf, levelFor, monsterById, stageFor, teamFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
 import { weekPoints } from './streak'
 
 const PERSON_STORAGE = 'putzy.person'
@@ -75,6 +76,9 @@ export default function App() {
   // Stempel, dessen Animation gerade läuft.
   const [stampShown, setStampShown] = useState<Earned | null>(null)
   const closeStamp = useCallback(() => setStampShown(null), [])
+  // Team-Bonus im Event: Leiste unten mit den Monstern, die gerade +5 bekommen haben.
+  const [team, setTeam] = useState<Team | null>(null)
+  const closeTeam = useCallback(() => setTeam(null), [])
   const now = useNow()
   const week = weekStart(now)
   const day = now.toDateString()
@@ -281,14 +285,16 @@ export default function App() {
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
   const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking ? unread(newsSeen) : []
 
-  // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster und XP).
+  // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster, XP und Team-Bonus).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
-  const award = (work: Work, save: (monster: string, xp: number) => Promise<void>, find: { key: string; element: MonsterElement; task: string }) => {
+  const award = (work: Work, save: (c: { monster: string; xp: number; team: string[]; team_xp: number }) => Promise<void>, find: { key: string; element: MonsterElement; task: string }) => {
     const monster = monsterById(myPick!.monster)
     const before = snap.monsterXp[monster.id] ?? 0
     const elements = elementsOf(monster, before)
     const xp = xpOf(work, elements, eventBonus(now))
-    const level = levelFor(before + xp)
+    const crew = teamFor(work, eventBonus(now), monsters, snap.monsterXp)
+    const level = levelFor(before + xp + (crew.includes(monster) ? TEAM_BONUS : 0))
+    if (crew.length > 0) setTeam({ key: Date.now(), element: work!.element, monsters: crew, monsterXp: snap.monsterXp })
     setAttacking(true)
     // Bei einer Entwicklung oder Level 30 übernimmt die Warteschlange, sonst gibt es das Level-Up-Vollbild.
     if (level > levelFor(before) && level < MAX_LEVEL && stageFor(monster, level) === stageFor(monster, levelFor(before))) {
@@ -304,7 +310,7 @@ export default function App() {
     }
     const egg = rollEgg(find.key, find.element, snap.eggs)
     run(
-      save(monster.id, xp).then(() => egg ? findEgg({ monster: egg, found_by: person, found_task: find.task }) : undefined, (e) => {
+      save({ monster: monster.id, xp, team: crew.map((m) => m.id), team_xp: crew.length > 0 ? TEAM_BONUS : 0 }).then(() => egg ? findEgg({ monster: egg, found_by: person, found_task: find.task }) : undefined, (e) => {
         pendingCel.current = null
         // 23505: Die andere Person hat die Aufgabe heute schon abgehakt. Das Neuladen zeigt, wer.
         if (e?.code === '23505') return setError('Das war heute schon erledigt.')
@@ -315,13 +321,13 @@ export default function App() {
 
   const onToggle = (row: Row) => {
     if (row.done) return run(undo(row.done.id))
-    award(row.task, (monster, xp) => complete({ task_id: row.task.id, person, monster, xp }), { key: `${today}|${row.task.id}`, element: row.task.element, task: row.task.name })
+    award(row.task, (c) => complete({ task_id: row.task.id, person, ...c }), { key: `${today}|${row.task.id}`, element: row.task.element, task: row.task.name })
   }
 
   // Ständige Aufgabe: done ist der eigene Haken von heute, nur der lässt sich zurücknehmen.
   const onStanding = (s: Standing, done?: Completion) => {
     if (done) return run(undo(done.id))
-    award({ effort: STANDING_EFFORT, element: s.element }, (monster, xp) => complete({ task_id: null, standing: s.id, person, monster, xp }), {
+    award({ effort: STANDING_EFFORT, element: s.element }, (c) => complete({ task_id: null, standing: s.id, person, ...c }), {
       key: `${today}|${s.id}|${person}`,
       element: s.element,
       task: s.name,
@@ -331,7 +337,7 @@ export default function App() {
   // Einmalige Aufgabe: done ist ihre Erledigung, rückgängig nur die eigene am selben Tag (siehe OneOffs).
   const onOneOff = (o: OneOff, done?: Completion) => {
     if (done) return run(undo(done.id))
-    award(null, (monster, xp) => complete({ task_id: null, oneoff: o.id, person, monster, xp }), { key: o.id, element: 'ohne', task: o.name })
+    award(null, (c) => complete({ task_id: null, oneoff: o.id, person, ...c }), { key: o.id, element: 'ohne', task: o.name })
   }
 
   const onAddOneOff = (name: string) => {
@@ -446,6 +452,7 @@ export default function App() {
         </button>
       )}
       {news.length > 0 && <NewsBox news={news} monsterImg={weekImg(monsterById(myPick!.monster), snap.monsterXp)} onDone={() => seeNews(person)} />}
+      {team && <TeamBar key={team.key} team={team} onDone={closeTeam} />}
       {cel && <Celebration cel={cel} onDone={closeCel} />}
       {evo && <Evolution cel={evo} onDone={closeEvo} />}
       {legend && <Legend monster={legend} onDone={closeLegend} />}

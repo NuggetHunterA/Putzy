@@ -31,6 +31,9 @@ create table completions (
   person text not null check (person in ('adrian', 'ulrike')),
   monster text not null,
   xp int not null,
+  -- Team-Bonus im Event: Monster, die dafür je team_xp XP extra bekommen.
+  team text[] not null default '{}',
+  team_xp int not null default 0,
   done_at timestamptz not null default now()
 );
 create index on completions (task_id, done_at desc);
@@ -112,10 +115,12 @@ create table stamps_seen (
   primary key (person, stamp)
 );
 
--- XP aus Erledigungen und Stempel-Boni.
+-- XP aus Erledigungen, Team-Boni und Stempel-Boni.
 create view monster_xp with (security_invoker = true) as
   select monster, sum(xp)::int as xp from (
     select monster, xp from completions
+    union all
+    select unnest(team), team_xp from completions
     union all
     select unnest(monsters), xp from stamps
   ) x group by monster;

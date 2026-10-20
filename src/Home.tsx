@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
 import { EVENT_LABEL, eventBonus, eventEnd, eventFor } from './events'
-import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Element, type Monster, type Person, type Standing } from './game'
+import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, TEAM_BONUS, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Element, type Monster, type Person, type Standing } from './game'
 import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
 import { STREAK_START, addDays, current, longest, weekDays } from './streak'
@@ -192,7 +192,7 @@ function EventBadge({ now }: { now: Date }) {
             <b>{EVENT_LABEL[event]}</b>
           </span>
           <span>
-            {ELEMENTS[bonus].name}-Aufgaben bringen 50 % mehr XP, zusätzlich zum Element-Bonus deines Monsters.
+            {ELEMENTS[bonus].name}-Aufgaben bringen 50 % mehr XP, zusätzlich zum Element-Bonus deines Monsters. Außerdem bekommen alle {ELEMENTS[bonus].name}-Monster je {TEAM_BONUS} XP.
           </span>
           <small>{left === 0 ? 'Nur noch heute' : `Noch bis ${end.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })}`}</small>
         </button>

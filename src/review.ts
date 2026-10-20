@@ -29,7 +29,7 @@ function kindOf(c: Completion, tasks: Task[]): Kind | null {
 const weekOf = (c: Completion) => weekStart(new Date(c.done_at))
 
 // Ein Eintrag pro Person, die in der Woche ein Monster hatte, in der Reihenfolge von PEOPLE.
-// Stempel-Boni zählen zur XP der Woche, in der der Stempel kam.
+// Stempel-Boni zählen zur XP der Woche, in der der Stempel kam, Team-Boni zur Woche der Erledigung.
 export function weekReview(week: string, picks: Pick[], completions: Completion[], tasks: Task[], stamps: Earned[] = []): MonsterWeek[] {
   return (Object.keys(PEOPLE) as Person[]).flatMap((person) => {
     const pick = picks.find((p) => p.week_start === week && p.person === person)
@@ -37,7 +37,9 @@ export function weekReview(week: string, picks: Pick[], completions: Completion[
     const monster = monsterById(pick.monster)
     const own = completions.filter((c) => c.monster === monster.id)
     const bonus = stamps.filter((e) => e.monsters.includes(monster.id))
-    const bonusXp = (keep: (w: string) => boolean) => bonus.filter((e) => keep(weekStart(new Date(e.earned_at)))).reduce((n, e) => n + e.xp, 0)
+    const team = completions.filter((c) => c.team.includes(monster.id))
+    const bonusXp = (keep: (w: string) => boolean) =>
+      bonus.filter((e) => keep(weekStart(new Date(e.earned_at)))).reduce((n, e) => n + e.xp, 0) + team.filter((c) => keep(weekOf(c))).reduce((n, c) => n + c.team_xp, 0)
     const before = own.filter((c) => weekOf(c) < week).reduce((n, c) => n + c.xp, 0) + bonusXp((w) => w < week)
     const done = own.filter((c) => weekOf(c) === week)
     const xp = done.reduce((n, c) => n + c.xp, 0) + bonusXp((w) => w === week)

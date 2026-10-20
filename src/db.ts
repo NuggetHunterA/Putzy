@@ -15,7 +15,8 @@ export type Task = {
   first_due: string
   sort: number
 }
-export type Completion = { id: string; task_id: string | null; standing: string | null; oneoff: string | null; person: Person; monster: string; xp: number; done_at: string }
+// team: Monster, die dafür den Team-Bonus von je team_xp XP bekommen haben (zählt in monster_xp).
+export type Completion = { id: string; task_id: string | null; standing: string | null; oneoff: string | null; person: Person; monster: string; xp: number; team: string[]; team_xp: number; done_at: string }
 export type Pick = { week_start: string; person: Person; monster: string }
 export type Seen = { person: Person; monster: string; stage: number }
 // Alle Erledigungen in kurz, für Eure Werte im Pedia.

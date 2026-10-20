@@ -6,7 +6,7 @@ import type { Earned } from './stamps'
 const task: Task = { id: 't1', room: 'Bad', name: 'Wanne', element: 'wasser', effort: 'M', interval_days: 7, first_due: '2026-10-01', sort: 1 }
 let n = 0
 const done = (monster: string, xp: number, at: string, extra: Partial<Completion> = {}): Completion => ({
-  id: String(n++), task_id: null, standing: null, oneoff: null, person: 'adrian', monster, xp, done_at: new Date(at).toISOString(), ...extra,
+  id: String(n++), task_id: null, standing: null, oneoff: null, person: 'adrian', monster, xp, team: [], team_xp: 0, done_at: new Date(at).toISOString(), ...extra,
 })
 const picks: Pick[] = [
   { week_start: '2026-10-05', person: 'adrian', monster: '2' },
@@ -39,6 +39,16 @@ describe('Wochenrückblick', () => {
     expect(adrian).toMatchObject({ xp: 15, levelBefore: 10 })
     expect(ulrike).toMatchObject({ xp: 15 })
     expect(weekStamps('2026-10-12', stamps)).toBe(2)
+  })
+
+  it('zählt Team-Boni zur Woche der Erledigung, auch bei fremden Erledigungen', () => {
+    const completions = [
+      done('2', 1345, '2026-10-06T10:00', { team: ['2'], team_xp: 5 }), // 1.345 + 5 Team-Bonus = Level 10
+      done('5', 25, '2026-10-13T10:00', { person: 'ulrike', team: ['2', '5'], team_xp: 5 }),
+    ]
+    const [adrian, ulrike] = weekReview('2026-10-12', picks, completions, [])
+    expect(adrian).toMatchObject({ xp: 5, levelBefore: 10 })
+    expect(ulrike).toMatchObject({ xp: 30 })
   })
 
   it('zeigt nur Personen mit Monster in der Woche', () => {
