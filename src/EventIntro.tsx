@@ -6,7 +6,7 @@ import { eggCost, eggFile, eggName } from './eggs'
 import { ElementIcon } from './ElementIcon'
 import { EVENT_LABEL, eventBonus, eventEnd, eventStart, type AppEvent } from './events'
 import { burst } from './fx'
-import { ELEMENTS, type Monster } from './game'
+import { ELEMENTS, TEAM_BONUS, type Monster } from './game'
 
 const short = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.`
 
@@ -57,6 +57,13 @@ export function EventIntro({ event, now, egg, onDone }: { event: AppEvent; now: 
         </span>
         <b>+50% XP</b>
         <span>für {look.name}-Aufgaben, zusätzlich zum Element-Bonus deines Monsters</span>
+      </div>
+      <div className="intro-bonus intro-team">
+        <span className="event-badge-dot" style={{ background: look.strong }}>
+          <ElementIcon element={bonus} />
+        </span>
+        <b>+{TEAM_BONUS} XP</b>
+        <span>für alle {look.name}-Monster bei jeder {look.name}-Aufgabe</span>
       </div>
       {egg ? (
         <>

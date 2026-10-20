@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { daysUntilDue, firstDue, levelFor, monsterById, elementsOf, nextInterval, stageFor, weekStart, xpFor, xpForLevel, xpOf } from './game'
+import { daysUntilDue, firstDue, levelFor, monsterById, elementsOf, nextInterval, stageFor, teamFor, weekStart, xpFor, xpForLevel, xpOf } from './game'
 
 describe('XP', () => {
   it('gibt 125 % beim passenden Element', () => {
@@ -112,5 +112,23 @@ describe('Intervall-Stufen', () => {
   it('fängt Werte zwischen den Stufen ein', () => {
     expect(nextInterval(5, 1)).toBe(7)
     expect(nextInterval(5, -1)).toBe(3)
+  })
+})
+
+describe('Team-Bonus', () => {
+  const monsters = ['1', '5', '8', '22'].map(monsterById)
+  const ids = (ms: { id: string }[]) => ms.map((m) => m.id)
+
+  it('trifft alle Monster des Event-Elements, nur bei Aufgaben dieses Elements', () => {
+    expect(ids(teamFor({ effort: 'K', element: 'licht' }, 'licht', monsters, {}))).toEqual(['1', '8', '22'])
+    expect(teamFor({ effort: 'K', element: 'feuer' }, 'licht', monsters, {})).toEqual([])
+    expect(teamFor({ effort: 'K', element: 'licht' }, null, monsters, {})).toEqual([])
+    expect(teamFor(null, 'licht', monsters, {})).toEqual([])
+  })
+
+  it('zählt das Zweitelement erst ab der Endstufe', () => {
+    const feuer = { effort: 'K', element: 'feuer' } as const
+    expect(ids(teamFor(feuer, 'feuer', monsters, {}))).toEqual(['5'])
+    expect(ids(teamFor(feuer, 'feuer', monsters, { 22: xpForLevel(25) }))).toEqual(['5', '22'])
   })
 })
