@@ -35,7 +35,7 @@ export const dueEventEgg = (event: AppEvent | null, eggs: Egg[]) => {
   return id && !eggs.some((x) => x.monster === id) ? id : null
 }
 
-export const eggCost = (monster: string) => (monster === START_EGG ? 35 : eventEgg(monster) ? 15 : 75)
+export const eggCost = (monster: string) => (monster === START_EGG ? 35 : eventEgg(monster) ? 10 : 60)
 export const eggFile = (monster: string) => `/monster/${monster}-0-ei.webp`
 export const eggName = (m: Monster) => (m.element === 'ohne' ? 'Ei ohne Element' : `${ELEMENTS[m.element].name}-Ei`)
 

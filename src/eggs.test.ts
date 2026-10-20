@@ -25,10 +25,10 @@ describe('Eier', () => {
     expect(rollEgg(k, 'feuer', [egg('19', { hatched_at: '2026-11-01T10:00:00Z' }), egg('20')])).toBe('21')
   })
 
-  it('zieht ausgebrütete Eier vom Konto ab: Start-Ei 35, alle anderen 75', () => {
+  it('zieht ausgebrütete Eier vom Konto ab: Start-Ei 35, Zufallsfunde 60', () => {
     const weeks = [{ week_start: '2026-10-19', points: 7 }, { week_start: '2026-10-26', points: 100 }]
     expect(balance(weeks, [egg('19')])).toBe(107)
-    expect(balance(weeks, [egg('19', { hatched_at: 'x' }), egg('20', { hatched_at: 'x' })])).toBe(-3)
+    expect(balance(weeks, [egg('19', { hatched_at: 'x' }), egg('20', { hatched_at: 'x' })])).toBe(12)
   })
 
   it('heißt nur nach dem Element', () => {
@@ -54,8 +54,8 @@ describe('Eier', () => {
     expect(dueEventEgg('halloween', [...full, egg('26')])).toBeNull()
     expect(dueEventEgg('ostern', full)).toBeNull()
     expect(dueEventEgg(null, full)).toBeNull()
-    expect(eggCost('26')).toBe(15)
-    expect(eggCost('21')).toBe(75)
+    expect(eggCost('26')).toBe(10)
+    expect(eggCost('21')).toBe(60)
     expect(eggName(monsterById('26'))).toBe('Licht-Ei')
   })
 
