@@ -56,7 +56,7 @@ export function EventIntro({ event, now, egg, onDone }: { event: AppEvent; now: 
           <ElementIcon element={bonus} />
         </span>
         <b>+50% XP</b>
-        <span>für {look.name}-Aufgaben, zusätzlich zum Element-Bonus deines Monsters</span>
+        <span>für {look.name}-Aufgaben</span>
       </div>
       <div className="intro-bonus intro-team">
         <span className="event-badge-dot" style={{ background: look.strong }}>
