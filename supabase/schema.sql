@@ -152,4 +152,8 @@ create policy household on streak_weeks for all to anon using (true) with check 
 create policy household on stamps for all to anon using (true) with check (true);
 create policy household on stamps_seen for all to anon using (true) with check (true);
 
+-- Neue Tabellen bekommen ab 30.10.2026 keinen API-Zugriff mehr automatisch, daher ausdrücklich.
+grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen to anon;
+grant select on task_last_done, monster_xp, monster_stats to anon;
+
 alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps;
