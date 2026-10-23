@@ -27,7 +27,6 @@ export const NEWS: News[] = [
   { id: 22, title: 'Kleineres Nest, mehr Eier', text: 'Das Nest im Pedia ist jetzt kompakter. Zufalls-Eier tauchen auch noch auf, wenn schon zwei Eier warten.' },
   { id: 23, title: 'Event-Bosse', text: 'Zu zehn Events taucht ein Schmutz-Boss auf. Jede erledigte Aufgabe schwächt ihn um ihre XP, ab dem letzten Event-Tag schickt ihr drei Monster in den Endkampf, ein Sieg bringt 6 Streak-Punkte. Silvester geht jetzt bis zum 2. Januar.' },
   { id: 24, title: 'Frühjahrsputz nach Ostern', text: 'Der Frühjahrsputz beginnt jetzt jedes Jahr genau drei Wochen nach dem Start des Oster-Events und dauert eine Woche. Den Stempel „Volles Nest“ gibt es schon für 10 ausgebrütete Eier.' },
-  { id: 25, title: 'Ein Trupp pro Gebiet', text: 'In jedes Expeditionsgebiet kann jetzt nur noch ein Trupp gleichzeitig reisen. Ist dort schon einer unterwegs, zeigt der Raum, wann er zurückkommt.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
