@@ -45,11 +45,10 @@
 .log-loot img { width: 18px; height: 18px; }
 .log-loot .super { color: var(--accent); margin-right: 2px; }
 .log-who { opacity: .6; white-space: nowrap; }
-.basket { position: relative; display: flex; align-items: center; gap: 4px; aspect-ratio: 892 / 200; padding: 0 34% 2% 6%; background: url(/expedition/korb.webp) center / 100% 100% no-repeat; }
-.basket .f { position: relative; flex: 1; display: flex; justify-content: center; }
-.basket .f img { width: 36px; height: 36px; filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, .3)); }
-.basket .f span { position: absolute; right: 0; bottom: -2px; min-width: 20px; padding: 0 4px; border: 2px solid var(--ink); border-radius: 99px; background: var(--paper); font-size: 11px; font-weight: 800; text-align: center; }
-.basket .btn { position: absolute; right: 6%; top: 50%; translate: 0 -50%; background: var(--sun); }
+.basket { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border: 3px solid var(--ink); border-radius: 18px; background: var(--paper); }
+.basket .f { display: flex; align-items: center; gap: 1px; font-size: 14px; font-weight: 800; }
+.basket .f img { width: 30px; height: 30px; }
+.basket .btn { margin-left: auto; background: var(--sun); }
 
 /* Gesperrtes Gebiet: Blatt von unten */
 .sheet-wrap { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgba(27, 21, 48, .45); }

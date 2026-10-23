@@ -110,7 +110,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
         {FRUIT_ORDER.map((f) => (
           <span key={f} className="f">
             <img src={fruitImg(f)} alt={FRUITS[f].name} />
-            <span>{Math.max(0, fruits[f])}</span>
+            {Math.max(0, fruits[f])}
           </span>
         ))}
         <button className="btn" onClick={() => setFeeding(true)}>
