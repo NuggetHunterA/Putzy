@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { AREA_EGGS, type Egg } from './eggs'
 import {
-  AREAS, advantage, areaById, basket, blocked, canFeed, canStart, eggsToFile, expeditionPoints, fruitCap, isOpen, mapAreas, odds, rollLoot,
+  AREAS, advantage, areaBusy, areaById, basket, blocked, canFeed, canStart, eggsToFile, expeditionPoints, fruitCap, isOpen, mapAreas, odds, rollLoot,
   truppSlots, unseenHomecomings, weekExpeditions, type Expedition, type Loot,
 } from './expeditions'
 import { monsterById, xpForLevel } from './game'
@@ -47,6 +47,14 @@ describe('Expeditionen', () => {
     expect(blocked(monsterById('8'), lagune, lv({ 8: 9 }), [], new Set(['8']))).toBe('unterwegs')
     expect(blocked(monsterById('8'), lagune, lv({ 8: 4 }), [], new Set())).toBe('ab Lv 5')
     expect(blocked(monsterById('8'), lagune, lv({ 8: 5 }), [], new Set())).toBeNull()
+  })
+
+  it('lässt pro Gebiet nur einen Trupp gleichzeitig los', () => {
+    const flur = areaById('flur')
+    expect(areaBusy(flur, [exp()], NOW)).toBe(true)
+    expect(areaBusy(flur, [exp()], LATER)).toBe(false)
+    expect(areaBusy(flur, [exp({ recalled_at: '2026-10-23T09:00:00Z' })], NOW)).toBe(false)
+    expect(areaBusy(areaById('lagune'), [exp()], NOW)).toBe(false)
   })
 
   it('verlangt das geforderte Element und das Mindestlevel für jedes Monster', () => {
