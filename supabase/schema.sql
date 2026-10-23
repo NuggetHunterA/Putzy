@@ -115,6 +115,35 @@ create table stamps_seen (
   primary key (person, stamp)
 );
 
+-- Expeditionen (src/expeditions.ts): Trupps mit der beim Start gewürfelten Beute, zurückgerufen sobald recalled_at gesetzt ist.
+create table expeditions (
+  id uuid primary key,
+  area text not null,
+  monsters text[] not null check (cardinality(monsters) between 1 and 3),
+  started_by text not null check (started_by in ('adrian', 'ulrike')),
+  started_at timestamptz not null default now(),
+  ends_at timestamptz not null,
+  recalled_at timestamptz,
+  loot jsonb not null
+);
+
+-- Wer die Heimkehr eines Trupps schon gesehen hat.
+create table expeditions_seen (
+  person text not null check (person in ('adrian', 'ulrike')),
+  expedition uuid not null references expeditions (id) on delete cascade,
+  primary key (person, expedition)
+);
+
+-- Verfütterte Früchte. Früchte-XP zählen nicht in monster_xp, die App rechnet sie dazu (Bremse in src/expeditions.ts).
+create table feedings (
+  id uuid primary key default gen_random_uuid(),
+  monster text not null,
+  fruit text not null check (fruit in ('beere', 'pflaume', 'apfel', 'gold')),
+  xp int not null,
+  person text not null check (person in ('adrian', 'ulrike')),
+  fed_at timestamptz not null default now()
+);
+
 -- XP aus Erledigungen, Team-Boni und Stempel-Boni.
 create view monster_xp with (security_invoker = true) as
   select monster, sum(xp)::int as xp from (
@@ -139,6 +168,9 @@ alter table eggs enable row level security;
 alter table streak_weeks enable row level security;
 alter table stamps enable row level security;
 alter table stamps_seen enable row level security;
+alter table expeditions enable row level security;
+alter table expeditions_seen enable row level security;
+alter table feedings enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
@@ -151,9 +183,12 @@ create policy household on eggs for all to anon using (true) with check (true);
 create policy household on streak_weeks for all to anon using (true) with check (true);
 create policy household on stamps for all to anon using (true) with check (true);
 create policy household on stamps_seen for all to anon using (true) with check (true);
+create policy household on expeditions for all to anon using (true) with check (true);
+create policy household on expeditions_seen for all to anon using (true) with check (true);
+create policy household on feedings for all to anon using (true) with check (true);
 
 -- Neue Tabellen bekommen ab 30.10.2026 keinen API-Zugriff mehr automatisch, daher ausdrücklich.
-grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen to anon;
+grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen, expeditions, expeditions_seen, feedings to anon;
 grant select on task_last_done, monster_xp, monster_stats to anon;
 
-alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps, expeditions, feedings;

@@ -23,6 +23,8 @@ export const NEWS: News[] = [
   { id: 17, title: 'Listenansicht im Pedia', text: 'Über den Schalter „Reihen | Liste“ zeigt das Pedia jede Stufe als kleine Kachel, so seht ihr viel mehr Monster auf einmal. In der Liste könnt ihr nach Element filtern.' },
   { id: 20, title: 'Legenden auf Level 30', text: 'Erreicht ein Monster Level 30, füllt es sich mit Gold und erzählt seine Legende. Diese Szene seht ihr beide, egal wer die Aufgabe abgehakt hat.' },
   { id: 19, title: 'Neue Entwicklungs-Level', text: 'Blattwart entwickelt sich jetzt schon auf Level 28 zu Arborius statt erst auf Level 30. Monster mit zwei Stufen, also Aali und Kokeli, entwickeln sich jetzt beide auf Level 18.' },
+  { id: 21, title: 'Expeditionen', text: 'Über den Kompass oben schickt ihr Monster, die gerade nicht Wochenmonster sind, als Trupp in Gebiete im ganzen Haus. Sie bringen Früchte für XP mit, selten Streak-Punkte, neue Gebiets-Eier und ganz selten ein Shiny.' },
+  { id: 22, title: 'Kleineres Nest, mehr Eier', text: 'Das Nest im Pedia ist jetzt kompakter. Zufalls-Eier tauchen auch noch auf, wenn schon zwei Eier warten.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

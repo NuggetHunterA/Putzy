@@ -1,6 +1,7 @@
 // Datenzugriff auf Supabase. Der Schlüssel kommt aus dem Haushaltslink (#k=…), nicht aus dem Build.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Egg } from './eggs'
+import { fruitXp, type Expedition, type Feeding, type Fruit } from './expeditions'
 import type { Effort, Element, Person } from './game'
 import type { Earned } from './stamps'
 import type { StreakWeek } from './streak'
@@ -26,7 +27,9 @@ export type OneOff = { id: string; name: string; created_at: string }
 export type Snapshot = {
   tasks: Task[]
   lastDone: Record<string, Date>
+  // XP mit Früchten; cleanXp ohne Früchte, nur für die Bremse (src/expeditions.ts).
   monsterXp: Record<string, number>
+  cleanXp: Record<string, number>
   today: Completion[]
   picks: Pick[]
   seen: Seen[]
@@ -46,6 +49,10 @@ export type Snapshot = {
   // Stempelheft (src/stamps.ts): verdiente Stempel und welche Animation wer schon gesehen hat.
   stamps: Earned[]
   stampsSeen: { person: Person; stamp: string }[]
+  // Expeditionen, älteste zuerst, wer welche Heimkehr gesehen hat, und verfütterte Früchte.
+  expeditions: Expedition[]
+  expeditionsSeen: { person: Person; expedition: string }[]
+  feedings: Feeding[]
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -79,7 +86,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, done] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -95,16 +102,24 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('streak_weeks').select('*'),
     db().from('stamps').select('*'),
     db().from('stamps_seen').select('person, stamp'),
+    db().from('expeditions').select('*').order('started_at'),
+    db().from('expeditions_seen').select('person, expedition'),
+    db().from('feedings').select('*').order('fed_at'),
     loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
     tasksDone[r.monster] = { ...tasksDone[r.monster], [r.person]: r.tasks }
   }
+  const cleanXp: Record<string, number> = Object.fromEntries(check<{ monster: string; xp: number }[]>(xp).map((r) => [r.monster, r.xp]))
+  const fed = check<Feeding[]>(feedings)
+  const monsterXp = { ...cleanXp }
+  for (const [m, n] of Object.entries(fruitXp(fed))) monsterXp[m] = (monsterXp[m] ?? 0) + n
   return {
     tasks: check(tasks),
     lastDone: Object.fromEntries(check<{ task_id: string; last_done_at: string }[]>(last).map((r) => [r.task_id, new Date(r.last_done_at)])),
-    monsterXp: Object.fromEntries(check<{ monster: string; xp: number }[]>(xp).map((r) => [r.monster, r.xp])),
+    monsterXp,
+    cleanXp,
     today: check(today),
     picks: check(picks),
     seen: check(seen),
@@ -118,6 +133,9 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     streakWeeks: check(streakWeeks),
     stamps: check(stamps),
     stampsSeen: check(stampsSeen),
+    expeditions: check(expeditions),
+    expeditionsSeen: check(expeditionsSeen),
+    feedings: fed,
   }
 }
 
@@ -190,6 +208,24 @@ export async function markStampSeen(person: Person, stamp: string) {
   check(await db().from('stamps_seen').upsert({ person, stamp }, { ignoreDuplicates: true }))
 }
 
+// Die Beute steht schon fest (rollLoot in expeditions.ts), die id hat sie mitbestimmt.
+export async function startExpedition(e: Omit<Expedition, 'recalled_at'>) {
+  check(await db().from('expeditions').insert(e))
+}
+
+// Nur ein noch laufender Trupp lässt sich zurückrufen.
+export async function recallExpedition(id: string) {
+  check(await db().from('expeditions').update({ recalled_at: new Date().toISOString() }).eq('id', id).is('recalled_at', null).gt('ends_at', new Date().toISOString()))
+}
+
+export async function markHomecomingSeen(person: Person, expedition: string) {
+  check(await db().from('expeditions_seen').upsert({ person, expedition }, { ignoreDuplicates: true }))
+}
+
+export async function feed(f: { monster: string; fruit: Fruit; xp: number; person: Person }) {
+  check(await db().from('feedings').insert(f))
+}
+
 export async function markNews(person: Person, lastId: number) {
   check(await db().from('news_seen').upsert({ person, last_id: lastId }))
 }
@@ -229,6 +265,8 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'unlocks' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'eggs' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'stamps' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expeditions' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'feedings' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     db().removeChannel(channel)

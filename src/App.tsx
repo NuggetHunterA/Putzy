@@ -6,9 +6,13 @@ import { Legend } from './Legend'
 import { eventBonus, eventFor, eventStart } from './events'
 import { EventIntro } from './EventIntro'
 import './events.css'
-import { complete, connect, deleteOneOff, deleteTask, findEgg, hatchEgg, load, markNews, markSeen, markStampSeen, pickMonster, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
+import { complete, connect, deleteOneOff, deleteTask, feed, findEgg, hatchEgg, load, markHomecomingSeen, markNews, markSeen, markStampSeen, pickMonster, recallExpedition, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, startExpedition, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
 import { balance, dueEventEgg, EVENT_EGGS, nextEggScene, rollEgg, type Egg } from './eggs'
 import { EggScene, type Scene } from './EggScene'
+import { Expeditions } from './Expeditions'
+import './expeditions.css'
+import { FRUITS, areaById, awayMonsters, eggsToFile, expeditionPoints, rollLoot, unseenHomecomings, type Area, type Expedition, type Fruit } from './expeditions'
+import { Departure, Homecoming } from './Homecoming'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
 import { MonsterPick } from './MonsterPick'
@@ -55,7 +59,7 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks' | 'stamps'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks' | 'stamps' | 'expeditions'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
@@ -76,6 +80,11 @@ export default function App() {
   // Stempel, dessen Animation gerade läuft.
   const [stampShown, setStampShown] = useState<Earned | null>(null)
   const closeStamp = useCallback(() => setStampShown(null), [])
+  // Heimkehr eines Trupps und Aufbruch, die gerade gezeigt werden.
+  const [homeShown, setHomeShown] = useState<Expedition | null>(null)
+  const closeHome = useCallback(() => setHomeShown(null), [])
+  const [departure, setDeparture] = useState<Expedition | null>(null)
+  const closeDeparture = useCallback(() => setDeparture(null), [])
   // Team-Bonus im Event: Leiste unten mit den Monstern, die gerade +5 bekommen haben.
   const [team, setTeam] = useState<Team | null>(null)
   const closeTeam = useCallback(() => setTeam(null), [])
@@ -153,22 +162,48 @@ export default function App() {
   // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
   const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined
   useEffect(() => {
-    if (!reveal || !person || intro || secret || evo || legend || cel || attacking) return
+    if (!reveal || !person || intro || secret || evo || legend || cel || attacking || homeShown || departure) return
     const seen = { person, monster: reveal.id, stage: 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setSecret(reveal)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [reveal, person, intro, secret, evo, legend, cel, attacking, refresh])
+  }, [reveal, person, intro, secret, evo, legend, cel, attacking, homeShown, departure, refresh])
+
+  // Heimkehr: nur auf der Expeditions-Seite, älteste zuerst, sofort als gesehen merken. Gebiets-Eier aus einer
+  // Heimkehr, die diese Person noch nicht gesehen hat, warten mit ihrer Ei-Szene bis danach.
+  const homecomings = snap && person ? unseenHomecomings(snap.expeditions, snap.expeditionsSeen, person, now) : []
+  const homeNext = view === 'expeditions' && !reveal ? homecomings[0] : undefined
+  useEffect(() => {
+    if (!homeNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure) return
+    setSnap((s) => s && { ...s, expeditionsSeen: [...s.expeditionsSeen, { person, expedition: homeNext.id }] })
+    setHomeShown(homeNext)
+    markHomecomingSeen(person, homeNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [homeNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, refresh])
+  const pendingEggs = new Set(homecomings.map((e) => e.loot.egg))
+
+  // Gebiets-Eier heimgekehrter Trupps ins Nest legen. Ein Versuch je Ei und Start.
+  const toFile = snap ? eggsToFile(snap.expeditions, snap.eggs, now) : []
+  const toFileKey = toFile.map((e) => e.id).join()
+  const filed = useRef(new Set<string>())
+  useEffect(() => {
+    const list = toFile.filter((e) => !filed.current.has(e.id))
+    if (list.length === 0) return
+    list.forEach((e) => filed.current.add(e.id))
+    Promise.all(list.map((e) => findEgg({ monster: e.loot.egg!, found_by: e.started_by, found_task: `Expedition ${areaName(e.area)}` })))
+      .catch(() => setError('Das hat nicht geklappt. Ich lade neu.'))
+      .finally(refresh)
+    // toFile ändert sich mit jedem Neuladen, entscheidend sind nur neue Funde.
+  }, [toFileKey, refresh])
 
   // Eier: Fund (Stufe -1) und Schlüpfen (Stufe 0) zeigen, nach geheimen Reihen und vor Entwicklungen.
-  const eggScene = snap && person && !reveal ? nextEggScene(snap.eggs, snap.seen, person) : undefined
+  const eggScene = snap && person && !reveal && !homeShown ? nextEggScene(snap.eggs.filter((e) => !pendingEggs.has(e.monster)), snap.seen, person) : undefined
   useEffect(() => {
-    if (!eggScene || !person || intro || secret || eggShown || evo || legend || cel || attacking) return
+    if (!eggScene || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure) return
     const seen = { person, monster: eggScene.monster.id, stage: eggScene.kind === 'found' ? -1 : 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEggShown(eggScene)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [eggScene, person, intro, secret, eggShown, evo, legend, cel, attacking, refresh])
+  }, [eggScene, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, refresh])
 
   // Streak-Punkte abgeschlossener Wochen, die noch nicht gespeichert sind, festhalten. Einmal pro Woche je Start.
   const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done) : []
@@ -199,31 +234,31 @@ export default function App() {
   // noch nicht gesehener Stempel ausgelöst hat, warten bis nach seiner Animation.
   const next = snap && person ? unseen(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking) return
+    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, refresh])
+  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, refresh])
 
   // Legenden nach den Entwicklungen zeigen und sofort als gesehen merken.
   const legendNext = snap && person && !next ? unseenLegends(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!legendNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking) return
+    if (!legendNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure) return
     const seen = { person, monster: legendNext.id, stage: LEGEND_STAGE }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setLegend(legendNext)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [legendNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, refresh])
+  }, [legendNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, refresh])
 
   // Stempel nach den Entwicklungen und Legenden zeigen, ältester zuerst, und sofort als gesehen merken.
   const stampNext = snap && person && !next && !legendNext ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
   useEffect(() => {
-    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking) return
+    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure) return
     setSnap((s) => s && { ...s, stampsSeen: [...s.stampsSeen, { person, stamp: stampNext.id }] })
     setStampShown(stampNext)
     markStampSeen(person, stampNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, refresh])
+  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -281,9 +316,9 @@ export default function App() {
 
   const myPick = snap.picks.find((p) => p.person === person)
   const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
-  const bank = balance(points, snap.eggs)
+  const bank = balance(points, snap.eggs, expeditionPoints(snap.expeditions, now))
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking ? unread(newsSeen) : []
+  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking && !homeShown && !departure ? unread(newsSeen) : []
 
   // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster, XP und Team-Bonus).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
@@ -358,6 +393,37 @@ export default function App() {
 
   const onHatch = (e: Egg) => run(hatchEgg(e.monster, person))
 
+  // Trupp losschicken: Die Beute wird jetzt gewürfelt und mitgespeichert.
+  const onStartExpedition = (area: Area, trupp: Monster[]) => {
+    const id = crypto.randomUUID()
+    const start = new Date()
+    const e = {
+      id,
+      area: area.id,
+      monsters: trupp.map((m) => m.id),
+      started_by: person,
+      started_at: start.toISOString(),
+      ends_at: new Date(start.getTime() + area.hours * 3_600_000).toISOString(),
+      loot: rollLoot(id, area, trupp, snap.monsterXp, snap.eggs, snap.expeditions),
+    }
+    setSnap({ ...snap, expeditions: [...snap.expeditions, { ...e, recalled_at: null }] })
+    setDeparture({ ...e, recalled_at: null })
+    run(startExpedition(e))
+  }
+
+  const onRecall = (e: Expedition) => {
+    const at = new Date().toISOString()
+    setSnap({ ...snap, expeditions: snap.expeditions.map((x) => (x.id === e.id ? { ...x, recalled_at: at } : x)) })
+    run(recallExpedition(e.id))
+  }
+
+  const onFeed = (m: Monster, fruit: Fruit) => {
+    const xp = FRUITS[fruit].xp
+    const f = { id: crypto.randomUUID(), monster: m.id, fruit, xp, person, fed_at: new Date().toISOString() }
+    setSnap((s) => s && { ...s, feedings: [...s.feedings, f], monsterXp: { ...s.monsterXp, [m.id]: (s.monsterXp[m.id] ?? 0) + xp } })
+    run(feed({ monster: m.id, fruit, xp, person }))
+  }
+
   const stampShownDef = stampShown && stamps(snap.tasks, snap.stamps).find((s) => s.id === stampShown.id)
   const stampsOpened = localStorage.getItem(STAMPS_STORAGE) ?? ''
   const onStamps = () => {
@@ -396,10 +462,21 @@ export default function App() {
           tasks={snap.tasks}
           week={previousWeek(week)}
           streak={points.length > 0 ? { earned: points.at(-1)!.points, bank } : undefined}
+          expeditions={snap.expeditions}
+          feedings={snap.feedings}
           onDone={doneReview}
         />
       ) : !myPick ? (
-        <MonsterPick person={person} monsters={monsters} picks={snap.picks} monsterXp={snap.monsterXp} onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))} />
+        <MonsterPick
+          person={person}
+          monsters={monsters}
+          picks={snap.picks}
+          monsterXp={snap.monsterXp}
+          expeditions={snap.expeditions.filter((e) => awayMonsters([e], now).size > 0)}
+          now={now}
+          onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))}
+          onRecall={onRecall}
+        />
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
       ) : view === 'oneoffs' ? (
@@ -426,10 +503,12 @@ export default function App() {
           onWeeks={() => setView('weeks')}
           onStamps={onStamps}
         />
+      ) : view === 'expeditions' ? (
+        <Expeditions snap={snap} monsters={monsters} now={now} onBack={() => setView('home')} onStart={onStartExpedition} onRecall={onRecall} onFeed={onFeed} />
       ) : view === 'stamps' ? (
         <Stamps snap={snap} facts={facts!} onBack={() => setView('pedia')} />
       ) : view === 'weeks' ? (
-        <WeekReview tasks={snap.tasks} week={week} archive onDone={() => setView('pedia')} />
+        <WeekReview tasks={snap.tasks} week={week} archive expeditions={snap.expeditions} feedings={snap.feedings} onDone={() => setView('pedia')} />
       ) : (
         <Home
           snap={snap}
@@ -444,6 +523,8 @@ export default function App() {
           onIntervals={() => setView('intervals')}
           onPedia={() => setView('pedia')}
           onOneOffs={() => setView('oneoffs')}
+          onExpeditions={() => setView('expeditions')}
+          homecomings={homecomings.length}
         />
       )}
       {error && (
@@ -467,6 +548,8 @@ export default function App() {
         />
       )}
       {intro && <EventIntro event={intro} now={now} egg={introEgg} onDone={closeIntro} />}
+      {homeShown && <Homecoming exp={homeShown} person={person} monsterXp={snap.monsterXp} onDone={closeHome} />}
+      {departure && <Departure exp={departure} monsterXp={snap.monsterXp} onDone={closeDeparture} />}
       {eggShown && <EggScene scene={eggShown} person={person} canPick={!myPick} onDone={closeEgg} />}
     </>
   )
@@ -490,3 +573,5 @@ function Message({ title, text }: { title: string; text: string }) {
     </main>
   )
 }
+
+const areaName = (id: string) => areaById(id).name

@@ -28,9 +28,10 @@ describe('Putzy-Pedia', () => {
     expect(list('ulrike')).toEqual(['2:1', '2:2', '5:1'])
   })
 
-  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35, geheime Reihen bis 53, Reihen aus Eiern bis 74, Event-Reihen bis 83', () => {
+  it('zählt Reihen mit 2 und 4 Stufen fortlaufend bis 35, geheime Reihen bis 53, Reihen aus Eiern bis 74, Event-Reihen bis 83, Gebiets-Reihen bis 110', () => {
     expect(dexTotal(open)).toBe(35)
-    expect(dexTotal(MONSTERS)).toBe(83)
+    expect(dexTotal(MONSTERS)).toBe(110)
+    expect(dexNo(monsterById('37'), 2)).toBe('110')
     expect(dexNo(monsterById('28'), 2)).toBe('83')
     expect(dexNo(monsterById('19'), 0)).toBe('54')
     expect(dexNo(monsterById('25'), 2)).toBe('74')

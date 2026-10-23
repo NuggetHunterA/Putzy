@@ -4,6 +4,8 @@ import { useBack } from './back'
 import { loadHistory, type Completion, type Pick, type Task } from './db'
 import type { Earned } from './stamps'
 import { ElementIcon } from './ElementIcon'
+import { Compass } from './Expeditions'
+import { weekExpeditions, type Expedition, type Feeding } from './expeditions'
 import { ELEMENTS, PEOPLE, backdrop } from './game'
 import { Sponge } from './Sponge'
 import { KINDS, reviewWeeks, weekLabel, weekReview, weekStamps, type Kind, type MonsterWeek } from './review'
@@ -16,12 +18,15 @@ type Props = {
   archive?: boolean
   // Montags: Streak-Punkte der Vorwoche und Kontostand danach.
   streak?: { earned: number; bank: number }
+  // Für die Zeile mit Expeditionen und Früchte-XP der Woche.
+  expeditions: Expedition[]
+  feedings: Feeding[]
   onDone: () => void
 }
 
 const ONEOFF_COLOR = '#8C82A8'
 
-export function WeekReview({ tasks, week: start, archive, streak, onDone }: Props) {
+export function WeekReview({ tasks, week: start, archive, streak, expeditions, feedings, onDone }: Props) {
   useBack(onDone)
   const [history, setHistory] = useState<{ picks: Pick[]; completions: Completion[]; stamps: Earned[] } | null>(null)
   const [failed, setFailed] = useState(false)
@@ -52,6 +57,7 @@ export function WeekReview({ tasks, week: start, archive, streak, onDone }: Prop
   const label = !archive ? `Letzte Woche · ${weekLabel(week)}` : week === start ? 'Diese Woche · bisher' : weekLabel(week)
   const max = Math.max(1, ...cards.flatMap((c) => KINDS.map((k) => c.tasks[k])))
   const stamped = weekStamps(week, history.stamps)
+  const trips = weekExpeditions(week, expeditions, feedings, new Date())
 
   return (
     <main className="screen">
@@ -82,6 +88,14 @@ export function WeekReview({ tasks, week: start, archive, streak, onDone }: Prop
           <span className="wr-stamp" aria-hidden="true" />
           <span>
             Stempel: {stamped} neu im Stempelheft
+          </span>
+        </div>
+      )}
+      {trips.trips + trips.fruitXp > 0 && (
+        <div className="wr-streak">
+          <Compass size={30} />
+          <span>
+            {trips.trips === 1 ? '1 Expedition' : `${trips.trips} Expeditionen`} · {trips.fruitXp} Früchte-XP verfüttert
           </span>
         </div>
       )}

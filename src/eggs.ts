@@ -22,7 +22,9 @@ export const ELEMENT_EGG: Record<MonsterElement, string> = { wasser: '20', feuer
 export const EGG_CHANCE = 0.005
 export const ONEOFF_EGG_CHANCE = 0.01
 // Gewürfelt wird nur, solange höchstens so viele Eier auf das Ausbrüten warten.
-export const MAX_WAITING = 1
+export const MAX_WAITING = 2
+// Gebiets-Eier (expeditions.ts): kommen von Expeditionen immer ins Nest und kosten wie Event-Eier wenig.
+export const AREA_EGGS = ['29', '30', '31', '32', '33', '34', '35', '36', '37']
 
 // Event-Eier: Zum Event liegt das Ei ohne Zufall im Nest, auch wenn dort schon Eier warten, und ist billiger.
 // Den Fund zeigt die Event-Begrüßung (EventIntro.tsx), nicht die Ei-Szene.
@@ -35,19 +37,19 @@ export const dueEventEgg = (event: AppEvent | null, eggs: Egg[]) => {
   return id && !eggs.some((x) => x.monster === id) ? id : null
 }
 
-export const eggCost = (monster: string) => (monster === START_EGG ? 35 : eventEgg(monster) ? 10 : 60)
+export const eggCost = (monster: string) => (monster === START_EGG ? 35 : eventEgg(monster) || AREA_EGGS.includes(monster) ? 10 : 60)
 export const eggFile = (monster: string) => `/monster/${monster}-0-ei.webp`
 export const eggName = (m: Monster) => (m.element === 'ohne' ? 'Ei ohne Element' : `${ELEMENTS[m.element].name}-Ei`)
 
 export const waiting = (eggs: Egg[]) => eggs.filter((e) => !e.hatched_at)
 export const isHatched = (m: Monster, eggs: Egg[]) => eggs.some((e) => e.monster === m.id && e.hatched_at)
 
-// Konto: Punkte aller abgeschlossenen Wochen minus ausgebrütete Eier.
-export const balance = (weeks: StreakWeek[], eggs: Egg[]) =>
-  weeks.reduce((n, w) => n + w.points, 0) - eggs.filter((e) => e.hatched_at).reduce((n, e) => n + eggCost(e.monster), 0)
+// Konto: Punkte aller abgeschlossenen Wochen und aus Expeditionen minus ausgebrütete Eier.
+export const balance = (weeks: StreakWeek[], eggs: Egg[], expeditionPoints = 0) =>
+  weeks.reduce((n, w) => n + w.points, 0) + expeditionPoints - eggs.filter((e) => e.hatched_at).reduce((n, e) => n + eggCost(e.monster), 0)
 
 // Zahl zwischen 0 und 1, fest für denselben Schlüssel (FNV-1a).
-function chance(key: string) {
+export function chance(key: string) {
   let h = 2166136261
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619)
   return (h >>> 0) / 2 ** 32

@@ -81,6 +81,16 @@ export const MONSTERS: Monster[] = [
   { ...egg('26', 'licht', 'Sichelschimmer', ['Mondi', 'Sichel\u00ADflatter', 'Noctiluna'], ['mondi', 'sichelflatter', 'noctiluna']), second: 'luft' },
   { ...egg('27', 'natur', 'Nadelfunkeln', ['Zapfi', 'Nadelpelz', 'Lichter\u00ADborst'], ['zapfi', 'nadelpelz', 'lichterborst']), second: 'feuer' },
   { ...egg('28', 'feuer', 'Glücksfeuer', ['Zündi', 'Lampion\u00ADlong', 'Wolken\u00ADkaiser'], ['zuendi', 'lampionlong', 'wolkenkaiser']), second: 'luft' },
+  // Gebiets-Eier: Super-Beute einer Expedition in diesem Gebiet (AREAS in expeditions.ts).
+  egg('29', 'natur', 'Tarnzungen-Schnapp', ['Schillo', 'Ranken\u00ADzunge', 'Chroma\u00ADleon'], ['schillo', 'rankenzunge', 'chromaleon']),
+  egg('30', 'luft', 'Klammer-Böe', ['Kliffi', 'Klammer\u00ADschwinge', 'Albatrosso'], ['kliffi', 'klammerschwinge', 'albatrosso']),
+  egg('31', 'licht', 'Gipfelglanz', ['Hörni', 'Gipfelbock', 'Lumibex'], ['hoerni', 'gipfelbock', 'lumibex']),
+  { ...egg('32', 'luft', 'Fata-Morgana-Sprung', ['Hopsi', 'Dünen\u00ADhüpfer', 'Mirago'], ['hopsi', 'duenenhuepfer', 'mirago']), second: 'licht' },
+  egg('33', 'ohne', 'Tunnelgräber', ['Buddel', 'Keller\u00ADwühler', 'Kata\u00ADkombo'], ['buddel', 'kellerwuehler', 'katakombo']),
+  egg('34', 'wasser', 'Schneeball-Rutsch', ['Pingi', 'Eis\u00ADrutscher', 'Glacius'], ['pingi', 'eisrutscher', 'glacius']),
+  egg('35', 'natur', 'Pollenwirbel', ['Hummli', 'Pollen\u00ADbrummer', 'Nektaria'], ['hummli', 'pollenbrummer', 'nektaria']),
+  egg('36', 'wasser', 'Planschfontäne', ['Ringli', 'Plansch\u00ADingo', 'Flamin\u00ADgrande'], ['ringli', 'planschingo', 'flamingrande']),
+  egg('37', 'feuer', 'Glut-Umarmung', ['Teddi', 'Kaminbär', 'Urso\u00ADflamm'], ['teddi', 'kaminbaer', 'ursoflamm']),
 ]
 
 export const monsterById = (id: string) => MONSTERS.find((m) => m.id === id)!
