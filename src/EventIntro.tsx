@@ -1,7 +1,9 @@
 // Event-Begrüßung beim ersten Öffnen im Event: Der Name fällt Buchstabe für Buchstabe herein, darunter Zeitraum und
-// Bonus als Sticker. Hat das Event ein Ei, rollt es ins Nest; das ersetzt dessen Fund-Szene.
-import { useRef } from 'react'
+// Bonus als Sticker. Hat das Event ein Ei, rollt es ins Nest; das ersetzt dessen Fund-Szene. Hat es einen Boss, steigt
+// er auf einer zweiten Seite aus dem Abfluss.
+import { useEffect, useRef, useState } from 'react'
 import { useBack } from './back'
+import { BOSS_POINTS, bossImg, weakness, type BossState } from './bosses'
 import { eggCost, eggFile, eggName } from './eggs'
 import { ElementIcon } from './ElementIcon'
 import { EVENT_LABEL, eventBonus, eventEnd, eventStart, type AppEvent } from './events'
@@ -10,8 +12,9 @@ import { ELEMENTS, TEAM_BONUS, type Monster } from './game'
 
 const short = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.`
 
-export function EventIntro({ event, now, egg, onDone }: { event: AppEvent; now: Date; egg: Monster | null; onDone: () => void }) {
+export function EventIntro({ event, now, egg, boss, onDone }: { event: AppEvent; now: Date; egg: Monster | null; boss: BossState | null; onDone: () => void }) {
   useBack(onDone)
+  const [bossPage, setBossPage] = useState(false)
   const img = useRef<HTMLImageElement>(null)
   const bonus = eventBonus(now)!
   const look = ELEMENTS[bonus]
@@ -31,6 +34,8 @@ export function EventIntro({ event, now, egg, onDone }: { event: AppEvent; now: 
     const r = el.getBoundingClientRect()
     burst(r.left + r.width / 2, r.top + r.height / 2, egg!.element, 16, 120)
   }
+
+  if (bossPage && boss) return <BossIntro s={boss} onDone={onDone} />
 
   return (
     <div className={`intro ${egg ? '' : 'no-egg'}`} style={{ ['--glow' as string]: look.soft, ['--n' as string]: name.length }}>
@@ -81,8 +86,65 @@ export function EventIntro({ event, now, egg, onDone }: { event: AppEvent; now: 
       ) : (
         <p className="intro-egg-text">Sammelt in diesen Tagen so viel XP wie möglich!</p>
       )}
-      <button className="btn intro-btn" onClick={onDone}>
+      <button className="btn intro-btn" onClick={boss?.boss.event === event && !boss.fight ? () => setBossPage(true) : onDone}>
         Los geht's!
+      </button>
+    </div>
+  )
+}
+
+// Zweite Seite: Der Boss steigt auf, der Boden bebt, Name und Fakten stempeln herein.
+function BossIntro({ s, onDone }: { s: BossState; onDone: () => void }) {
+  const stage = useRef<HTMLDivElement>(null)
+  const weak = weakness(s.boss)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const r = stage.current?.getBoundingClientRect()
+      if (r) burst(r.left + r.width / 2, r.top + r.height * 0.75, s.boss.element, 26, 140)
+      navigator.vibrate?.(60)
+    }, 950)
+    return () => clearTimeout(id)
+  }, [s.boss.element])
+  const day = new Date(`${s.lastDay}T12:00`).toLocaleDateString('de-DE', { weekday: 'long' })
+  return (
+    <div className="intro boss-intro" style={{ ['--glow' as string]: ELEMENTS[s.boss.element].soft, ['--n' as string]: s.boss.name.length }}>
+      <span className="intro-kicker">EIN BOSS TAUCHT AUF</span>
+      <div className="boss-stage" ref={stage}>
+        <img src={bossImg(s.boss)} alt="" />
+      </div>
+      <h1 className="intro-title" aria-label={s.boss.name}>
+        {[...s.boss.name].map((c, i) => (
+          <span key={i} style={{ ['--i' as string]: i }}>
+            {c}
+          </span>
+        ))}
+      </h1>
+      <div className="boss-facts">
+        <span className="bfact">
+          <span className="event-badge-dot" style={{ background: ELEMENTS[s.boss.element].strong }}>
+            <ElementIcon element={s.boss.element} />
+          </span>
+          <span>{ELEMENTS[s.boss.element].name}-Boss</span>
+        </span>
+        <span className="bfact">
+          <b>{s.lp}</b> LP
+        </span>
+        <span className="bfact weak">
+          <span className="event-badge-dot" style={{ background: ELEMENTS[weak].strong }}>
+            <ElementIcon element={weak} />
+          </span>
+          <span>
+            {ELEMENTS[weak].name}-Monster
+            <br />
+            haben Vorteil
+          </span>
+        </span>
+      </div>
+      <p className="intro-egg-text">
+        Jede erledigte Aufgabe schwächt ihn. Ab {day} schickt ihr drei Monster in den Endkampf. Sieg bringt <b>{BOSS_POINTS} Streak-Punkte</b>.
+      </p>
+      <button className="btn intro-btn" onClick={onDone}>
+        Wir putzen ihn weg!
       </button>
     </div>
   )

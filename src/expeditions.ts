@@ -55,7 +55,7 @@ export const areaOfEgg = (monster: string) => AREAS.find((a) => a.egg === monste
 
 // Element-Kreis: Wasser schlägt Feuer, Feuer Natur, Natur Luft, Luft Licht, Licht Wasser.
 export const BEATS: Record<Element, Element> = { wasser: 'feuer', feuer: 'natur', natur: 'luft', luft: 'licht', licht: 'wasser' }
-const beatenBy = (e: Element) => (Object.keys(BEATS) as Element[]).find((k) => BEATS[k] === e)!
+export const beatenBy = (e: Element) => (Object.keys(BEATS) as Element[]).find((k) => BEATS[k] === e)!
 
 export type Loot = {
   tier: 'klein' | 'gut' | 'super'
@@ -131,11 +131,14 @@ export function meets(need: Need, trupp: Monster[], monsterXp: Record<string, nu
 }
 
 // Je Monster und Gegner-Element: +1, wenn eines seiner Elemente es schlägt, −1, wenn es das Hauptelement schlägt.
-export function advantage(area: Area, trupp: Monster[], monsterXp: Record<string, number>) {
+export const advantage = (area: Area, trupp: Monster[], monsterXp: Record<string, number>) => advantageAgainst(area.enemies, trupp, monsterXp)
+
+// Dasselbe für eine Liste von Gegner-Elementen, auch für die Bosse (src/bosses.ts).
+export function advantageAgainst(enemies: Element[], trupp: Monster[], monsterXp: Record<string, number>) {
   let n = 0
   for (const m of trupp) {
     const els = elementsOf(m, monsterXp[m.id] ?? 0)
-    for (const enemy of area.enemies) {
+    for (const enemy of enemies) {
       if (els.some((e) => e !== 'ohne' && BEATS[e] === enemy)) n++
       if (m.element !== 'ohne' && beatenBy(m.element) === enemy) n--
     }

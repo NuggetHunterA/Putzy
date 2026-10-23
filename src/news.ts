@@ -25,6 +25,7 @@ export const NEWS: News[] = [
   { id: 19, title: 'Neue Entwicklungs-Level', text: 'Blattwart entwickelt sich jetzt schon auf Level 28 zu Arborius statt erst auf Level 30. Monster mit zwei Stufen, also Aali und Kokeli, entwickeln sich jetzt beide auf Level 18.' },
   { id: 21, title: 'Expeditionen', text: 'Über den Kompass oben schickt ihr Monster, die gerade nicht Wochenmonster sind, als Trupp in Gebiete im ganzen Haus. Sie bringen Früchte für XP mit, selten Streak-Punkte, neue Gebiets-Eier und ganz selten ein Shiny.' },
   { id: 22, title: 'Kleineres Nest, mehr Eier', text: 'Das Nest im Pedia ist jetzt kompakter. Zufalls-Eier tauchen auch noch auf, wenn schon zwei Eier warten.' },
+  { id: 23, title: 'Event-Bosse', text: 'Zu zehn Events taucht ein Schmutz-Boss auf. Jede erledigte Aufgabe schwächt ihn um ihre XP, ab dem letzten Event-Tag schickt ihr drei Monster in den Endkampf, ein Sieg bringt 6 Streak-Punkte. Silvester geht jetzt bis zum 2. Januar.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

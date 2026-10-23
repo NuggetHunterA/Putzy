@@ -76,7 +76,7 @@ const EVENTS: [AppEvent, (d: Date) => boolean, Element][] = [
   ['halloween', fixed(1028, 1031), 'licht'],
   ['weihnachten', fixed(1220, 1226), 'natur'],
   ['advent', (d) => d.getDay() === 0 && fixed(1127, 1224)(d), 'feuer'], // die vier Adventssonntage
-  ['silvester', (d) => fixed(1231)(d) || fixed(101)(d), 'luft'], // bis Neujahr
+  ['silvester', (d) => fixed(1231)(d) || fixed(101, 102)(d), 'luft'], // bis 2. Januar
 ]
 
 // Name für die Bonus-Plakette auf der Startseite.

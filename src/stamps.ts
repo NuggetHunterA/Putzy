@@ -2,8 +2,10 @@
 // Ein Stempel wird gespeichert, sobald seine Bedingung erfüllt ist, und bleibt dann (auch wenn ein Haken zurückgenommen wird).
 // Bonus-XP gehen an alle Monster, die in dem Moment sichtbar sind (bei Element-Stempeln nur an dieses Element),
 // und zählen über die Tabelle stamps in die Monster-XP (supabase/stempelheft.sql).
+import { BOSSES } from './bosses'
 import type { Done, Snapshot, Task } from './db'
 import type { Egg } from './eggs'
+import { EVENT_LABEL } from './events'
 import { ELEMENTS, MAX_LEVEL, MONSTERS, STANDING, TASK_ELEMENTS, dayString, levelFor, stageFor, type MonsterElement, type Person } from './game'
 import { isVisible, visibleMonsters } from './secret'
 import { longest, weekDays, weekPoints } from './streak'
@@ -13,9 +15,9 @@ import { longest, weekDays, weekPoints } from './streak'
 export type Earned = { id: string; earned_at: string; person: Person | null; xp: number; monsters: string[]; label: string | null }
 
 // Alles, was die Bedingungen brauchen.
-export type Facts = Pick<Snapshot, 'done' | 'tasks' | 'monsterXp' | 'unlocks' | 'eggs' | 'streakWeeks'> & { today: string; week: string }
+export type Facts = Pick<Snapshot, 'done' | 'tasks' | 'monsterXp' | 'unlocks' | 'eggs' | 'streakWeeks' | 'bossFights'> & { today: string; week: string }
 
-export type Icon = 'pfeil' | 'geheim' | 'topf' | 'haus' | 'schwamm' | 'ei' | 'nest' | 'klemmbrett' | 'krone' | MonsterElement
+export type Icon = 'pfeil' | 'geheim' | 'topf' | 'haus' | 'schwamm' | 'ei' | 'nest' | 'klemmbrett' | 'krone' | 'schwert' | MonsterElement
 
 export type Stamp = {
   id: string
@@ -36,7 +38,7 @@ export type Stamp = {
 }
 
 export const TASK_GOAL = 25
-const COLOR = { evo: '#D6284A', geheim: '#6A52B0', standing: '#FF5A3C', streak: '#00B39B', ei: '#C78A4A', grau: '#8C82A8', summe: '#1B1530', level: '#9B7BFF', gold: '#E0B000' }
+const COLOR = { boss: '#2A1846', evo: '#D6284A', geheim: '#6A52B0', standing: '#FF5A3C', streak: '#00B39B', ei: '#C78A4A', grau: '#8C82A8', summe: '#1B1530', level: '#9B7BFF', gold: '#E0B000' }
 // Licht ist als Tinte auf Weiß zu blass, deshalb dunkler.
 export const ink = (e: MonsterElement) => (e === 'licht' ? COLOR.gold : ELEMENTS[e].strong)
 
@@ -120,6 +122,11 @@ export const FIXED: Stamp[] = [
       count: (f: Facts) => evolutions(f, e),
     }
   }),
+  // Ein Stempel je Boss für den ersten Sieg, ohne XP.
+  ...BOSSES.map((b) => ({
+    id: `boss-${b.event}`, group: 'Bosse', name: b.name, text: `${b.name} besiegt (${EVENT_LABEL[b.event].replace(/^\S+ /, '')})`, arc: b.name, icon: 'schwert' as const,
+    color: COLOR.boss, goal: 1, reward: null, count: (f: Facts) => f.bossFights.filter((x) => x.event === b.event && x.won).length,
+  })),
 ]
 
 const taskStamp = (id: string, name: string, group: string, element: MonsterElement, count: Stamp['count']): Stamp => ({
@@ -140,6 +147,7 @@ export function stamps(tasks: Task[], earned: Earned[]): Stamp[] {
 // Ohne Namen, solange der Stempel ein geheimes Monster verraten würde.
 export function hidden(s: Stamp, f: Facts) {
   if (s.id.startsWith('geheim-')) return s.count(f) === 0
+  if (s.id.startsWith('boss-')) return !f.bossFights.some((x) => `boss-${x.event}` === s.id)
   if (s.id === 'meister-ohne') return !visibleMonsters(f.unlocks, f.today, f.eggs).some((m) => m.element === 'ohne')
   return false
 }
@@ -151,6 +159,7 @@ function earnedBy(s: Stamp, f: Facts): Person | null {
   if (s.id === 'ei-fund') return first(f.eggs.filter((e) => e.found_by), (e) => e.found_at).found_by
   if (s.id.startsWith('ei-')) return first(f.eggs.filter((e) => e.hatched_at), (e) => e.hatched_at!).hatched_by
   if (s.id.startsWith('woche-') || s.id === 'haus-voll') return null
+  if (s.id.startsWith('boss-')) return f.bossFights.find((x) => `boss-${x.event}` === s.id && x.won)!.started_by
   return f.done.reduce<Done | null>((last, c) => (!last || c.done_at >= last.done_at ? c : last), null)?.person ?? null
 }
 

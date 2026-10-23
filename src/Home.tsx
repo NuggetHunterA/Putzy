@@ -1,7 +1,9 @@
 // Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste mit den ständigen Aufgaben oben.
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
+import { FLOOR, bossImg, canFight, hitsCount, shortDay, type BossState } from './bosses'
+import { bossHit } from './fx'
 import { ElementIcon } from './ElementIcon'
 import { Compass } from './Expeditions'
 import { EVENT_LABEL, eventBonus, eventEnd, eventFor } from './events'
@@ -32,11 +34,14 @@ type Props = {
   onExpeditions: () => void
   // Heimgekehrte Trupps, deren Heimkehr diese Person noch nicht gesehen hat.
   homecomings: number
+  // Laufender Boss oder null.
+  boss: BossState | null
+  onBoss: () => void
 }
 
 export type { Row }
 
-export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings }: Props) {
+export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings, boss, onBoss }: Props) {
   const { myBadge, strike } = useStrike(snap, person, onAttackEnd)
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
@@ -55,10 +60,26 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
   const myElements = elementsOf(myMonster, snap.monsterXp[myMonster.id] ?? 0)
   const bonus = eventBonus(now)
   const xpFor = (t: Task) => xpOf(t, myElements, bonus)
-  const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task, dot, () => onToggle(row))
+  // Boss: Jede Erledigung trifft ihn mit ihren XP. Treffer fliegen beim Abhaken zur Boss-Leiste.
+  const bossPic = useRef<HTMLImageElement>(null)
+  const hitting = boss && hitsCount(boss, now) ? boss : null
+  const hitBoss = (element: Element, xp: number, dot: HTMLElement) => {
+    if (!hitting || !bossPic.current) return
+    const damage = Math.min(xp, Math.round(hitting.lp * (1 - FLOOR)) - hitting.damage)
+    if (damage > 0) bossHit(dot, bossPic.current, element, damage)
+  }
+  const toggle = (row: Row, dot: HTMLElement) =>
+    strike(!!row.done, row.task, dot, () => {
+      onToggle(row)
+      if (!row.done) hitBoss(row.task.element, xpFor(row.task), dot)
+    })
   const toggleStanding = (s: Standing, dot: HTMLElement) => {
     const mine = snap.today.find((c) => c.standing === s.id && c.person === person)
-    strike(!!mine, { effort: STANDING_EFFORT, element: s.element }, dot, () => onStanding(s, mine))
+    const work = { effort: STANDING_EFFORT, element: s.element }
+    strike(!!mine, work, dot, () => {
+      onStanding(s, mine)
+      if (!mine) hitBoss(s.element, xpOf(work, myElements, bonus), dot)
+    })
   }
 
   return (
@@ -121,6 +142,8 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
           ))}
         </span>
       </div>
+
+      {boss && <BossBar s={boss} now={now} imgRef={bossPic} onClick={onBoss} />}
 
       <PediaBanner snap={snap} monsters={monsters} onClick={onPedia} />
 
@@ -206,6 +229,37 @@ function EventBadge({ now }: { now: Date }) {
         </button>
       )}
     </>
+  )
+}
+
+// Boss-Leiste unter dem Fortschritt: Bild, LP-Balken mit Boden-Marke (FLOOR) und wann der Kampf ist. Am letzten Tag
+// leuchtet sie und wird zum Knopf „Zum Kampf!“, nach dem Kampf steht das Ergebnis darin.
+function BossBar({ s, now, imgRef, onClick }: { s: BossState; now: Date; imgRef: RefObject<HTMLImageElement | null>; onClick: () => void }) {
+  const left = s.lp - s.damage
+  const ready = canFight(s, now)
+  const when = s.fight ? (s.fight.won ? 'Besiegt!' : 'Entkommen') : ready ? (dayString(now) === s.lastDay ? 'heute!' : `bis ${shortDay(s.open)}`) : `Kampf ab ${shortDay(s.lastDay)}`
+  return (
+    <button className={`boss-bar${ready ? ' ready' : ''}${s.fight ? ' over' : ''}`} onClick={onClick} aria-label={`${s.boss.name}: ${left} von ${s.lp} LP`}>
+      <img ref={imgRef} className="bb-img" src={bossImg(s.boss)} alt="" />
+      <span className="bb-main">
+        <span className="bb-top">
+          <span className="bb-name">{s.boss.name}</span>
+          <span className="event-badge-dot" style={{ background: ELEMENTS[s.boss.element].strong }}>
+            <ElementIcon element={s.boss.element} />
+          </span>
+          {!ready && <span className="bb-tag">BOSS</span>}
+        </span>
+        <span className="hpbar">
+          <span style={{ width: `${(left / s.lp) * 100}%` }} />
+          <i style={{ left: `${FLOOR * 100}%` }} />
+        </span>
+        <span className="bb-meta">
+          <span>{ready ? `${left} LP übrig` : `${left} / ${s.lp} LP`}</span>
+          <span>{when}</span>
+        </span>
+      </span>
+      {ready ? <span className="bb-fight">Zum Kampf!</span> : <span className="bb-go">›</span>}
+    </button>
   )
 }
 

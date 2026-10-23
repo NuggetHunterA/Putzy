@@ -144,6 +144,28 @@ create table feedings (
   fed_at timestamptz not null default now()
 );
 
+-- Event-Bosse (src/bosses.ts): ein Endkampf je Boss und Jahr, Ergebnis beim Start festgehalten.
+create table boss_fights (
+  id uuid primary key,
+  event text not null,
+  year int not null,
+  monsters text[] not null check (cardinality(monsters) between 1 and 3),
+  started_by text not null check (started_by in ('adrian', 'ulrike')),
+  started_at timestamptz not null default now(),
+  won boolean not null,
+  chance int not null,
+  damage int not null,
+  lp int not null,
+  unique (event, year)
+);
+
+-- Wer die Kampf-Szene schon gesehen hat.
+create table boss_fights_seen (
+  person text not null check (person in ('adrian', 'ulrike')),
+  fight uuid not null references boss_fights (id) on delete cascade,
+  primary key (person, fight)
+);
+
 -- XP aus Erledigungen, Team-Boni und Stempel-Boni.
 create view monster_xp with (security_invoker = true) as
   select monster, sum(xp)::int as xp from (
@@ -171,6 +193,8 @@ alter table stamps_seen enable row level security;
 alter table expeditions enable row level security;
 alter table expeditions_seen enable row level security;
 alter table feedings enable row level security;
+alter table boss_fights enable row level security;
+alter table boss_fights_seen enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
@@ -186,9 +210,11 @@ create policy household on stamps_seen for all to anon using (true) with check (
 create policy household on expeditions for all to anon using (true) with check (true);
 create policy household on expeditions_seen for all to anon using (true) with check (true);
 create policy household on feedings for all to anon using (true) with check (true);
+create policy household on boss_fights for all to anon using (true) with check (true);
+create policy household on boss_fights_seen for all to anon using (true) with check (true);
 
 -- Neue Tabellen bekommen ab 30.10.2026 keinen API-Zugriff mehr automatisch, daher ausdrücklich.
-grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen, expeditions, expeditions_seen, feedings to anon;
+grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen, expeditions, expeditions_seen, feedings, boss_fights, boss_fights_seen to anon;
 grant select on task_last_done, monster_xp, monster_stats to anon;
 
-alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps, expeditions, feedings;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps, expeditions, feedings, boss_fights;
