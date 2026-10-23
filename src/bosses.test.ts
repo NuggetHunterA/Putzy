@@ -20,8 +20,8 @@ describe('Bosse', () => {
     expect(lpFor(bossDays('halloween', 2026))).toBe(480)
     // Silvester gehört zum Jahr, in dem es beginnt, und geht bis 2.1.
     expect(bossDays('silvester', 2026)).toEqual(['2026-12-31', '2027-01-01', '2027-01-02'])
-    // 2027 fällt Karfreitag auf den 26.3.: Ostern hat Vorrang, der Frühjahrsputz hat nur 6 Tage.
-    expect(bossDays('fruehjahrsputz', 2027)).toHaveLength(6)
+    // Der Frühjahrsputz hängt an Ostern: 2027 vom 16. bis 22.4.
+    expect(bossDays('fruehjahrsputz', 2027)).toEqual(['2027-04-16', '2027-04-17', '2027-04-18', '2027-04-19', '2027-04-20', '2027-04-21', '2027-04-22'])
   })
 
   it('läuft vom ersten Event-Tag bis zwei Tage nach dem Ende', () => {

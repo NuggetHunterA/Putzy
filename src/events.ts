@@ -66,7 +66,7 @@ const EVENTS: [AppEvent, (d: Date) => boolean, Element][] = [
   ['hochzeitstag', fixed(414), 'feuer'],
   ['ostern', aroundEaster(-2, 1), 'natur'], // Karfreitag bis Ostermontag
   ['neujahr_cn', neujahrCn, 'feuer'],
-  ['fruehjahrsputz', fixed(320, 326), 'wasser'],
+  ['fruehjahrsputz', aroundEaster(19, 25), 'wasser'], // eine Woche, beginnt 3 Wochen nach Karfreitag
   ['maifeiertag', fixed(430, 501), 'natur'],
   ['sonnenwende', fixed(618, 622), 'licht'],
   ['jahrestag', fixed(601), 'licht'],

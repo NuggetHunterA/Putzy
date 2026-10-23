@@ -17,8 +17,6 @@ describe('Event-Designs', () => {
     expect(on('2027-01-01')).toBe('silvester')
     expect(on('2027-01-02')).toBe('silvester')
     expect(on('2027-01-03')).toBeNull()
-    expect(on('2026-03-20')).toBe('fruehjahrsputz')
-    expect(on('2026-03-27')).toBeNull()
     expect(on('2026-06-01')).toBe('jahrestag')
     expect(on('2026-06-17')).toBeNull()
     expect(on('2026-06-18')).toBe('sonnenwende')
@@ -39,6 +37,17 @@ describe('Event-Designs', () => {
     expect(on('2026-04-03')).toBe('ostern')
     expect(on('2026-04-06')).toBe('ostern')
     expect(on('2026-04-07')).toBeNull()
+  })
+
+  it('beginnt den Frühjahrsputz 3 Wochen nach Karfreitag', () => {
+    expect(on('2026-03-20')).toBeNull()
+    expect(on('2026-04-23')).toBeNull()
+    expect(on('2026-04-24')).toBe('fruehjahrsputz') // Karfreitag 3.4. + 21 Tage
+    expect(on('2026-04-30')).toBe('fruehjahrsputz')
+    expect(on('2026-05-01')).toBe('maifeiertag')
+    expect(on('2027-04-16')).toBe('fruehjahrsputz') // Karfreitag 26.3. + 21 Tage
+    expect(on('2027-04-22')).toBe('fruehjahrsputz')
+    expect(on('2027-04-23')).toBeNull()
   })
 
   it('kennt Chinesisches Neujahr aus der Liste', () => {
