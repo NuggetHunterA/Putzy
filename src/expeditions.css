@@ -229,3 +229,28 @@
 .logbook { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 18px; background: var(--paper); font-size: 13px; font-weight: 700; }
 .logbook > b { font-size: 16px; }
 .logbook span { display: flex; justify-content: space-between; }
+
+/* Entwurf: hübschere Karte */
+.map { background: #F6E7C8 repeating-linear-gradient(90deg, transparent 0 18px, rgba(214, 160, 90, .16) 18px 20px); }
+.room { isolation: isolate; background: #FFFDF6; }
+.room-bg { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center 70%; -webkit-mask: linear-gradient(100deg, transparent 32%, #000 85%); mask: linear-gradient(100deg, transparent 32%, #000 85%); opacity: .9; }
+.room.locked .room-bg { filter: grayscale(1) blur(1.5px); opacity: .35; }
+.room b, .room .meta, .room .lockline { text-shadow: 0 0 4px #FFFDF6, 0 0 2px #FFFDF6; }
+.room.busy .faces img { animation: hk-hop .45s ease-in-out infinite alternate; }
+.room.busy .faces img:nth-child(2) { animation-delay: .15s; }
+.room.busy .faces img:nth-child(3) { animation-delay: .3s; }
+.peek { position: absolute; right: -6px; top: calc(50% - 26px); width: 56px; height: 56px; object-fit: contain; z-index: 0; transform-origin: 70% 100%; animation: peek 2.4s ease-in-out infinite; filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, .25)); }
+@keyframes peek { 0%, 100% { transform: translate(26px, 4px) rotate(12deg); } 40%, 70% { transform: translate(0, 0) rotate(-4deg); } }
+.floor-label.beam { margin: 4px -8px 0; padding: 3px 12px; border-block: 2.5px solid var(--ink); background: linear-gradient(#C98A4B, #A86A31); color: #FFF4DE; opacity: 1; font-size: 10px; text-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+.cellar { grid-column: 1 / -1; margin: -6px -8px -8px; padding: 10px 8px 8px; border-radius: 0 0 15px 15px; background-color: #8C8496; background-image: linear-gradient(335deg, rgba(0, 0, 0, .18) 23px, transparent 23px), linear-gradient(155deg, rgba(255, 255, 255, .12) 23px, transparent 23px), linear-gradient(335deg, rgba(0, 0, 0, .18) 23px, transparent 23px), linear-gradient(155deg, rgba(255, 255, 255, .12) 23px, transparent 23px); background-size: 58px 58px; background-position: 0 2px, 4px 35px, 29px 31px, 34px 6px; }
+.cellar .room { width: 100%; }
+.wicker { position: relative; padding-top: 12px; border-radius: 10px 10px 22px 22px; background: #D9A35B; background-image: repeating-linear-gradient(90deg, rgba(110, 63, 24, .28) 0 3px, transparent 3px 14px), repeating-linear-gradient(0deg, #E3B26A 0 7px, #C98F48 7px 9px); }
+.wicker::before { content: ''; position: absolute; left: 10px; right: 10px; top: -9px; height: 14px; border: 3px solid var(--ink); border-radius: 99px; background: repeating-linear-gradient(60deg, #B57A36 0 6px, #E3B26A 6px 12px); }
+.wicker .f { padding: 2px 6px 2px 2px; border: 2px solid var(--ink); border-radius: 99px; background: #FFF8E8; }
+.notebook { position: relative; padding: 10px 12px 10px 34px; gap: 0; background: #FFFDF6 repeating-linear-gradient(transparent 0 29px, #C9DDF2 29px 31px); background-position: 0 6px; }
+.notebook::before { content: ''; position: absolute; top: 0; bottom: 0; left: 24px; width: 2px; background: #F2A0A8; }
+.notebook::after { content: ''; position: absolute; top: 10px; bottom: 10px; left: 7px; width: 9px; background: radial-gradient(circle, #1B1530 3.5px, transparent 4px) 0 0 / 9px 31px repeat-y; }
+.notebook .log-row { min-height: 31px; align-items: center; }
+.stamp-mini { padding: 0 5px; border: 2px solid currentColor; border-radius: 6px; font-family: 'Bangers', sans-serif; font-size: 12px; letter-spacing: .06em; transform: rotate(-8deg); margin-right: 4px; }
+.stamp-mini.super { color: var(--accent); }
+.stamp-mini.gut { color: #2E9E5B; }

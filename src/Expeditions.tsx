@@ -53,6 +53,8 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
     const found = a.egg && snap.eggs.some((e) => e.monster === a.egg)
     return (
       <button key={a.id} className={`room ${cls} ${open ? '' : 'locked'} ${trupp ? 'busy' : ''}`} onClick={() => (open ? setPicking(a) : setSheet(a))}>
+        <span className="room-bg" style={{ backgroundImage: `url(/expedition/kulisse-${a.id}.webp)` }} />
+        {trupp && <img className="peek" src={`/expedition/gegner-${a.id}.webp`} alt="" />}
         <b>{a.name}</b>
         {open ? (
           <span className="meta">
@@ -91,20 +93,20 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
           <img src="/expedition/dach.webp" alt="" />
           {room(byId('gipfel')!)}
         </div>
-        <span className="floor-label">OBEN</span>
+        <span className="floor-label beam">OBEN</span>
         {room(byId('klippen')!)}
         {room(byId('wueste')!)}
-        <span className="floor-label">UNTEN</span>
+        <span className="floor-label beam">UNTEN</span>
         {room(byId('lagune')!)}
         {room(byId('vulkan')!)}
         {room(byId('flur')!)}
         {room(byId('dschungel')!)}
         {room(season, 'season')}
-        <span className="floor-label">KELLER</span>
-        {room(byId('keller')!, 'wide')}
+        <span className="floor-label beam">KELLER</span>
+        <div className="cellar">{room(byId('keller')!, 'wide')}</div>
       </div>
 
-      <div className="basket">
+      <div className="basket wicker">
         {FRUIT_ORDER.map((f) => (
           <span key={f} className="f">
             <img src={fruitImg(f)} alt={FRUITS[f].name} />
@@ -142,7 +144,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
       {log.length > 0 && (
         <>
           <h2 className="exp-title">Logbuch</h2>
-          <div className="trupp log">
+          <div className="trupp log notebook">
             {log.map((e) => (
               <span key={e.id} className="log-row">
                 <span>{areaById(e.area).name}</span>
@@ -151,7 +153,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
                     'zurückgerufen'
                   ) : (
                     <>
-                      {e.loot.tier === 'super' && <b className="super">SUPER</b>}
+                      {e.loot.tier !== 'klein' && <b className={`stamp-mini ${e.loot.tier}`}>{e.loot.tier === 'super' ? 'SUPER' : 'GUT'}</b>}
                       {e.loot.fruits.map((f, i) => (
                         <img key={i} src={fruitImg(f)} alt={FRUITS[f].name} />
                       ))}
