@@ -106,7 +106,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
         <div className="cellar">{room(byId('keller')!, 'wide')}</div>
       </div>
 
-      <div className="basket wicker">
+      <div className="basket">
         {FRUIT_ORDER.map((f) => (
           <span key={f} className="f">
             <img src={fruitImg(f)} alt={FRUITS[f].name} />
