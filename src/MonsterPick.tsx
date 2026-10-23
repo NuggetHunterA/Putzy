@@ -1,6 +1,10 @@
-// Monsterwahl zum Wochenstart. Ein Monster, das die andere Person schon hat, ist gesperrt.
+// Monsterwahl zum Wochenstart. Ein Monster, das die andere Person schon hat, ist gesperrt, eines auf Expedition auch;
+// dessen Trupp lässt sich ohne Beute zurückrufen.
+import { useState } from 'react'
 import { ELEMENTS, PEOPLE, backdrop, levelFor, stageFor, type Monster, type Person } from './game'
 import type { Pick } from './db'
+import { Compass, left } from './Expeditions'
+import { areaById, type Expedition } from './expeditions'
 
 type Props = {
   person: Person
@@ -8,10 +12,15 @@ type Props = {
   monsters: Monster[]
   picks: Pick[]
   monsterXp: Record<string, number>
+  // Trupps, die gerade unterwegs sind.
+  expeditions: Expedition[]
+  now: Date
   onPick: (monsterId: string) => void
+  onRecall: (e: Expedition) => void
 }
 
-export function MonsterPick({ person, monsters, picks, monsterXp, onPick }: Props) {
+export function MonsterPick({ person, monsters, picks, monsterXp, expeditions, now, onPick, onRecall }: Props) {
+  const [recall, setRecall] = useState<Expedition | null>(null)
   return (
     <main className="screen">
       <header className="pick-head">
@@ -26,26 +35,53 @@ export function MonsterPick({ person, monsters, picks, monsterXp, onPick }: Prop
       <div className="pick-grid">
         {monsters.map((m, i) => {
           const takenBy = picks.find((p) => p.monster === m.id && p.person !== person)
+          const away = expeditions.find((e) => e.monsters.includes(m.id))
           const level = levelFor(monsterXp[m.id] ?? 0)
           const stage = stageFor(m, level)
           return (
-            <button
-              key={m.id}
-              className="pick-card"
-              style={{ animationDelay: `${i * 0.04}s` }}
-              disabled={!!takenBy}
-              onClick={() => onPick(m.id)}
-            >
-              <span className="pick-img" style={{ background: backdrop(m.element) }}>
-                <img src={m.files[stage]} alt="" />
-                <span className="chip">{ELEMENTS[m.element].name}</span>
-              </span>
-              <span className="pick-name">{m.stages[stage]}</span>
-              <span className="pick-meta">{takenBy ? `${PEOPLE[takenBy.person]} hat ihn` : `Level ${level}`}</span>
-            </button>
+            <div key={m.id} className={`pick-wrap ${away ? 'away' : ''}`}>
+              <button className={`pick-card ${away ? 'away' : ''}`} style={{ animationDelay: `${i * 0.04}s` }} disabled={!!takenBy || !!away} onClick={() => onPick(m.id)}>
+                <span className="pick-img" style={{ background: backdrop(m.element) }}>
+                  <img src={m.files[stage]} alt="" />
+                  <span className="chip">{ELEMENTS[m.element].name}</span>
+                  {away && (
+                    <span className="away-tag">
+                      <Compass size={12} /> unterwegs · {left(new Date(away.ends_at), now)}
+                    </span>
+                  )}
+                </span>
+                <span className="pick-name">{m.stages[stage]}</span>
+                <span className="pick-meta">{takenBy ? `${PEOPLE[takenBy.person]} hat ihn` : `Level ${level}`}</span>
+              </button>
+              {away && (
+                <button className="pick-recall" onClick={() => setRecall(away)}>
+                  Zurückrufen
+                </button>
+              )}
+            </div>
           )
         })}
       </div>
+      {recall && (
+        <div className="news">
+          <div className="confirm">
+            <h2 className="confirm-title">Trupp zurückrufen?</h2>
+            <p className="confirm-text">Der Trupp aus der {areaById(recall.area).name} kommt sofort heim, aber ohne Beute. Danach sind alle seine Monster wieder wählbar.</p>
+            <button
+              className="news-btn red"
+              onClick={() => {
+                onRecall(recall)
+                setRecall(null)
+              }}
+            >
+              Zurückrufen
+            </button>
+            <button className="btn" onClick={() => setRecall(null)}>
+              Doch nicht
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

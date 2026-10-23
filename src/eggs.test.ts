@@ -17,18 +17,20 @@ describe('Eier', () => {
     expect(rollEgg(k, 'feuer', [])).toBe('21')
   })
 
-  it('würfelt nicht, wenn das Ei schon da ist oder zwei Eier warten', () => {
+  it('würfelt nicht, wenn das Ei schon da ist oder drei Eier warten', () => {
     const k = keys(true, 0.005)[0]
     expect(rollEgg(k, 'feuer', [egg('21', { hatched_at: '2026-11-01T10:00:00Z' })])).toBeNull()
     expect(rollEgg(k, 'feuer', [egg('19')])).toBe('21')
-    expect(rollEgg(k, 'feuer', [egg('19'), egg('20')])).toBeNull()
-    expect(rollEgg(k, 'feuer', [egg('19', { hatched_at: '2026-11-01T10:00:00Z' }), egg('20')])).toBe('21')
+    expect(rollEgg(k, 'feuer', [egg('19'), egg('20')])).toBe('21')
+    expect(rollEgg(k, 'feuer', [egg('19'), egg('20'), egg('22')])).toBeNull()
+    expect(rollEgg(k, 'feuer', [egg('19', { hatched_at: '2026-11-01T10:00:00Z' }), egg('20'), egg('22')])).toBe('21')
   })
 
   it('zieht ausgebrütete Eier vom Konto ab: Start-Ei 35, Zufallsfunde 60', () => {
     const weeks = [{ week_start: '2026-10-19', points: 7 }, { week_start: '2026-10-26', points: 100 }]
     expect(balance(weeks, [egg('19')])).toBe(107)
     expect(balance(weeks, [egg('19', { hatched_at: 'x' }), egg('20', { hatched_at: 'x' })])).toBe(12)
+    expect(balance(weeks, [egg('19', { hatched_at: 'x' }), egg('29', { hatched_at: 'x' })], 3)).toBe(65)
   })
 
   it('heißt nur nach dem Element', () => {
@@ -56,6 +58,7 @@ describe('Eier', () => {
     expect(dueEventEgg(null, full)).toBeNull()
     expect(eggCost('26')).toBe(10)
     expect(eggCost('21')).toBe(60)
+    expect(eggCost('33')).toBe(10)
     expect(eggName(monsterById('26'))).toBe('Licht-Ei')
   })
 

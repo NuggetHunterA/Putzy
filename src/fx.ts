@@ -167,3 +167,23 @@ export async function attack({ from, to, bar, src, element, taskElement, xp, onH
   fly.remove()
   from.style.visibility = ''
 }
+
+// Frucht fliegt im Bogen von oben in der Mitte zum Ziel, dann onLand.
+export function flyTo(src: string, to: DOMRect, onLand: () => void) {
+  const { x, y } = center(to)
+  if (reduced()) return onLand()
+  const el = spawn('img', 'fly-fruit') as HTMLImageElement
+  el.src = src
+  const sx = innerWidth / 2 - 24
+  el.animate(
+    [
+      { transform: `translate(${sx}px, 120px) scale(1)` },
+      { transform: `translate(${(sx + x - 24) / 2}px, ${Math.min(120, y) - 80}px) scale(1.2)`, offset: 0.5 },
+      { transform: `translate(${x - 24}px, ${y - 24}px) scale(.3)` },
+    ],
+    { duration: 650, easing: 'ease-in' },
+  ).onfinish = () => {
+    el.remove()
+    onLand()
+  }
+}

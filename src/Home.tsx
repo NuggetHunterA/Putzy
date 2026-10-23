@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
 import { ElementIcon } from './ElementIcon'
+import { Compass } from './Expeditions'
 import { EVENT_LABEL, eventBonus, eventEnd, eventFor } from './events'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, TEAM_BONUS, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Element, type Monster, type Person, type Standing } from './game'
 import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
@@ -28,11 +29,14 @@ type Props = {
   onIntervals: () => void
   onPedia: () => void
   onOneOffs: () => void
+  onExpeditions: () => void
+  // Heimgekehrte Trupps, deren Heimkehr diese Person noch nicht gesehen hat.
+  homecomings: number
 }
 
 export type { Row }
 
-export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs }: Props) {
+export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings }: Props) {
   const { myBadge, strike } = useStrike(snap, person, onAttackEnd)
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
@@ -68,6 +72,10 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
           <h1 className="logo">Putzy</h1>
         </div>
         <span className="head-btns">
+          <button className={`gear${homecomings > 0 ? ' hot' : ''}`} onClick={onExpeditions} aria-label={`Expeditionen, ${homecomings} zurück`}>
+            <Compass size={22} />
+            {homecomings > 0 && <span className="gear-count">{homecomings}</span>}
+          </button>
           <button className={`gear${oneoffs > 0 ? ' has-count' : ''}`} onClick={onOneOffs} aria-label={`Einmalige Aufgaben, ${oneoffs} offen`}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="5" y="4" width="14" height="17" rx="2" />
