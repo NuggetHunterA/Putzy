@@ -1,6 +1,6 @@
 // Event-Bosse: Zu jedem Event mit mindestens 3 Tagen taucht ein Schmutz-Boss auf. Jede Erledigung im Event schwächt ihn
 // (Schaden = XP, Aufgaben im Event-Element doppelt), ab dem letzten Tag tritt ein Trupp aus drei Monstern gegen ihn an.
-// Das Ergebnis wird beim Start fest aus Event und Jahr gewürfelt und gespeichert (Konzept: bosse.md im Projektordner).
+// Das Ergebnis wird beim Start aus der zufälligen Kampf-id gewürfelt und gespeichert (Konzept: bosse.md im Projektordner).
 import type { Done, Task } from './db'
 import { chance } from './eggs'
 import { eventFor, type AppEvent } from './events'
@@ -117,8 +117,8 @@ export function bestTrupp(boss: Boss, monsters: Monster[], monsterXp: Record<str
   return [...monsters].sort((a, b) => score(b) - score(a)).slice(0, 3)
 }
 
-// Fester Wurf aus Event und Jahr, damit beide Handys dasselbe Ergebnis hätten.
-export const rollWin = (event: AppEvent, year: number, percent: number) => chance(`boss:${event}:${year}`) < percent / 100
+// Wurf aus der zufälligen Kampf-id: Er steht erst beim Start fest und wird mit dem Kampf gespeichert.
+export const rollWin = (id: string, percent: number) => chance(`boss:${id}`) < percent / 100
 
 export const fightOf = (fights: Fight[], t: BossTime) => fights.find((f) => f.event === t.boss.event && f.year === t.year)
 export const bossPoints = (fights: Fight[]) => fights.filter((f) => f.won).length * BOSS_POINTS

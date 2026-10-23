@@ -447,14 +447,15 @@ export default function App() {
   const onFight = (trupp: Monster[]) => {
     if (!boss) return
     const total = winChance(boss.boss, boss.damage, boss.lp, trupp, snap.monsterXp).total
+    const id = crypto.randomUUID()
     const f: Fight = {
-      id: crypto.randomUUID(),
+      id,
       event: boss.boss.event,
       year: boss.year,
       monsters: trupp.map((m) => m.id),
       started_by: person,
       started_at: new Date().toISOString(),
-      won: rollWin(boss.boss.event, boss.year, total),
+      won: rollWin(id, total),
       chance: total,
       damage: boss.damage,
       lp: boss.lp,
