@@ -106,6 +106,8 @@ export const truppSlots = (monsters: Monster[], monsterXp: Record<string, number
 export const isAway = (e: Expedition, now: Date) => !e.recalled_at && new Date(e.ends_at) > now
 export const isHome = (e: Expedition, now: Date) => !e.recalled_at && new Date(e.ends_at) <= now
 export const awayMonsters = (exps: Expedition[], now: Date) => new Set(exps.filter((e) => isAway(e, now)).flatMap((e) => e.monsters))
+// Pro Gebiet ist höchstens ein Trupp gleichzeitig unterwegs.
+export const areaBusy = (area: Area, exps: Expedition[], now: Date) => exps.some((e) => e.area === area.id && isAway(e, now))
 
 // Warum ein Monster nicht mit darf, oder null. Wochenmonster beider Personen bleiben zu Hause.
 export function blocked(m: Monster, area: Area, monsterXp: Record<string, number>, picks: Pick[], away: Set<string>) {

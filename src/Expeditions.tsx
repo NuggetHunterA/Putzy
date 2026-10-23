@@ -5,7 +5,7 @@ import { useBack } from './back'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
 import {
-  FRUITS, FRUIT_ORDER, UNLOCK_TIER, areaById, awayMonsters, basket, blocked, canFeed, canStart, fruitCap, isAway, isOpen, mapAreas, odds,
+  FRUITS, FRUIT_ORDER, UNLOCK_TIER, areaBusy, areaById, awayMonsters, basket, blocked, canFeed, canStart, fruitCap, isAway, isOpen, mapAreas, odds,
   truppSlots, type Area, type Expedition, type Fruit,
 } from './expeditions'
 import { burst, flyTo } from './fx'
@@ -43,7 +43,8 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
 
   if (picking) return <TruppPick area={picking} snap={snap} monsters={monsters} now={now} free={slots - away.length} onBack={() => setPicking(null)} onStart={(t) => {
     setPicking(null)
-    onStart(picking, t)
+    // Das andere Handy kann das Gebiet inzwischen belegt haben.
+    if (!areaBusy(picking, snap.expeditions, now)) onStart(picking, t)
   }} />
   if (feeding) return <Basket snap={snap} monsters={monsters} now={now} onBack={() => setFeeding(false)} onFeed={onFeed} />
 
@@ -52,11 +53,13 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
     const trupp = away.find((e) => e.area === a.id)
     const found = a.egg && snap.eggs.some((e) => e.monster === a.egg)
     return (
-      <button key={a.id} className={`room ${cls} ${open ? '' : 'locked'} ${trupp ? 'busy' : ''}`} onClick={() => (open ? setPicking(a) : setSheet(a))}>
+      <button key={a.id} className={`room ${cls} ${open ? '' : 'locked'} ${trupp ? 'busy' : ''}`} onClick={() => (trupp ? undefined : open ? setPicking(a) : setSheet(a))}>
         <span className="room-bg" style={{ backgroundImage: `url(/expedition/kulisse-${a.id}.webp)` }} />
         {trupp && <img className="peek" src={`/expedition/gegner-${a.id}.webp`} alt="" />}
         <b>{a.name}</b>
-        {open ? (
+        {trupp ? (
+          <span className="meta">unterwegs · zurück {clock(new Date(trupp.ends_at))}</span>
+        ) : open ? (
           <span className="meta">
             {a.hours} h · ab Lv {a.minLevel}
             {a.id === 'flur' ? ' · Einstieg' : ''}
