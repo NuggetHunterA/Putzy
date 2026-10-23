@@ -43,7 +43,6 @@ const COLOR = { boss: '#2A1846', evo: '#D6284A', geheim: '#6A52B0', standing: '#
 export const ink = (e: MonsterElement) => (e === 'licht' ? COLOR.gold : ELEMENTS[e].strong)
 
 const secrets = MONSTERS.filter((m) => m.secret)
-const eggSeries = MONSTERS.filter((m) => m.egg)
 const fmt = (n: number) => n.toLocaleString('de-DE')
 const forAll = (xp: number) => (xp ? { xp } : null)
 
@@ -95,7 +94,7 @@ export const FIXED: Stamp[] = [
     count: (f) => f.eggs.filter((e) => e.found_by).length }),
   milestone({ id: 'ei-schlupf', name: 'Geschlüpft', text: 'Ein Ei ausgebrütet', arc: 'Geschlüpft', icon: 'ei', color: COLOR.ei, goal: 1, reward: forAll(10),
     count: (f) => f.eggs.filter((e) => e.hatched_at).length }),
-  milestone({ id: 'ei-alle', name: 'Volles Nest', text: `Alle ${eggSeries.length} Eier ausgebrütet`, arc: 'Volles Nest', icon: 'nest', color: COLOR.ei, goal: eggSeries.length, reward: forAll(25),
+  milestone({ id: 'ei-alle', name: 'Volles Nest', text: '10 Eier ausgebrütet', arc: 'Volles Nest', icon: 'nest', color: COLOR.ei, goal: 10, reward: forAll(25),
     count: (f) => f.eggs.filter((e) => e.hatched_at).length }),
   milestone({ id: 'einmalig-30', name: 'Projekt-Profis', text: '30 einmalige Aufgaben erledigt', arc: 'Projekte', icon: 'klemmbrett', color: COLOR.grau, goal: 30, reward: forAll(15),
     count: (f) => f.done.filter((c) => c.oneoff).length }),
