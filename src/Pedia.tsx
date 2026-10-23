@@ -1,7 +1,7 @@
 // Putzy-Pedia: Übersicht aller Reihen und Detailseite mit Infos, die alle 5 Level freigeschaltet werden.
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useBack } from './back'
-import { BOSSES, bossImg, bossesWon } from './bosses'
+import { BOSSES, bossesWon } from './bosses'
 import type { Snapshot } from './db'
 import { AREA_EGGS, type Account, eggCost, eggFile, eggName, eventEgg, waiting, type Egg } from './eggs'
 import { EVENT_LABEL } from './events'
@@ -9,9 +9,8 @@ import { Compass } from './Expeditions'
 import { areaById, isHome, isShiny, shinyFilter, shownShinies, type Expedition } from './expeditions'
 import { ElementIcon } from './ElementIcon'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, backdrop, elementsOf, levelFor, monsterById, stageFor, xpForLevel, type Monster, type Person } from './game'
+import { RubberStamp, Skull } from './PediaIcons'
 import { Sponge } from './Sponge'
-import { StampMark } from './StampMark'
-import { tilt } from './Stamps'
 import { stamps } from './stamps'
 import { PEDIA, PEDIA_ORDER, UNLOCK, dexNo, dexTotal, discoveredCount, isDiscovered, lastStage, listStages, monsterStats, type DexFilter, type Stats } from './pedia'
 
@@ -51,9 +50,6 @@ export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeek
   if (open) return <Detail m={open.m} start={open.stage} snap={snap} onBack={() => setOpen(null)} onReplay={onReplay} />
 
   const all = stamps(snap.tasks, snap.stamps)
-  // Neuester Stempel als Bild auf der Kachel, solange keiner verdient ist ein offener.
-  const newest = [...snap.stamps].sort((a, b) => b.earned_at.localeCompare(a.earned_at))[0]
-  const latest = all.find((s) => s.id === newest?.id)
   const showList = (on: boolean) => {
     setList(on)
     localStorage.setItem(VIEW_STORAGE, on ? 'liste' : 'reihen')
@@ -94,7 +90,7 @@ export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeek
         </span>
       </button>
       <button className="wr-entry sh-entry" onClick={onStamps}>
-        {latest && <StampMark stamp={latest} size={44} tilt={tilt(latest.id)} />}
+        <RubberStamp />
         <span>
           <b>Stempel</b>
           <small>
@@ -104,7 +100,7 @@ export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeek
         {stampsNew > 0 && <span className="sh-new">{stampsNew} neu</span>}
       </button>
       <button className="wr-entry boss-entry" onClick={onBosses}>
-        <img src={bossImg(BOSSES.find((b) => snap.bossFights.some((f) => f.event === b.event && f.won)) ?? BOSSES[7])} alt="" />
+        <Skull />
         <span>
           <b>Bosse</b>
           <small>
