@@ -88,9 +88,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
 
       <div className="map">
         <div className="roof">
-          <svg viewBox="0 0 340 112" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M4 110 L170 2 L336 110 Z" fill="#FFD9A8" stroke="#1B1530" strokeWidth="3" strokeLinejoin="round" />
-          </svg>
+          <img src="/expedition/dach.webp" alt="" />
           {room(byId('gipfel')!)}
         </div>
         <span className="floor-label">OBEN</span>

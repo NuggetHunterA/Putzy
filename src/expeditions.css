@@ -12,9 +12,9 @@
 
 /* Karte */
 .map { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; border: 3px solid var(--ink); border-radius: 18px; background: #FFF8E8; box-shadow: 4px 4px 0 var(--ink); }
-.roof { grid-column: 1 / -1; position: relative; height: 112px; margin: -4px -4px 0; }
-.roof svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.roof .room { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); width: 46%; }
+.roof { grid-column: 1 / -1; position: relative; aspect-ratio: 900 / 277; margin: -4px -4px 66px; }
+.roof > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.roof .room { position: absolute; left: 50%; bottom: -66px; transform: translateX(-50%); width: 46%; }
 .floor-label { grid-column: 1 / -1; margin: 2px 2px -2px; font-size: 10px; font-weight: 800; letter-spacing: .12em; opacity: .45; }
 .room { position: relative; min-height: 64px; padding: 6px 8px; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper); display: flex; flex-direction: column; align-items: flex-start; gap: 2px; overflow: hidden; text-align: left; }
 .room b { font-size: 12.5px; font-weight: 800; line-height: 1.1; padding-right: 24px; }
@@ -164,13 +164,13 @@
 .hk-call { position: absolute; left: 0; right: 0; top: 28%; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: 'Bangers', sans-serif; font-size: 34px; letter-spacing: .03em; color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); animation: hk-pop .28s .25s both; z-index: 5; }
 .hk-adv { padding: 2px 12px; border: 3px solid var(--ink); border-radius: 10px; background: var(--sun); color: var(--ink); -webkit-text-stroke: 0; text-shadow: none; font-size: 26px; transform: rotate(-8deg); }
 @keyframes hk-pop { from { transform: scale(.4); opacity: 0; } }
-.hk-chest { position: absolute; left: 50%; bottom: 24%; width: 200px; translate: -50% 0; animation: hk-drop .7s ease-in both, hk-wobble .26s .9s 3; }
+.hk-chest { position: absolute; left: 50%; bottom: 20%; width: 230px; translate: -50% 0; animation: hk-drop .7s ease-in both, hk-wobble .26s .9s 3; }
 .hk-chest.open { animation: none; }
-.hk-chest svg { position: relative; display: block; width: 100%; }
+.hk-chest.open img { animation: hk-open .4s ease-out; }
+@keyframes hk-open { 40% { transform: scale(1.12); } }
+.hk-chest img { position: relative; display: block; width: 100%; filter: drop-shadow(3px 5px 0 rgba(0, 0, 0, .3)); }
 @keyframes hk-drop { from { transform: translateY(-100vh); } 70% { transform: translateY(0); } 85% { transform: translateY(-26px); } }
 @keyframes hk-wobble { 33% { rotate: 5deg; } 66% { rotate: -5deg; } }
-.hk-lid { transition: transform .7s ease-out, opacity .7s; transform-origin: 50% 80%; }
-.hk-lid.off { transform: translate(60px, -140px) rotate(30deg); opacity: 0; }
 .hk-rays { position: absolute; left: 50%; top: 50%; width: 700px; height: 700px; margin: -350px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 210, 63, .5) 0 10deg, transparent 10deg 20deg); -webkit-mask: radial-gradient(circle, #000 20%, transparent 65%); mask: radial-gradient(circle, #000 20%, transparent 65%); animation: hk-spin 14s linear infinite, hk-fade .9s both; }
 .hk-chest.super .hk-rays { background: repeating-conic-gradient(rgba(255, 210, 63, .8) 0 10deg, rgba(255, 255, 255, .2) 10deg 20deg); }
 @keyframes hk-spin { to { rotate: 360deg; } }

@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBack } from './back'
 import { fruitImg } from './Expeditions'
-import { FRUITS, areaById, beatsArea, shinyFilter, type Expedition, type Fruit } from './expeditions'
+import { FRUITS, areaById, beatsArea, shinyFilter, type Expedition, type Fruit, type Loot } from './expeditions'
 import { eggFile } from './eggs'
 import { burst, confetti } from './fx'
 import { ELEMENTS, PEOPLE, backdrop, levelFor, monsterById, stageFor, type Monster, type MonsterElement, type Person } from './game'
@@ -151,7 +151,7 @@ export function Homecoming({ exp, person, monsterXp, onDone }: { exp: Expedition
           {(phase === 'chest' || phase === 'loot') && (
             <div className={`hk-chest ${loot.tier} ${open ? 'open' : ''}`} ref={chest}>
               {open && loot.tier !== 'klein' && <span className="hk-rays" />}
-              <Chest gold={loot.tier === 'super'} open={open} />
+              <Chest tier={loot.tier} open={open} />
             </div>
           )}
           {phase === 'loot' && (
@@ -197,28 +197,8 @@ export function Homecoming({ exp, person, monsterXp, onDone }: { exp: Expedition
 
 const PLURAL: Record<Fruit, string> = { beere: 'Beeren', pflaume: 'Pflaumen', apfel: 'Äpfel', gold: 'Goldäpfel' }
 
-function Chest({ gold, open }: { gold: boolean; open: boolean }) {
-  const body = gold ? ['#FFE27A', '#F2A900', '#C98A00'] : ['#D99A5B', '#8E5626', '#6E3F18']
-  return (
-    <svg viewBox="0 0 200 170" aria-hidden="true">
-      <defs>
-        <linearGradient id={`ch${gold}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={body[0]} />
-          <stop offset="1" stopColor={body[1]} />
-        </linearGradient>
-      </defs>
-      <g transform="translate(0 60)">
-        <rect x="8" y="6" width="184" height="98" rx="10" fill={`url(#ch${gold})`} stroke="#1B1530" strokeWidth="6" />
-        <rect x="8" y="40" width="184" height="14" fill={body[2]} stroke="#1B1530" strokeWidth="5" />
-        <rect x="84" y="30" width="32" height="34" rx="6" fill="#fff" stroke="#1B1530" strokeWidth="5" />
-        <circle cx="100" cy="47" r="5" fill="#1B1530" />
-      </g>
-      <g className={open ? 'hk-lid off' : 'hk-lid'}>
-        <path d="M8 126 V90 Q100 50 192 90 V126 Z" fill={body[0]} stroke="#1B1530" strokeWidth="6" strokeLinejoin="round" />
-        <path d="M84 126 V84 h32 V126" fill="none" stroke="#1B1530" strokeWidth="5" />
-      </g>
-    </svg>
-  )
+function Chest({ tier, open }: { tier: Loot['tier']; open: boolean }) {
+  return <img src={`/expedition/kiste-${tier}-${open ? 'auf' : 'zu'}.webp`} alt="" />
 }
 
 // Shiny-Enthüllung: einmalig, das Monster wechselt mit Blitz und Glitzer die Farbe.
