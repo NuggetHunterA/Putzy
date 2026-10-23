@@ -335,7 +335,7 @@ export default function App() {
   const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
   const konto = account(points, snap.eggs, expeditionPoints(snap.expeditions, now), bossPoints(snap.bossFights))
   const bank = konto.total
-  const boss = bossState(now, snap.done, snap.tasks, snap.bossFights)
+  const boss = bossState(now, snap.done, snap.bossFights)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
   const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking && !homeShown && !departure && !fightNext && !fightShown ? unread(newsSeen) : []
 

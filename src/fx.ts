@@ -190,11 +190,11 @@ export function flyTo(src: string, to: DOMRect, onLand: () => void) {
 
 // Boss-Treffer beim Abhaken: Kugel im Element der Aufgabe fliegt zum Boss-Bild, der Boss zuckt, die Schadenszahl springt
 // heraus. Läuft neben dem Rückflug des Monsters her und bremst das Abhaken nicht.
-export function bossHit(from: HTMLElement, to: HTMLElement, element: Element | undefined, damage: number, double: boolean) {
+export function bossHit(from: HTMLElement, to: HTMLElement, element: Element | undefined, damage: number) {
   if (reduced()) return
   const f = center(from.getBoundingClientRect())
   const t = center(to.getBoundingClientRect())
-  const orb = spawn('span', `boss-orb${double ? ' big' : ''}`)
+  const orb = spawn('span', 'boss-orb')
   orb.style.background = ELEMENTS[element ?? 'ohne'].strong
   orb.animate(
     [
@@ -205,11 +205,10 @@ export function bossHit(from: HTMLElement, to: HTMLElement, element: Element | u
     { duration: 420, easing: 'cubic-bezier(.5,0,.6,1)' },
   ).onfinish = () => {
     orb.remove()
-    burst(t.x, t.y, element ?? 'ohne', double ? 22 : 10, double ? 100 : 60)
-    to.animate([{ transform: 'none', filter: 'brightness(3)' }, { transform: 'translateX(-8px) rotate(-6deg)' }, { transform: 'translateX(6px) rotate(4deg)' }, { transform: 'none', filter: 'none' }], { duration: double ? 450 : 300 })
-    const n = spawn('span', `boss-dmg${double ? ' big' : ''}`)
+    burst(t.x, t.y, element ?? 'ohne', 10, 60)
+    to.animate([{ transform: 'none', filter: 'brightness(3)' }, { transform: 'translateX(-8px) rotate(-6deg)' }, { transform: 'translateX(6px) rotate(4deg)' }, { transform: 'none', filter: 'none' }], { duration: 300 })
+    const n = spawn('span', 'boss-dmg')
     n.textContent = `−${damage}`
-    if (double) n.dataset.double = '2×!'
     n.animate(
       [
         { transform: `translate(${t.x - 10}px, ${t.y - 20}px) scale(.3)`, opacity: 0 },

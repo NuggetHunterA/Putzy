@@ -1,11 +1,11 @@
 // Event-Bosse: Zu jedem Event mit mindestens 3 Tagen taucht ein Schmutz-Boss auf. Jede Erledigung im Event schwächt ihn
-// (Schaden = XP, Aufgaben im Event-Element doppelt), ab dem letzten Tag tritt ein Trupp aus drei Monstern gegen ihn an.
+// (Schaden = XP der Erledigung), ab dem letzten Tag tritt ein Trupp aus drei Monstern gegen ihn an.
 // Das Ergebnis wird beim Start aus der zufälligen Kampf-id gewürfelt und gespeichert (Konzept: bosse.md im Projektordner).
-import type { Done, Task } from './db'
+import type { Done } from './db'
 import { chance } from './eggs'
 import { eventFor, type AppEvent } from './events'
 import { advantageAgainst, beatenBy } from './expeditions'
-import { STANDING, dayString, levelFor, type Element, type Monster, type Person } from './game'
+import { dayString, levelFor, type Element, type Monster, type Person } from './game'
 import { addDays } from './streak'
 
 export type Boss = { event: AppEvent; name: string; element: Element; slug: string }
@@ -25,7 +25,7 @@ export const BOSSES: Boss[] = [
 ]
 export const bossFor = (event: AppEvent) => BOSSES.find((b) => b.event === event)
 export const bossImg = (b: Boss) => `/boss/${b.slug}.webp`
-// Aufgaben dieses Elements machen doppelten Schaden: das Bonus-Element des Events.
+// Element, das ihn schlägt: das Bonus-Element des Events. Monster dieses Elements haben im Endkampf Vorteil.
 export const weakness = (b: Boss) => beatenBy(b.element)
 
 export const LP_PER_DAY = 120
@@ -84,16 +84,12 @@ export function nextVisit(boss: Boss, now: Date) {
   return null
 }
 
-const elementOf = (c: Done, tasks: Task[]) =>
-  c.task_id ? tasks.find((t) => t.id === c.task_id)?.element : c.standing ? STANDING.find((s) => s.id === c.standing)?.element : undefined
-
 // Schaden je Person aus den Erledigungen an den Event-Tagen, vor dem Kampf. Noch nicht gedeckelt.
-export function damageBy(t: BossTime, done: Done[], tasks: Task[], fight?: Fight) {
+export function damageBy(t: BossTime, done: Done[], fight?: Fight) {
   const by: Record<Person, number> = { adrian: 0, ulrike: 0 }
-  const double = weakness(t.boss)
   for (const c of done) {
     if (!t.days.includes(dayString(new Date(c.done_at))) || (fight && c.done_at >= fight.started_at)) continue
-    by[c.person] += c.xp * (elementOf(c, tasks) === double ? 2 : 1)
+    by[c.person] += c.xp
   }
   return by
 }
@@ -131,11 +127,11 @@ export const unseenFights = (fights: Fight[], seen: { person: Person; fight: str
 
 // Stand des laufenden Bosses für Startseite und Boss-Seite: LP, Schaden (gedeckelt; nach einem Sieg alle LP, nach einer
 // Flucht der beim Start festgehaltene) und der Kampf.
-export function bossState(now: Date, done: Done[], tasks: Task[], fights: Fight[]) {
+export function bossState(now: Date, done: Done[], fights: Fight[]) {
   const t = currentBoss(now)
   if (!t) return null
   const fight = fightOf(fights, t)
-  const by = damageBy(t, done, tasks, fight)
+  const by = damageBy(t, done, fight)
   const lp = lpFor(t.days)
   return { ...t, lp, by, damage: fight ? (fight.won ? lp : fight.damage) : capped(by.adrian + by.ulrike, lp), fight }
 }

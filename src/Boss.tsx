@@ -85,7 +85,7 @@ export function Boss({ s, snap, person, monsters, now, onBack, onFight, onReplay
         <Result f={s.fight} event={EVENT_LABEL[s.boss.event].replace(/^\S+ /, '')} xp={xp} onReplay={() => onReplay(s.fight!)} />
       ) : (
         <>
-          {!ready && <Damage by={s.by} snap={snap} weak={weak} floor={Math.round(s.lp * FLOOR)} />}
+          {!ready && <Damage by={s.by} snap={snap} floor={Math.round(s.lp * FLOOR)} />}
           <h3 className="sub">Euer Trupp</h3>
           <div className="slots">
             {[0, 1, 2].map((i) => {
@@ -123,7 +123,7 @@ export function Boss({ s, snap, person, monsters, now, onBack, onFight, onReplay
   )
 }
 
-function Damage({ by, snap, weak, floor }: { by: Record<Person, number>; snap: Snapshot; weak: MonsterElement; floor: number }) {
+function Damage({ by, snap, floor }: { by: Record<Person, number>; snap: Snapshot; floor: number }) {
   const sum = Math.max(1, by.adrian + by.ulrike)
   return (
     <div className="card dmg">
@@ -141,7 +141,7 @@ function Damage({ by, snap, weak, floor }: { by: Record<Person, number>; snap: S
         )
       })}
       <span className="bhint">
-        Schaden = XP der Aufgabe, {ELEMENTS[weak].name}-Aufgaben doppelt. {floor} LP bleiben immer übrig, damit der Kampf spannend bleibt.
+        Schaden = XP der Aufgabe. {floor} LP bleiben immer übrig, damit der Kampf spannend bleibt.
       </span>
     </div>
   )

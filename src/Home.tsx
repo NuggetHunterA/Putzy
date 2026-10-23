@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
-import { FLOOR, bossImg, canFight, hitsCount, shortDay, weakness, type BossState } from './bosses'
+import { FLOOR, bossImg, canFight, hitsCount, shortDay, type BossState } from './bosses'
 import { bossHit } from './fx'
 import { ElementIcon } from './ElementIcon'
 import { Compass } from './Expeditions'
@@ -60,14 +60,13 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
   const myElements = elementsOf(myMonster, snap.monsterXp[myMonster.id] ?? 0)
   const bonus = eventBonus(now)
   const xpFor = (t: Task) => xpOf(t, myElements, bonus)
-  // Boss: Aufgaben seiner Schwäche machen doppelten Schaden. Treffer fliegen beim Abhaken zur Boss-Leiste.
+  // Boss: Jede Erledigung trifft ihn mit ihren XP. Treffer fliegen beim Abhaken zur Boss-Leiste.
   const bossPic = useRef<HTMLImageElement>(null)
   const hitting = boss && hitsCount(boss, now) ? boss : null
-  const double = hitting ? weakness(hitting.boss) : null
   const hitBoss = (element: Element, xp: number, dot: HTMLElement) => {
     if (!hitting || !bossPic.current) return
-    const damage = Math.min(xp * (element === double ? 2 : 1), Math.round(hitting.lp * (1 - FLOOR)) - hitting.damage)
-    if (damage > 0) bossHit(dot, bossPic.current, element, damage, element === double)
+    const damage = Math.min(xp, Math.round(hitting.lp * (1 - FLOOR)) - hitting.damage)
+    if (damage > 0) bossHit(dot, bossPic.current, element, damage)
   }
   const toggle = (row: Row, dot: HTMLElement) =>
     strike(!!row.done, row.task, dot, () => {
@@ -148,10 +147,10 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
 
       <PediaBanner snap={snap} monsters={monsters} onClick={onPedia} />
 
-      <TaskSection title="Heute" badge={<EventBadge now={now} />} rows={today} person={person} xp={xpFor} bonus={bonus} double={double} onToggle={toggle}>
+      <TaskSection title="Heute" badge={<EventBadge now={now} />} rows={today} person={person} xp={xpFor} bonus={bonus} onToggle={toggle}>
         <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
       </TaskSection>
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} double={double} onToggle={toggle} />}
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} onToggle={toggle} />}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -264,14 +263,6 @@ function BossBar({ s, now, imgRef, onClick }: { s: BossState; now: Date; imgRef:
   )
 }
 
-export function Sword({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2" />
-    </svg>
-  )
-}
-
 // Antippen: Monster hüpft und sagt kurz, wie viele XP bis zum nächsten Level fehlen.
 export function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: Snapshot; imgRef?: RefObject<HTMLSpanElement | null> }) {
   const [talk, setTalk] = useState(0)
@@ -373,7 +364,7 @@ function StandingStrip({ today, person, onToggle }: { today: Completion[]; perso
 }
 
 // Erledigte Zeilen lassen sich nur von der Person zurücknehmen, die sie abgehakt hat.
-function TaskSection({ title, badge, rows, person, xp, bonus, double, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; double: Element | null; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
+function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
       <div className="section-head">
@@ -405,15 +396,7 @@ function TaskSection({ title, badge, rows, person, xp, bonus, double, onToggle, 
             </span>
             <span className="row-side">
               <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
-              <span className="row-xpline">
-                {!r.done && r.task.element === double && (
-                  <span className="dmg-chip" aria-label="doppelter Schaden am Boss">
-                    <Sword size={11} />
-                    2×
-                  </span>
-                )}
-                <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
-              </span>
+              <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
             </span>
           </motion.button>
         ))}

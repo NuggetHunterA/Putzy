@@ -21,16 +21,9 @@
 .boss-bar.over .bb-meta span:last-child { opacity: 1; }
 @keyframes boss-ready { 50% { box-shadow: 4px 4px 0 var(--ink), 0 0 0 6px rgba(255, 210, 63, .45); } }
 
-/* Doppelter Schaden in der Aufgabenzeile */
-.row-xpline { display: flex; align-items: center; gap: 4px; }
-.dmg-chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px 0 4px; border: 2px solid var(--ink); border-radius: 99px; background: var(--accent); color: var(--paper); font-size: 11px; font-weight: 800; white-space: nowrap; }
-
 /* Treffer beim Abhaken (fx.ts) und im Endkampf */
 .boss-orb { position: absolute; left: 0; top: 0; width: 26px; height: 26px; border: 3px solid var(--ink); border-radius: 50%; }
-.boss-orb.big { width: 36px; height: 36px; box-shadow: 0 0 0 5px rgba(255, 210, 63, .5); }
 .boss-dmg { position: absolute; left: 0; top: 0; font-family: 'Bangers', sans-serif; font-size: 32px; letter-spacing: .03em; color: #FF5C7A; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; white-space: nowrap; }
-.boss-dmg.big { font-size: 46px; color: var(--paper); text-shadow: 3px 3px 0 var(--accent); }
-.boss-dmg.big::after { content: attr(data-double); margin-left: 4px; font-size: .6em; color: var(--sun); }
 
 /* Boss-Seite */
 .boss-screen { gap: 12px; }

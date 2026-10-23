@@ -134,9 +134,9 @@ function BossIntro({ s, onDone }: { s: BossState; onDone: () => void }) {
             <ElementIcon element={weak} />
           </span>
           <span>
-            {ELEMENTS[weak].name}-Aufgaben
+            {ELEMENTS[weak].name}-Monster
             <br />
-            treffen doppelt
+            haben Vorteil
           </span>
         </span>
       </div>
