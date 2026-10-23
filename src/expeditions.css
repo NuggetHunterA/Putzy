@@ -251,3 +251,9 @@
 .stamp-mini { padding: 0 5px; border: 2px solid currentColor; border-radius: 6px; font-family: 'Bangers', sans-serif; font-size: 12px; letter-spacing: .06em; transform: rotate(-8deg); margin-right: 4px; }
 .stamp-mini.super { color: var(--accent); }
 .stamp-mini.gut { color: #2E9E5B; }
+
+/* Trupp-Blatt: Kulisse des Gebiets als Bühne oben */
+.area-head.scene { position: relative; align-items: flex-end; min-height: 190px; padding: 0; overflow: hidden; background-size: cover; background-position: center 55%; }
+.area-enemy { position: absolute; right: 10px; bottom: 58px; width: 116px; height: 116px; object-fit: contain; filter: drop-shadow(3px 4px 0 rgba(0, 0, 0, .3)); animation: hk-bob 1.4s ease-in-out infinite alternate; }
+.area-head.scene .col { position: relative; flex: 1; padding: 8px 12px 8px 54px; border-top: 3px solid var(--ink); background: rgba(255, 253, 246, .94); }
+.area-head.scene > .eldot { position: absolute; left: 10px; bottom: 12px; z-index: 1; }
