@@ -413,7 +413,8 @@ function TruppPick({ area, snap, monsters, now, free, onBack, onStart }: { area:
         </button>
         <h1 className="bar-title">Trupp losschicken</h1>
       </header>
-      <div className="area-head">
+      <div className="area-head scene" style={{ backgroundImage: `url(/expedition/kulisse-${area.id}.webp)` }}>
+        <img className="area-enemy" src={`/expedition/gegner-${area.id}.webp`} alt="" />
         {area.enemies.length ? <Dot e={area.enemies[0]} size={34} /> : <Dot e="ohne" size={34} />}
         <span className="col">
           <b>{area.name}</b>
