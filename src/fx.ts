@@ -1,5 +1,5 @@
 // Effekte außerhalb von React: fliegendes Monster, Element-Partikel, Konfetti. Alles läuft in einer festen Ebene über der App.
-import type { Element, MonsterElement } from './game'
+import { ELEMENTS, type Element, type MonsterElement } from './game'
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 })
@@ -185,5 +185,39 @@ export function flyTo(src: string, to: DOMRect, onLand: () => void) {
   ).onfinish = () => {
     el.remove()
     onLand()
+  }
+}
+
+// Boss-Treffer beim Abhaken: Kugel im Element der Aufgabe fliegt zum Boss-Bild, der Boss zuckt, die Schadenszahl springt
+// heraus. Läuft neben dem Rückflug des Monsters her und bremst das Abhaken nicht.
+export function bossHit(from: HTMLElement, to: HTMLElement, element: Element | undefined, damage: number, double: boolean) {
+  if (reduced()) return
+  const f = center(from.getBoundingClientRect())
+  const t = center(to.getBoundingClientRect())
+  const orb = spawn('span', `boss-orb${double ? ' big' : ''}`)
+  orb.style.background = ELEMENTS[element ?? 'ohne'].strong
+  orb.animate(
+    [
+      { transform: `translate(${f.x - 13}px, ${f.y - 13}px) scale(.4)` },
+      { transform: `translate(${(f.x + t.x) / 2 + 40}px, ${Math.min(f.y, t.y) - 60}px) scale(1.1)`, offset: 0.5 },
+      { transform: `translate(${t.x - 13}px, ${t.y - 13}px) scale(.9)` },
+    ],
+    { duration: 420, easing: 'cubic-bezier(.5,0,.6,1)' },
+  ).onfinish = () => {
+    orb.remove()
+    burst(t.x, t.y, element ?? 'ohne', double ? 22 : 10, double ? 100 : 60)
+    to.animate([{ transform: 'none', filter: 'brightness(3)' }, { transform: 'translateX(-8px) rotate(-6deg)' }, { transform: 'translateX(6px) rotate(4deg)' }, { transform: 'none', filter: 'none' }], { duration: double ? 450 : 300 })
+    const n = spawn('span', `boss-dmg${double ? ' big' : ''}`)
+    n.textContent = `−${damage}`
+    if (double) n.dataset.double = '2×!'
+    n.animate(
+      [
+        { transform: `translate(${t.x - 10}px, ${t.y - 20}px) scale(.3)`, opacity: 0 },
+        { transform: `translate(${t.x + 10}px, ${t.y - 70}px) scale(1.15)`, opacity: 1, offset: 0.3 },
+        { transform: `translate(${t.x + 14}px, ${t.y - 84}px)`, opacity: 1, offset: 0.75 },
+        { transform: `translate(${t.x + 14}px, ${t.y - 96}px)`, opacity: 0 },
+      ],
+      { duration: 1300, easing: 'cubic-bezier(.3,1.3,.5,1)' },
+    ).onfinish = () => n.remove()
   }
 }

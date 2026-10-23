@@ -1,5 +1,6 @@
 // Datenzugriff auf Supabase. Der Schlüssel kommt aus dem Haushaltslink (#k=…), nicht aus dem Build.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Fight } from './bosses'
 import type { Egg } from './eggs'
 import { fruitXp, type Expedition, type Feeding, type Fruit } from './expeditions'
 import type { Effort, Element, Person } from './game'
@@ -53,6 +54,9 @@ export type Snapshot = {
   expeditions: Expedition[]
   expeditionsSeen: { person: Person; expedition: string }[]
   feedings: Feeding[]
+  // Boss-Endkämpfe, älteste zuerst, und wer welche Kampf-Szene gesehen hat.
+  bossFights: Fight[]
+  bossFightsSeen: { person: Person; fight: string }[]
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -86,7 +90,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, done] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, bossFights, bossFightsSeen, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -105,6 +109,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('expeditions').select('*').order('started_at'),
     db().from('expeditions_seen').select('person, expedition'),
     db().from('feedings').select('*').order('fed_at'),
+    db().from('boss_fights').select('*').order('started_at'),
+    db().from('boss_fights_seen').select('person, fight'),
     loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
@@ -136,6 +142,8 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     expeditions: check(expeditions),
     expeditionsSeen: check(expeditionsSeen),
     feedings: fed,
+    bossFights: check(bossFights),
+    bossFightsSeen: check(bossFightsSeen),
   }
 }
 
@@ -226,6 +234,15 @@ export async function feed(f: { monster: string; fruit: Fruit; xp: number; perso
   check(await db().from('feedings').insert(f))
 }
 
+// Ein Kampf je Boss und Jahr: Startet das andere Handy gleichzeitig, schlägt das zweite Speichern fehl (23505).
+export async function startBossFight(f: Fight) {
+  check(await db().from('boss_fights').insert(f))
+}
+
+export async function markBossFightSeen(person: Person, fight: string) {
+  check(await db().from('boss_fights_seen').upsert({ person, fight }, { ignoreDuplicates: true }))
+}
+
 export async function markNews(person: Person, lastId: number) {
   check(await db().from('news_seen').upsert({ person, last_id: lastId }))
 }
@@ -267,6 +284,7 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'stamps' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'expeditions' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'feedings' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'boss_fights' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     db().removeChannel(channel)

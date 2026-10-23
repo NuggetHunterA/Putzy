@@ -1,7 +1,9 @@
 // Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste mit den ständigen Aufgaben oben.
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
+import { FLOOR, bossImg, canFight, hitsCount, shortDay, weakness, type BossState } from './bosses'
+import { bossHit } from './fx'
 import { ElementIcon } from './ElementIcon'
 import { Compass } from './Expeditions'
 import { EVENT_LABEL, eventBonus, eventEnd, eventFor } from './events'
@@ -32,11 +34,14 @@ type Props = {
   onExpeditions: () => void
   // Heimgekehrte Trupps, deren Heimkehr diese Person noch nicht gesehen hat.
   homecomings: number
+  // Laufender Boss oder null.
+  boss: BossState | null
+  onBoss: () => void
 }
 
 export type { Row }
 
-export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings }: Props) {
+export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings, boss, onBoss }: Props) {
   const { myBadge, strike } = useStrike(snap, person, onAttackEnd)
   const rows: Row[] = snap.tasks.map((task) => ({
     task,
@@ -55,10 +60,27 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
   const myElements = elementsOf(myMonster, snap.monsterXp[myMonster.id] ?? 0)
   const bonus = eventBonus(now)
   const xpFor = (t: Task) => xpOf(t, myElements, bonus)
-  const toggle = (row: Row, dot: HTMLElement) => strike(!!row.done, row.task, dot, () => onToggle(row))
+  // Boss: Aufgaben seiner Schwäche machen doppelten Schaden. Treffer fliegen beim Abhaken zur Boss-Leiste.
+  const bossPic = useRef<HTMLImageElement>(null)
+  const hitting = boss && hitsCount(boss, now) ? boss : null
+  const double = hitting ? weakness(hitting.boss) : null
+  const hitBoss = (element: Element, xp: number, dot: HTMLElement) => {
+    if (!hitting || !bossPic.current) return
+    const damage = Math.min(xp * (element === double ? 2 : 1), Math.round(hitting.lp * (1 - FLOOR)) - hitting.damage)
+    if (damage > 0) bossHit(dot, bossPic.current, element, damage, element === double)
+  }
+  const toggle = (row: Row, dot: HTMLElement) =>
+    strike(!!row.done, row.task, dot, () => {
+      onToggle(row)
+      if (!row.done) hitBoss(row.task.element, xpFor(row.task), dot)
+    })
   const toggleStanding = (s: Standing, dot: HTMLElement) => {
     const mine = snap.today.find((c) => c.standing === s.id && c.person === person)
-    strike(!!mine, { effort: STANDING_EFFORT, element: s.element }, dot, () => onStanding(s, mine))
+    const work = { effort: STANDING_EFFORT, element: s.element }
+    strike(!!mine, work, dot, () => {
+      onStanding(s, mine)
+      if (!mine) hitBoss(s.element, xpOf(work, myElements, bonus), dot)
+    })
   }
 
   return (
@@ -122,12 +144,14 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
         </span>
       </div>
 
+      {boss && <BossBar s={boss} now={now} imgRef={bossPic} onClick={onBoss} />}
+
       <PediaBanner snap={snap} monsters={monsters} onClick={onPedia} />
 
-      <TaskSection title="Heute" badge={<EventBadge now={now} />} rows={today} person={person} xp={xpFor} bonus={bonus} onToggle={toggle}>
+      <TaskSection title="Heute" badge={<EventBadge now={now} />} rows={today} person={person} xp={xpFor} bonus={bonus} double={double} onToggle={toggle}>
         <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
       </TaskSection>
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} onToggle={toggle} />}
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} double={double} onToggle={toggle} />}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -206,6 +230,45 @@ function EventBadge({ now }: { now: Date }) {
         </button>
       )}
     </>
+  )
+}
+
+// Boss-Leiste unter dem Fortschritt: Bild, LP-Balken mit Boden-Marke (FLOOR) und wann der Kampf ist. Am letzten Tag
+// leuchtet sie und wird zum Knopf „Zum Kampf!“, nach dem Kampf steht das Ergebnis darin.
+function BossBar({ s, now, imgRef, onClick }: { s: BossState; now: Date; imgRef: RefObject<HTMLImageElement | null>; onClick: () => void }) {
+  const left = s.lp - s.damage
+  const ready = canFight(s, now)
+  const when = s.fight ? (s.fight.won ? 'Besiegt!' : 'Entkommen') : ready ? (dayString(now) === s.lastDay ? 'heute!' : `bis ${shortDay(s.open)}`) : `Kampf ab ${shortDay(s.lastDay)}`
+  return (
+    <button className={`boss-bar${ready ? ' ready' : ''}${s.fight ? ' over' : ''}`} onClick={onClick} aria-label={`${s.boss.name}: ${left} von ${s.lp} LP`}>
+      <img ref={imgRef} className="bb-img" src={bossImg(s.boss)} alt="" />
+      <span className="bb-main">
+        <span className="bb-top">
+          <span className="bb-name">{s.boss.name}</span>
+          <span className="event-badge-dot" style={{ background: ELEMENTS[s.boss.element].strong }}>
+            <ElementIcon element={s.boss.element} />
+          </span>
+          {!ready && <span className="bb-tag">BOSS</span>}
+        </span>
+        <span className="hpbar">
+          <span style={{ width: `${(left / s.lp) * 100}%` }} />
+          <i style={{ left: `${FLOOR * 100}%` }} />
+        </span>
+        <span className="bb-meta">
+          <span>{ready ? `${left} LP übrig` : `${left} / ${s.lp} LP`}</span>
+          <span>{when}</span>
+        </span>
+      </span>
+      {ready ? <span className="bb-fight">Zum Kampf!</span> : <span className="bb-go">›</span>}
+    </button>
+  )
+}
+
+export function Sword({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2" />
+    </svg>
   )
 }
 
@@ -310,7 +373,7 @@ function StandingStrip({ today, person, onToggle }: { today: Completion[]; perso
 }
 
 // Erledigte Zeilen lassen sich nur von der Person zurücknehmen, die sie abgehakt hat.
-function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
+function TaskSection({ title, badge, rows, person, xp, bonus, double, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; double: Element | null; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
       <div className="section-head">
@@ -342,7 +405,15 @@ function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children
             </span>
             <span className="row-side">
               <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
-              <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
+              <span className="row-xpline">
+                {!r.done && r.task.element === double && (
+                  <span className="dmg-chip" aria-label="doppelter Schaden am Boss">
+                    <Sword size={11} />
+                    2×
+                  </span>
+                )}
+                <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
+              </span>
             </span>
           </motion.button>
         ))}

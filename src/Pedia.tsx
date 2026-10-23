@@ -1,8 +1,9 @@
 // Putzy-Pedia: Übersicht aller Reihen und Detailseite mit Infos, die alle 5 Level freigeschaltet werden.
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useBack } from './back'
+import { BOSSES, bossImg, bossesWon } from './bosses'
 import type { Snapshot } from './db'
-import { AREA_EGGS, eggCost, eggFile, eggName, eventEgg, waiting, type Egg } from './eggs'
+import { AREA_EGGS, type Account, eggCost, eggFile, eggName, eventEgg, waiting, type Egg } from './eggs'
 import { EVENT_LABEL } from './events'
 import { Compass } from './Expeditions'
 import { areaById, isHome, isShiny, shinyFilter, shownShinies, type Expedition } from './expeditions'
@@ -18,8 +19,8 @@ type Props = {
   snap: Snapshot
   // Nur sichtbare Monster, geheime Reihen erst nach ihrer Freischaltung.
   monsters: Monster[]
-  // Streak-Punkte auf dem gemeinsamen Konto, zum Ausbrüten.
-  points: number
+  // Gemeinsames Konto der Streak-Punkte, zum Ausbrüten. Antippen des Schwamms zeigt die Aufschlüsselung.
+  konto: Account
   onHatch: (e: Egg) => void
   onBack: () => void
   onReplay: (m: Monster, stage: number) => void
@@ -27,6 +28,7 @@ type Props = {
   // Stempelheft: Anzahl der Stempel seit dem letzten Öffnen.
   stampsNew: number
   onStamps: () => void
+  onBosses: () => void
 }
 
 // Stufen als Spalten: Slot, Pfeil, Slot … für 2 bis 4 Stufen.
@@ -37,8 +39,10 @@ const fmt = (n: number) => n.toLocaleString('de-DE')
 const VIEW_STORAGE = 'putzy.pediaView'
 const FILTERS: DexFilter[] = ['alle', 'wasser', 'feuer', 'natur', 'luft', 'licht', 'ohne']
 
-export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps }: Props) {
+export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps, onBosses }: Props) {
   useBack(onBack)
+  const points = konto.total
+  const [showKonto, setShowKonto] = useState(false)
   const [open, setOpen] = useState<{ m: Monster; stage?: number } | null>(null)
   const [hatch, setHatch] = useState<Egg | null>(null)
   const [list, setList] = useState(() => localStorage.getItem(VIEW_STORAGE) === 'liste')
@@ -66,12 +70,13 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
           ←
         </button>
         <h1 className="bar-title">Putzy-Pedia</h1>
-        <span className="bank" aria-label={`${points} Streak-Punkte`}>
+        <button className="bank" aria-label={`${points} Streak-Punkte`} aria-expanded={showKonto} onClick={() => setShowKonto(!showKonto)}>
           <Sponge size={30} />
           {points}
-        </span>
+        </button>
       </div>
-      <div className="pd-pair">
+      {showKonto && <Konto k={konto} />}
+      <div className="pd-pair pd-trio">
       <button className="wr-entry" onClick={onWeeks}>
         <span className="wr-pair">
           {snap.picks.map((p) => {
@@ -91,12 +96,21 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
       <button className="wr-entry sh-entry" onClick={onStamps}>
         {latest && <StampMark stamp={latest} size={44} tilt={tilt(latest.id)} />}
         <span>
-          <b>Stempelheft</b>
+          <b>Stempel</b>
           <small>
             {snap.stamps.length} von {all.length}
           </small>
         </span>
         {stampsNew > 0 && <span className="sh-new">{stampsNew} neu</span>}
+      </button>
+      <button className="wr-entry boss-entry" onClick={onBosses}>
+        <img src={bossImg(BOSSES.find((b) => snap.bossFights.some((f) => f.event === b.event && f.won)) ?? BOSSES[7])} alt="" />
+        <span>
+          <b>Bosse</b>
+          <small>
+            {bossesWon(snap.bossFights)} von {BOSSES.length}
+          </small>
+        </span>
       </button>
       </div>
       {waiting(snap.eggs).length > 0 && (
@@ -209,6 +223,28 @@ export function Pedia({ snap, monsters, points, onHatch, onBack, onReplay, onWee
 }
 
 // Wartendes Ei: Bild, Element, Name und Knopf zum Ausbrüten (grau mit fehlenden Punkten, solange es nicht reicht).
+// Aufschlüsselung des Kontos: woher die Punkte kommen und was die Eier gekostet haben.
+function Konto({ k }: { k: Account }) {
+  const sign = (n: number) => (n < 0 ? `−${-n}` : `+${n}`)
+  return (
+    <div className="card konto-card">
+      <b className="konto-title">Euer Konto</b>
+      <div className="konto">
+        <span>Streak-Wochen</span>
+        <b>{sign(k.weeks)}</b>
+        <span>Expeditionen</span>
+        <b>{sign(k.expeditions)}</b>
+        <span>Bosse</span>
+        <b>{sign(k.bosses)}</b>
+        <span>Ausgebrütete Eier</span>
+        <b>{k.eggs === 0 ? '0' : sign(k.eggs)}</b>
+        <span className="sum">Kontostand</span>
+        <b className="sum">{k.total}</b>
+      </div>
+    </div>
+  )
+}
+
 function EggCard({ egg, points, onHatch }: { egg: Egg; points: number; onHatch: () => void }) {
   const m = monsterById(egg.monster)
   const cost = eggCost(m.id)

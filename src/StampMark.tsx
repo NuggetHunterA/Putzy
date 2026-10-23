@@ -16,6 +16,7 @@ const ICONS: Record<Exclude<Icon, 'wasser' | 'feuer' | 'natur' | 'luft' | 'licht
   nest: 'M3 13c3 6 15 6 18 0M5 13c1-3 3-4 4-4M19 13c-1-3-3-4-4-4M9.5 12a2.5 3 0 1 1 5 0',
   klemmbrett: 'M7 4h10a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM9 3h6v3H9zM9 12l2 2 4-4',
   krone: 'M4 18h16M5 15L4 7l5 4 3-6 3 6 5-4-1 8z',
+  schwert: 'M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2',
 }
 
 export function StampMark({ stamp, open = false, hide = false, size = 64, tilt = 0 }: { stamp: Stamp; open?: boolean; hide?: boolean; size?: number; tilt?: number }) {
