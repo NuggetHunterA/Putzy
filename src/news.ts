@@ -28,6 +28,7 @@ export const NEWS: News[] = [
   { id: 23, title: 'Event-Bosse', text: 'Zu zehn Events taucht ein Schmutz-Boss auf. Jede erledigte Aufgabe schwächt ihn um ihre XP, ab dem letzten Event-Tag schickt ihr drei Monster in den Endkampf, ein Sieg bringt 6 Streak-Punkte. Silvester geht jetzt bis zum 2. Januar.' },
   { id: 24, title: 'Frühjahrsputz nach Ostern', text: 'Der Frühjahrsputz beginnt jetzt jedes Jahr genau drei Wochen nach dem Start des Oster-Events und dauert eine Woche. Den Stempel „Volles Nest“ gibt es schon für 10 ausgebrütete Eier.' },
   { id: 25, title: 'Level-Up beim Füttern', text: 'Steigt ein Monster durch eine Frucht aus dem Fruchtkorb ein Level auf, gibt es jetzt auch das Level-Up-Vollbild wie beim Abhaken.' },
+  { id: 26, title: 'Lieblingsaufgabe mit Raum', text: 'Im Steckbrief steht bei der Lieblingsaufgabe jetzt auch der Raum, also zum Beispiel „Küche · 12-mal erledigt“. Gleichnamige Aufgaben in verschiedenen Räumen werden dafür getrennt gezählt.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

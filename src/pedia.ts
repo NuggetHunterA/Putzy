@@ -587,7 +587,7 @@ export const LEGEND_STAGE = 30
 export const unseenLegends = (seen: Seen[], person: Person, monsterXp: Record<string, number>) =>
   PEDIA_ORDER.filter((m) => levelFor(monsterXp[m.id] ?? 0) === MAX_LEVEL && !seen.some((s) => s.person === person && s.monster === m.id && s.stage === LEGEND_STAGE))
 
-export type Stats = { favorite: { name: string; tasks: number } | null; since: Date | null; record: { tasks: number; week: number } | null }
+export type Stats = { favorite: { name: string; room: string | null; tasks: number } | null; since: Date | null; record: { tasks: number; week: number } | null }
 
 // Kalenderwoche nach ISO (Woche mit dem ersten Donnerstag ist KW 1).
 export function isoWeek(date: Date) {
@@ -599,18 +599,23 @@ export function isoWeek(date: Date) {
 // Eure Werte im Steckbrief: häufigste Aufgabe (ohne einmalige), erste Erledigung und die Woche mit den meisten.
 export function monsterStats(done: Done[], monster: string, tasks: Task[]): Stats {
   const mine = done.filter((c) => c.monster === monster)
-  const names = new Map<string, number>()
+  // Nach Aufgabe zählen, nicht nach Name: „Aufräumen“ gibt es in mehreren Räumen.
+  const counts = new Map<string, { name: string; room: string | null; tasks: number }>()
   const weeks = new Map<string, { tasks: number; at: Date }>()
   let since: Date | null = null
   for (const c of mine) {
     const at = new Date(c.done_at)
     if (!since || at < since) since = at
-    const name = c.standing ? STANDING.find((s) => s.id === c.standing)?.name : tasks.find((t) => t.id === c.task_id)?.name
-    if (name) names.set(name, (names.get(name) ?? 0) + 1)
+    const task = c.standing ? STANDING.find((s) => s.id === c.standing) : tasks.find((t) => t.id === c.task_id)
+    if (task) {
+      const key = `${c.standing ?? ''}/${c.task_id ?? ''}`
+      const room = 'room' in task ? task.room : null
+      counts.set(key, { name: task.name, room, tasks: (counts.get(key)?.tasks ?? 0) + 1 })
+    }
     const w = weekStart(at)
     weeks.set(w, { tasks: (weeks.get(w)?.tasks ?? 0) + 1, at })
   }
-  const favorite = [...names].reduce<[string, number] | null>((a, b) => (!a || b[1] > a[1] ? b : a), null)
+  const favorite = [...counts.values()].reduce<Stats['favorite']>((a, b) => (!a || b.tasks > a.tasks ? b : a), null)
   const best = [...weeks.values()].reduce<{ tasks: number; at: Date } | null>((a, b) => (!a || b.tasks > a.tasks ? b : a), null)
-  return { favorite: favorite && { name: favorite[0], tasks: favorite[1] }, since, record: best && { tasks: best.tasks, week: isoWeek(best.at) } }
+  return { favorite, since, record: best && { tasks: best.tasks, week: isoWeek(best.at) } }
 }
