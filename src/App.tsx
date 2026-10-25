@@ -438,6 +438,12 @@ export default function App() {
 
   const onFeed = (m: Monster, fruit: Fruit) => {
     const xp = FRUITS[fruit].xp
+    const before = snap.monsterXp[m.id] ?? 0
+    const level = levelFor(before + xp)
+    // Wie beim Abhaken: Entwicklung und Level 30 laufen über die Warteschlange, sonst gleich das Level-Up-Vollbild.
+    if (level > levelFor(before) && level < MAX_LEVEL && stageFor(m, level) === stageFor(m, levelFor(before))) {
+      setCel({ key: Date.now(), monster: m, stageBefore: stageFor(m, level), stageAfter: stageFor(m, level), level, xp, bonus: false })
+    }
     const f = { id: crypto.randomUUID(), monster: m.id, fruit, xp, person, fed_at: new Date().toISOString() }
     setSnap((s) => s && { ...s, feedings: [...s.feedings, f], monsterXp: { ...s.monsterXp, [m.id]: (s.monsterXp[m.id] ?? 0) + xp } })
     run(feed({ monster: m.id, fruit, xp, person }))
