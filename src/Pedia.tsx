@@ -501,7 +501,7 @@ function Facts({ e, stage, stats }: { e: (typeof PEDIA)[string]; stage: number; 
           Lieblingsaufgabe
           <b>
             {stats.favorite?.name ?? '–'}
-            {stats.favorite && <em>{stats.favorite.tasks}-mal erledigt</em>}
+            {stats.favorite && <em>{stats.favorite.room && `${stats.favorite.room} · `}{stats.favorite.tasks}-mal erledigt</em>}
           </b>
         </span>
         <span>

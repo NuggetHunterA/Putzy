@@ -59,18 +59,20 @@ describe('Putzy-Pedia', () => {
   })
 
   it('rechnet Eure Werte aus den Erledigungen eines Monsters', () => {
-    const tasks = [{ id: 'bad', name: 'Bad putzen' }, { id: 'boden', name: 'Boden wischen' }] as Parameters<typeof monsterStats>[2]
+    const tasks = [{ id: 'bad', room: 'Bad', name: 'Aufräumen' }, { id: 'kueche', room: 'Küche', name: 'Aufräumen' }] as Parameters<typeof monsterStats>[2]
     const c = (task_id: string | null, done_at: string, monster = '2', standing: string | null = null) => ({ monster, task_id, standing, oneoff: null, person: 'adrian' as const, xp: 10, done_at })
     const done = [
       c('bad', '2026-10-06T08:00:00Z'),
-      c('boden', '2026-10-07T08:00:00Z'),
+      c('kueche', '2026-10-07T08:00:00Z'),
+      c(null, '2026-10-10T08:00:00Z', '2', 'kochen'),
       c(null, '2026-10-08T08:00:00Z', '2', 'kochen'),
       c(null, '2026-10-09T08:00:00Z', '2', 'kochen'),
       c('bad', '2026-10-14T08:00:00Z'),
       c(null, '2026-10-01T08:00:00Z'), // einmalige Aufgabe zählt für Datum und Woche, nicht als Lieblingsaufgabe
       c('bad', '2026-09-01T08:00:00Z', '5'),
     ]
-    expect(monsterStats(done, '2', tasks)).toEqual({ favorite: { name: 'Bad putzen', tasks: 2 }, since: new Date('2026-10-01T08:00:00Z'), record: { tasks: 4, week: 41 } })
+    expect(monsterStats(done, '2', tasks)).toEqual({ favorite: { name: 'Kochen', room: null, tasks: 3 }, since: new Date('2026-10-01T08:00:00Z'), record: { tasks: 5, week: 41 } })
+    expect(monsterStats(done, '5', tasks).favorite).toEqual({ name: 'Aufräumen', room: 'Bad', tasks: 1 })
     expect(monsterStats(done, '9', tasks)).toEqual({ favorite: null, since: null, record: null })
   })
 
