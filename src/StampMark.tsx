@@ -1,4 +1,4 @@
-// Ein runder Gummistempel: Doppelring in Tintenfarbe, Name im Bogen oben, Symbol oder Zahl in der Mitte.
+// Ein runder Gummistempel: Doppelring in Tintenfarbe, Symbol oder Zahl oben, Name gerade auf einer Banderole darunter.
 // Verdient leicht schief mit Tinten-Struktur, offen als gestrichelter grauer Umriss.
 import { useId } from 'react'
 import { ElementIcon } from './ElementIcon'
@@ -20,16 +20,25 @@ const ICONS: Record<Exclude<Icon, 'wasser' | 'feuer' | 'natur' | 'luft' | 'licht
   pokal: 'M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8M9 18h6',
 }
 
+// Name für die Banderole: lange Namen auf so viele ganze Wörter gekürzt, wie hineinpassen.
+function ribbonText(arc: string) {
+  if (arc.length <= 17) return arc
+  const words = arc.split(' ')
+  let t = words[0]
+  for (const w of words.slice(1)) if (`${t} ${w}`.length <= 17) t = `${t} ${w}`; else break
+  return t
+}
+
 export function StampMark({ stamp, open = false, hide = false, size = 64, tilt = 0 }: { stamp: Stamp; open?: boolean; hide?: boolean; size?: number; tilt?: number }) {
   const id = useId()
   const c = open ? OPEN : stamp.color
   const icon = hide ? 'geheim' : stamp.icon
   const big = hide ? undefined : stamp.big
-  const arc = hide ? '???' : stamp.arc
+  const label = (hide ? '???' : ribbonText(stamp.arc)).toUpperCase()
+  const fs = label.length > 12 ? 11 : label.length > 9 ? 13 : label.length > 6 ? 15.5 : 18
   return (
-    <svg className="stamp-mark" width={size} height={size} viewBox="0 0 100 100" style={{ rotate: `${open ? 0 : tilt}deg` }} aria-hidden="true">
+    <svg className="stamp-mark" width={size} height={size} viewBox="0 0 100 100" style={{ rotate: `${open ? 0 : tilt}deg`, overflow: 'visible' }} aria-hidden="true">
       <defs>
-        <path id={`${id}a`} d="M 17 50 A 33 33 0 0 1 83 50" />
         {/* Tinte: Rauschen stanzt kleine Lücken aus, wie bei einem echten Stempel. */}
         <filter id={`${id}f`}>
           <feTurbulence baseFrequency=".9" numOctaves="2" seed={stamp.id.length} />
@@ -41,27 +50,28 @@ export function StampMark({ stamp, open = false, hide = false, size = 64, tilt =
       <g filter={open ? undefined : `url(#${id}f)`}>
         <circle cx="50" cy="50" r="45" fill="none" stroke={c} strokeWidth="5" strokeDasharray={open ? '7 6' : undefined} />
         <circle cx="50" cy="50" r="37" fill="none" stroke={c} strokeWidth="2" />
-        <text fontFamily="Bricolage Grotesque, system-ui, sans-serif" fontWeight="800" fontSize={arc.length > 14 ? 8 : 10.5} letterSpacing="1" fill={c}>
-          <textPath href={`#${id}a`} startOffset="50%" textAnchor="middle">
-            {(arc.length > 22 ? `${arc.slice(0, 21)}…` : arc).toUpperCase()}
-          </textPath>
-        </text>
         {big ? (
-          <text x="50" y="63" textAnchor="middle" fontFamily="Bangers, sans-serif" fontSize={big.length > 3 ? 24 : 32} fill={c}>
+          <text x="50" y="46" textAnchor="middle" fontFamily="Bangers, sans-serif" fontSize={big.length > 3 ? 22 : 28} fill={c}>
             {big}
           </text>
         ) : icon && icon in ICONS ? (
-          <g transform="translate(32 34) scale(1.5)" fill="none" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+          <g transform="translate(35.6 21.6) scale(1.2)" fill="none" stroke={c} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
             <path d={ICONS[icon as keyof typeof ICONS]} />
           </g>
         ) : (
           icon && (
-            <g transform="translate(32 34) scale(1.5)" color={c}>
+            <g transform="translate(35.6 21.6) scale(1.2)" color={c}>
               <ElementIcon element={icon as Exclude<Icon, keyof typeof ICONS>} size={24} />
             </g>
           )
         )}
       </g>
+      {/* Banderole ohne Tintenlücken, damit der Name auch klein lesbar bleibt. */}
+      <path d="M -4 60 H 104 L 98 70 L 104 80 H -4 L 2 70 Z" fill={c} />
+      <text x="50" y={70 + fs * 0.36} textAnchor="middle" fontFamily="Bricolage Grotesque, system-ui, sans-serif" fontWeight="800" fontSize={fs} letterSpacing=".2" fill="#fff"
+        textLength={label.length * fs * 0.68 > 94 ? 94 : undefined} lengthAdjust="spacingAndGlyphs">
+        {label}
+      </text>
     </svg>
   )
 }
