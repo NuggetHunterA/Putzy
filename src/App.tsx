@@ -131,12 +131,15 @@ export default function App() {
   // Nur das zuletzt gestartete Laden zählt: Ein älteres, das später ankommt, würde sonst schon Gesehenes
   // wieder als ungesehen zeigen.
   const loads = useRef(0)
+  // Zuletzt geladene Erledigungen, an die das nächste Laden nur die letzten Tage ansetzt (src/db.ts).
+  const lastDone = useRef(snap?.done ?? null)
   const refresh = useCallback(async () => {
     const n = ++loads.current
     try {
       const d = new Date()
-      const s = await load(new Date(d.getFullYear(), d.getMonth(), d.getDate()), weekStart(d))
+      const s = await load(new Date(d.getFullYear(), d.getMonth(), d.getDate()), weekStart(d), lastDone.current)
       if (n !== loads.current) return
+      lastDone.current = s.done
       setSnap(s)
       setReady(true)
       saveCache(s)

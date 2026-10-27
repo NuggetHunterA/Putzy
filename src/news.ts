@@ -30,6 +30,7 @@ export const NEWS: News[] = [
   { id: 25, title: 'Level-Up beim Füttern', text: 'Steigt ein Monster durch eine Frucht aus dem Fruchtkorb ein Level auf, gibt es jetzt auch das Level-Up-Vollbild wie beim Abhaken.' },
   { id: 26, title: 'Lieblingsaufgabe mit Raum', text: 'Im Steckbrief steht bei der Lieblingsaufgabe jetzt auch der Raum, also zum Beispiel „Küche · 12-mal erledigt“. Gleichnamige Aufgaben in verschiedenen Räumen werden dafür getrennt gezählt.' },
   { id: 27, title: 'Die Arena ist offen', text: 'Jeden Montag fordert euch ein Arenaleiter heraus. Stört seine Trainings, braut den Wochen-Trank und gewinnt Joker, die eine Aufgabe um einen Tag schieben.' },
+  { id: 28, title: 'Versionsnummer', text: 'Ganz unten auf der Aufgaben-Seite (Zahnrad) steht jetzt, welche Version von Putzy ihr gerade habt.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

@@ -268,6 +268,7 @@ img { display: block; }
 .iv-row .dot { width: 36px; height: 36px; }
 .iv-name { flex: 1; display: flex; flex-direction: column; font-weight: 800; font-size: 15px; min-width: 0; }
 .iv-name small { font-size: 12px; font-weight: 500; }
+.version { margin: 8px 0 0; text-align: center; font-size: 12px; font-weight: 500; opacity: 0.5; }
 .iv-days { min-width: 32px; text-align: center; font-family: 'Bangers', sans-serif; font-size: 24px; }
 .step {
   width: 44px; height: 44px;

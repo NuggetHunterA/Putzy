@@ -1,5 +1,7 @@
 // Datenzugriff auf Supabase. Der Schlüssel kommt aus dem Haushaltslink (#k=…), nicht aus dem Build.
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+// Nur Datenbank und Live-Verbindung, nicht das ganze Supabase-Paket (Login, Dateispeicher, Funktionen braucht Putzy nicht).
+import { PostgrestClient } from '@supabase/postgrest-js'
+import { RealtimeClient } from '@supabase/realtime-js'
 import type { ArenaFight, ArenaWeek, Brew, JokerUse } from './arena'
 import type { Fight } from './bosses'
 import type { Egg } from './eggs'
@@ -81,11 +83,17 @@ function householdKey() {
   return localStorage.getItem(KEY_STORAGE)
 }
 
-let client: SupabaseClient | null = null
+let client: PostgrestClient | null = null
+let live: RealtimeClient | null = null
 
+// Gleiche Anmeldung wie createClient aus @supabase/supabase-js ohne Login: Schlüssel als apikey und Bearer.
 export function connect() {
   const key = householdKey()
-  if (key) client = createClient(import.meta.env.VITE_SUPABASE_URL, key)
+  if (key) {
+    const url = import.meta.env.VITE_SUPABASE_URL
+    client = new PostgrestClient(`${url}/rest/v1`, { headers: { apikey: key, Authorization: `Bearer ${key}` } })
+    live = new RealtimeClient(`${url.replace(/^http/, 'ws')}/realtime/v1`, { params: { apikey: key }, accessToken: async () => key })
+  }
   return client !== null
 }
 
@@ -96,8 +104,9 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
   return data as T
 }
 
-export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, bossFights, bossFightsSeen, arenaWeeks, arenaFights, arenaBrews, arenaSeen, jokers, done] = await Promise.all([
+// prev: zuletzt geladene Erledigungen in kurz (src/App.tsx), aus denen nur die letzten Tage erneuert werden.
+export async function load(todayStart: Date, week: string, prev: Done[] | null): Promise<Snapshot> {
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, bossFights, bossFightsSeen, arenaWeeks, arenaFights, arenaBrews, arenaSeen, jokers, loadedDone] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -123,8 +132,11 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     all<Brew>((a, b) => db().from('arena_brews').select('*').order('week_start').range(a, b)),
     all<{ person: Person; ref: string }>((a, b) => db().from('arena_seen').select('person, ref').order('person').order('ref').range(a, b)),
     all<JokerUse>((a, b) => db().from('jokers').select('*').order('used_at').order('id').range(a, b)),
-    all<Done>((a, b) => db().from('completions').select('monster, task_id, standing, oneoff, person, xp, done_at').order('done_at').order('id').range(a, b)),
+    loadDone(todayStart, prev),
   ])
+  // Eine gelöschte Aufgabe setzt task_id auch in älteren Erledigungen auf null, das sieht das Nachladen nicht.
+  const taskIds = new Set(check<Task[]>(tasks).map((t) => t.id))
+  const done = loadedDone.some((d) => d.task_id && !taskIds.has(d.task_id)) ? await allDone() : loadedDone
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
     tasksDone[r.monster] = { ...tasksDone[r.monster], [r.person]: r.tasks }
@@ -173,6 +185,48 @@ async function all<T>(query: (from: number, to: number) => PromiseLike<{ data: T
     if (page.length < 1000) return rows
   }
 }
+
+const DONE_FIELDS = 'monster, task_id, standing, oneoff, person, xp, done_at'
+// Tag, an dem die Erledigungen zuletzt vollständig geladen wurden.
+const DONE_FULL_STORAGE = 'putzy.doneFull'
+// So weit zurück werden Erledigungen immer frisch geholt; das fängt Rückgängig-Machen und gleichzeitiges Abhaken auf.
+const DONE_FRESH_DAYS = 2
+
+const allDone = () => all<Done>((a, b) => db().from('completions').select(DONE_FIELDS).order('done_at').order('id').range(a, b))
+
+// Eure Werte im Pedia, Streak, Stempel, Boss und Arena brauchen alle Erledigungen. Vollständig geladen wird beim
+// ersten Laden des Tages, sonst nur die letzten Tage, angesetzt an den Rest von prev. Stimmt die Anzahl dann nicht
+// mit der Datenbank überein, wird doch alles geladen.
+async function loadDone(todayStart: Date, prev: Done[] | null) {
+  const day = todayStart.toDateString()
+  let fullDay: string | null = null
+  try {
+    fullDay = localStorage.getItem(DONE_FULL_STORAGE)
+  } catch {
+    // Ohne Speicher immer vollständig laden.
+  }
+  if (prev && fullDay === day) {
+    const since = new Date(todayStart)
+    since.setDate(since.getDate() - DONE_FRESH_DAYS)
+    const [recent, total] = await Promise.all([
+      all<Done>((a, b) => db().from('completions').select(DONE_FIELDS).gte('done_at', since.toISOString()).order('done_at').order('id').range(a, b)),
+      db().from('completions').select('id', { count: 'exact', head: true }),
+    ])
+    if (total.error) throw total.error
+    const done = mergeDone(prev, recent, since)
+    if (done.length === total.count) return done
+  }
+  const done = await allDone()
+  try {
+    localStorage.setItem(DONE_FULL_STORAGE, day)
+  } catch {
+    // Dann wird beim nächsten Mal wieder vollständig geladen.
+  }
+  return done
+}
+
+// Ältere Erledigungen aus prev, ab since die frisch geladenen. Beide sind nach Zeit sortiert, das Ergebnis also auch.
+export const mergeDone = (prev: Done[], recent: Done[], since: Date) => [...prev.filter((d) => new Date(d.done_at) < since), ...recent]
 
 // Wochenrückblick: alle Monsterwahlen, Erledigungen und Stempel.
 export async function loadHistory() {
@@ -346,7 +400,7 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     clearTimeout(timer)
     timer = window.setTimeout(onChange, 300)
   }
-  const channel = db()
+  const channel = live!
     .channel('household')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, changed)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'picks' }, changed)
@@ -366,6 +420,6 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     clearTimeout(timer)
-    db().removeChannel(channel)
+    live!.removeChannel(channel)
   }
 }
