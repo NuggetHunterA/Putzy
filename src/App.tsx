@@ -16,7 +16,7 @@ import { Legend } from './Legend'
 import { eventBonus, eventFor, eventStart } from './events'
 import { EventIntro } from './EventIntro'
 import './events.css'
-import { brewPotion, complete, connect, markArenaSeen, saveArenaWeek, startArenaFight, spendJoker, markBossFightSeen, startBossFight, deleteOneOff, deleteTask, feed, findEgg, hatchEgg, load, markHomecomingSeen, markNews, markSeen, markStampSeen, pickMonster, recallExpedition, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, startExpedition, subscribe, undo, unlock, type Completion, type Done, type OneOff, type Snapshot, type Task, openOneOffs } from './db'
+import { brewPotion, complete, connect, readCache, saveCache, markArenaSeen, saveArenaWeek, startArenaFight, spendJoker, markBossFightSeen, startBossFight, deleteOneOff, deleteTask, feed, findEgg, hatchEgg, load, markHomecomingSeen, markNews, markSeen, markStampSeen, pickMonster, recallExpedition, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, startExpedition, subscribe, undo, unlock, type Completion, type Done, type OneOff, type Snapshot, type Task, openOneOffs } from './db'
 import { account, dueEventEgg, EVENT_EGGS, nextEggScene, rollEgg, type Egg } from './eggs'
 import { EggScene, type Scene } from './EggScene'
 import { Expeditions } from './Expeditions'
@@ -66,7 +66,14 @@ function useNow() {
 
 export default function App() {
   const [person, setPerson] = useState(() => localStorage.getItem(PERSON_STORAGE) as Person | null)
-  const [snap, setSnap] = useState<Snapshot | null>(null)
+  // Beim Öffnen zuerst der gemerkte Stand, nur zum Anschauen. Szenen und automatisches Speichern warten auf
+  // frische Daten (loaded), damit nichts aus einem veralteten Stand ausgelöst wird.
+  const [snap, setSnap] = useState<Snapshot | null>(() => {
+    const d = new Date()
+    return readCache(new Date(d.getFullYear(), d.getMonth(), d.getDate()), weekStart(d))
+  })
+  const [ready, setReady] = useState(false)
+  const loaded = ready ? snap : null
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks' | 'stamps' | 'expeditions' | 'boss' | 'bosses' | 'arena' | 'leaders'>('home')
@@ -121,14 +128,22 @@ export default function App() {
     else delete document.documentElement.dataset.event
   }, [homeEvent])
 
+  // Nur das zuletzt gestartete Laden zählt: Ein älteres, das später ankommt, würde sonst schon Gesehenes
+  // wieder als ungesehen zeigen.
+  const loads = useRef(0)
   const refresh = useCallback(async () => {
+    const n = ++loads.current
     try {
       const d = new Date()
-      setSnap(await load(new Date(d.getFullYear(), d.getMonth(), d.getDate()), weekStart(d)))
+      const s = await load(new Date(d.getFullYear(), d.getMonth(), d.getDate()), weekStart(d))
+      if (n !== loads.current) return
+      setSnap(s)
+      setReady(true)
+      saveCache(s)
       // Nur die Lade-Meldung zurücknehmen; eine Meldung zu einem Schreibfehler bleibt stehen, bis man sie antippt.
       setError((e) => (e === LOAD_ERROR ? null : e))
     } catch {
-      setError(LOAD_ERROR)
+      if (n === loads.current) setError(LOAD_ERROR)
     }
   }, [])
 
@@ -147,7 +162,7 @@ export default function App() {
   }, [refresh, day])
 
   // Geheime Reihen: Ist eine Bedingung erfüllt, wird der heutige Tag gespeichert. Pro Reihe nur ein Versuch je Start.
-  const fresh = snap ? newUnlocks(snap.monsterXp, snap.unlocks).map((m) => m.id).join() : ''
+  const fresh = loaded ? newUnlocks(loaded.monsterXp, loaded.unlocks).map((m) => m.id).join() : ''
   const unlockTried = useRef(new Set<string>())
   useEffect(() => {
     const ids = fresh.split(',').filter((id) => id && !unlockTried.current.has(id))
@@ -157,7 +172,7 @@ export default function App() {
   }, [fresh, today, refresh])
 
   // Event-Ei: Während des Events ins Nest legen, falls es noch fehlt. Ein Versuch je Start.
-  const eventEggDue = snap ? dueEventEgg(eventFor(now), snap.eggs) : null
+  const eventEggDue = loaded ? dueEventEgg(eventFor(now), loaded.eggs) : null
   const eventEggTried = useRef<string | null>(null)
   useEffect(() => {
     if (!eventEggDue || eventEggTried.current === eventEggDue) return
@@ -169,7 +184,7 @@ export default function App() {
   // Vor allen anderen Szenen. Das Ei kommt nur mit, wenn es nicht schon in einem früheren Jahr gefunden wurde.
   const introKey = homeEvent && `${homeEvent}-${dayString(eventStart(now))}`
   const [introSeen, setIntroSeen] = useState(() => localStorage.getItem(INTRO_STORAGE))
-  const intro = homeEvent && introKey !== introSeen ? homeEvent : null
+  const intro = homeEvent && ready && introKey !== introSeen ? homeEvent : null
   const introEggId = intro && EVENT_EGGS[intro]
   const introEgg = introEggId && !snap!.eggs.some((e) => e.monster === introEggId && e.found_at < dayString(eventStart(now))) ? monsterById(introEggId) : null
   const closeIntro = () => {
@@ -178,7 +193,7 @@ export default function App() {
   }
 
   // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
-  const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined
+  const reveal = loaded && person ? unrevealed(loaded.seen, person, loaded.unlocks, today)[0] : undefined
   useEffect(() => {
     if (!reveal || !person || intro || secret || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: reveal.id, stage: 0 }
@@ -190,7 +205,7 @@ export default function App() {
   // Heimkehr: nur auf der Expeditions-Seite, älteste zuerst, sofort als gesehen merken. Gebiets-Eier aus einer
   // Heimkehr, die diese Person noch nicht gesehen hat, warten mit ihrer Ei-Szene bis danach.
   const homecomings = snap && person ? unseenHomecomings(snap.expeditions, snap.expeditionsSeen, person, now) : []
-  const homeNext = view === 'expeditions' && !reveal ? homecomings[0] : undefined
+  const homeNext = ready && view === 'expeditions' && !reveal ? homecomings[0] : undefined
   useEffect(() => {
     if (!homeNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     setSnap((s) => s && { ...s, expeditionsSeen: [...s.expeditionsSeen, { person, expedition: homeNext.id }] })
@@ -200,7 +215,7 @@ export default function App() {
   const pendingEggs = new Set(homecomings.map((e) => e.loot.egg))
 
   // Boss-Endkampf der anderen Person: auf der Startseite nachspielen, ältester zuerst, sofort als gesehen merken.
-  const fightNext = snap && person && view === 'home' && !reveal ? unseenFights(snap.bossFights, snap.bossFightsSeen, person)[0] : undefined
+  const fightNext = loaded && person && view === 'home' && !reveal ? unseenFights(loaded.bossFights, loaded.bossFightsSeen, person)[0] : undefined
   useEffect(() => {
     if (!fightNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     setSnap((s) => s && { ...s, bossFightsSeen: [...s.bossFightsSeen, { person, fight: fightNext.id }] })
@@ -209,28 +224,28 @@ export default function App() {
   }, [fightNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Arena: Leiter, Team, Trainingszeiten und Rezept beim ersten Öffnen der Woche auslosen und speichern. Ein Versuch je Woche.
-  const arenaDue = snap && today >= ARENA_START && !snap.arenaWeeks.some((w) => w.week_start === week) ? week : null
+  const arenaDue = loaded && today >= ARENA_START && !loaded.arenaWeeks.some((w) => w.week_start === week) ? week : null
   const arenaTried = useRef<string | null>(null)
   useEffect(() => {
-    if (!arenaDue || !snap || arenaTried.current === arenaDue) return
+    if (!arenaDue || !loaded || arenaTried.current === arenaDue) return
     arenaTried.current = arenaDue
     const left = 6 - ((now.getDay() + 6) % 7)
     const setup = {
-      monsters: visibleMonsters(snap.unlocks, today, snap.eggs),
-      monsterXp: snap.monsterXp,
-      tasks: snap.tasks,
-      dueThisWeek: snap.tasks.filter((t) => daysUntilDue(snap.lastDone[t.id] ?? null, t.interval_days, now, t.first_due) <= left),
-      openOneOffs: openOneOffs(snap).length,
+      monsters: visibleMonsters(loaded.unlocks, today, loaded.eggs),
+      monsterXp: loaded.monsterXp,
+      tasks: loaded.tasks,
+      dueThisWeek: loaded.tasks.filter((t) => daysUntilDue(loaded.lastDone[t.id] ?? null, t.interval_days, now, t.first_due) <= left),
+      openOneOffs: openOneOffs(loaded).length,
       now,
     }
-    saveArenaWeek(rollWeek(arenaDue, snap.arenaWeeks, setup)).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [arenaDue, snap, today, now, refresh])
+    saveArenaWeek(rollWeek(arenaDue, loaded.arenaWeeks, setup)).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [arenaDue, loaded, today, now, refresh])
 
   // Arena-Kampf oder Brauen der anderen Person: auf der Startseite nachspielen, sofort als gesehen merken.
   // Kämpfe älterer Wochen und fremde Tränke älterer Wochen kommen nicht mehr.
   const arenaSeen = (ref: string) => !!snap && snap.arenaSeen.some((x) => x.person === person && x.ref === ref)
-  const arenaBrewNext = snap && person && view === 'home' && !reveal ? snap.arenaBrews.find((x) => x.week_start === week && x.person !== person && !arenaSeen(`brew:${x.week_start}`)) : undefined
-  const arenaFightNext = snap && person && view === 'home' && !reveal && !arenaBrewNext ? snap.arenaFights.find((f) => f.week_start === week && !arenaSeen(f.id)) : undefined
+  const arenaBrewNext = loaded && person && view === 'home' && !reveal ? loaded.arenaBrews.find((x) => x.week_start === week && x.person !== person && !arenaSeen(`brew:${x.week_start}`)) : undefined
+  const arenaFightNext = loaded && person && view === 'home' && !reveal && !arenaBrewNext ? loaded.arenaFights.find((f) => f.week_start === week && !arenaSeen(f.id)) : undefined
   const arenaNext = arenaBrewNext ? `brew:${arenaBrewNext.week_start}` : arenaFightNext?.id
   useEffect(() => {
     if (!arenaNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
@@ -240,7 +255,7 @@ export default function App() {
   }, [arenaNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Gebiets-Eier heimgekehrter Trupps ins Nest legen. Ein Versuch je Ei und Start.
-  const toFile = snap ? eggsToFile(snap.expeditions, snap.eggs, now) : []
+  const toFile = loaded ? eggsToFile(loaded.expeditions, loaded.eggs, now) : []
   const toFileKey = toFile.map((e) => e.id).join()
   const filed = useRef(new Set<string>())
   useEffect(() => {
@@ -254,7 +269,7 @@ export default function App() {
   }, [toFileKey, refresh])
 
   // Eier: Fund (Stufe -1) und Schlüpfen (Stufe 0) zeigen, nach geheimen Reihen und vor Entwicklungen.
-  const eggScene = snap && person && !reveal && !homeShown ? nextEggScene(snap.eggs.filter((e) => !pendingEggs.has(e.monster)), snap.seen, person) : undefined
+  const eggScene = loaded && person && !reveal && !homeShown ? nextEggScene(loaded.eggs.filter((e) => !pendingEggs.has(e.monster)), loaded.seen, person) : undefined
   useEffect(() => {
     if (!eggScene || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: eggScene.monster.id, stage: eggScene.kind === 'found' ? -1 : 0 }
@@ -267,16 +282,16 @@ export default function App() {
   const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done, snap.jokers) : []
   const weeksSaved = useRef<string | null>(null)
   useEffect(() => {
-    if (!snap || weeksSaved.current === week) return
-    const unsaved = weekPoints(week, snap.streakWeeks, snap.tasks, snap.done, snap.jokers).filter((w) => !snap.streakWeeks.some((s) => s.week_start === w.week_start))
+    if (!loaded || weeksSaved.current === week) return
+    const unsaved = weekPoints(week, loaded.streakWeeks, loaded.tasks, loaded.done, loaded.jokers).filter((w) => !loaded.streakWeeks.some((s) => s.week_start === w.week_start))
     if (unsaved.length === 0) return
     weeksSaved.current = week
     saveWeeks(unsaved).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [snap, week, refresh])
+  }, [loaded, week, refresh])
 
   // Stempel: Ist eine Bedingung erfüllt, wird der Stempel samt Bonus gespeichert. Pro Stempel nur ein Versuch je Start.
   const facts: Facts | null = snap && { done: snap.done, tasks: snap.tasks, monsterXp: snap.monsterXp, unlocks: snap.unlocks, eggs: snap.eggs, streakWeeks: snap.streakWeeks, bossFights: snap.bossFights, arenaWeeks: snap.arenaWeeks, arenaFights: snap.arenaFights, jokers: snap.jokers, today, week }
-  const earnable = facts && snap ? newStamps(facts, snap.stamps) : []
+  const earnable = facts && loaded ? newStamps(facts, loaded.stamps) : []
   const earnableKey = earnable.map((e) => e.id).join()
   const stampTried = useRef(new Set<string>())
   useEffect(() => {
@@ -290,7 +305,7 @@ export default function App() {
 
   // Nächste noch nicht gesehene Entwicklung abspielen und sofort als gesehen merken. Entwicklungen, die erst ein
   // noch nicht gesehener Stempel ausgelöst hat, warten bis nach seiner Animation.
-  const next = snap && person ? unseen(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
+  const next = loaded && person ? unseen(loaded.seen, person, xpBeforeUnseen(loaded.monsterXp, loaded.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
     if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
@@ -300,7 +315,7 @@ export default function App() {
   }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Legenden nach den Entwicklungen zeigen und sofort als gesehen merken.
-  const legendNext = snap && person && !next ? unseenLegends(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
+  const legendNext = loaded && person && !next ? unseenLegends(loaded.seen, person, xpBeforeUnseen(loaded.monsterXp, loaded.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
     if (!legendNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: legendNext.id, stage: LEGEND_STAGE }
@@ -310,7 +325,7 @@ export default function App() {
   }, [legendNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Stempel nach den Entwicklungen und Legenden zeigen, ältester zuerst, und sofort als gesehen merken.
-  const stampNext = snap && person && !next && !legendNext ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
+  const stampNext = loaded && person && !next && !legendNext ? unseenStamps(loaded.stamps, stampsSeen)[0] : undefined
   useEffect(() => {
     if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     setSnap((s) => s && { ...s, stampsSeen: [...s.stampsSeen, { person, stamp: stampNext.id }] })
@@ -326,8 +341,8 @@ export default function App() {
     },
     [refresh],
   )
-  const newsSeen = snap && person ? snap.newsSeen[person] : undefined
-  const newsStart = snap && person && newsSeen === undefined ? person : null
+  const newsSeen = loaded && person ? loaded.newsSeen[person] : undefined
+  const newsStart = loaded && person && newsSeen === undefined ? person : null
   // Nur einmal pro Start versuchen, damit ein fehlschlagendes Speichern nicht endlos wiederholt wird.
   const newsStarted = useRef(false)
   useEffect(() => {
@@ -617,94 +632,97 @@ export default function App() {
 
   return (
     <>
-      {!myPick && reviewed !== week ? (
-        <WeekReview
-          key={week}
-          tasks={snap.tasks}
-          week={previousWeek(week)}
-          streak={points.length > 0 ? { earned: points.at(-1)!.points, bank } : undefined}
-          expeditions={snap.expeditions}
-          feedings={snap.feedings}
-          onDone={doneReview}
-        />
-      ) : !myPick ? (
-        <MonsterPick
-          person={person}
-          monsters={monsters}
-          picks={snap.picks}
-          monsterXp={snap.monsterXp}
-          expeditions={snap.expeditions.filter((e) => awayMonsters([e], now).size > 0)}
-          now={now}
-          onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))}
-          onRecall={onRecall}
-          arena={arenaWeek && { leader: leaderById(arenaWeek.leader), level: Math.max(...arenaWeek.foes.map((f) => f.level)) }}
-        />
-      ) : view === 'intervals' ? (
-        <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
-      ) : view === 'oneoffs' ? (
-        <OneOffs
-          snap={snap}
-          person={person}
-          now={now}
-          onAdd={onAddOneOff}
-          onToggle={onOneOff}
-          onSave={onSaveOneOff}
-          onDelete={onDeleteOneOff}
-          onAttackEnd={onAttackEnd}
-          onBack={() => setView('home')}
-        />
-      ) : view === 'boss' && boss ? (
-        <Boss s={boss} snap={snap} person={person} monsters={monsters} now={now} onBack={() => setView('home')} onFight={onFight} onReplay={setFightShown} />
-      ) : view === 'bosses' ? (
-        <Bosses snap={snap} now={now} onBack={() => setView('pedia')} onReplay={setFightShown} />
-      ) : view === 'arena' && arenaWeek && arenaCtx && arena ? (
-        <Arena snap={snap} person={person} monsters={monsters} now={now} week={arenaWeek} ctx={arenaCtx} s={arena} jokers={jokers.balance} onBack={() => setView('home')} onFight={onArenaFight} onBrew={onBrew} onReplay={(f) => setArenaShown({ fight: f })} />
-      ) : view === 'leaders' ? (
-        <ArenaLeaders snap={snap} onBack={() => setView('pedia')} />
-      ) : view === 'pedia' ? (
-        <Pedia
-          snap={snap}
-          monsters={monsters}
-          konto={konto}
-          stampsNew={snap.stamps.filter((e) => e.earned_at > stampsOpened).length}
-          onHatch={onHatch}
-          onBack={() => setView('home')}
-          onReplay={(m, stage) => setEvo(evolution(m, stage))}
-          onWeeks={() => setView('weeks')}
-          onStamps={onStamps}
-          onBosses={() => setView('bosses')}
-          onArena={() => setView('leaders')}
-        />
-      ) : view === 'expeditions' ? (
-        <Expeditions snap={snap} monsters={monsters} now={now} onBack={() => setView('home')} onStart={onStartExpedition} onRecall={onRecall} onFeed={onFeed} />
-      ) : view === 'stamps' ? (
-        <Stamps snap={snap} facts={facts!} onBack={() => setView('pedia')} />
-      ) : view === 'weeks' ? (
-        <WeekReview tasks={snap.tasks} week={week} archive expeditions={snap.expeditions} feedings={snap.feedings} onDone={() => setView('pedia')} />
-      ) : (
-        <Home
-          snap={snap}
-          person={person}
-          monsters={monsters}
-          now={now}
-          points={bank}
-          live={live}
-          onToggle={onToggle}
-          onStanding={onStanding}
-          onAttackEnd={onAttackEnd}
-          onIntervals={() => setView('intervals')}
-          onPedia={() => setView('pedia')}
-          onOneOffs={() => setView('oneoffs')}
-          onExpeditions={() => setView('expeditions')}
-          homecomings={homecomings.length}
-          boss={boss}
-          onBoss={() => setView('boss')}
-          arena={arena ? { leader: arena.leader, fight: myArenaFight } : null}
-          onArena={() => setView('arena')}
-          jokers={jokers.balance}
-          onJoker={onJoker}
-        />
-      )}
+      {/* Bis frische Daten da sind, lässt sich der gemerkte Stand nur anschauen. */}
+      <div inert={!ready} style={{ display: 'contents' }}>
+        {!myPick && reviewed !== week ? (
+          <WeekReview
+            key={week}
+            tasks={snap.tasks}
+            week={previousWeek(week)}
+            streak={points.length > 0 ? { earned: points.at(-1)!.points, bank } : undefined}
+            expeditions={snap.expeditions}
+            feedings={snap.feedings}
+            onDone={doneReview}
+          />
+        ) : !myPick ? (
+          <MonsterPick
+            person={person}
+            monsters={monsters}
+            picks={snap.picks}
+            monsterXp={snap.monsterXp}
+            expeditions={snap.expeditions.filter((e) => awayMonsters([e], now).size > 0)}
+            now={now}
+            onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))}
+            onRecall={onRecall}
+            arena={arenaWeek && { leader: leaderById(arenaWeek.leader), level: Math.max(...arenaWeek.foes.map((f) => f.level)) }}
+          />
+        ) : view === 'intervals' ? (
+          <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
+        ) : view === 'oneoffs' ? (
+          <OneOffs
+            snap={snap}
+            person={person}
+            now={now}
+            onAdd={onAddOneOff}
+            onToggle={onOneOff}
+            onSave={onSaveOneOff}
+            onDelete={onDeleteOneOff}
+            onAttackEnd={onAttackEnd}
+            onBack={() => setView('home')}
+          />
+        ) : view === 'boss' && boss ? (
+          <Boss s={boss} snap={snap} person={person} monsters={monsters} now={now} onBack={() => setView('home')} onFight={onFight} onReplay={setFightShown} />
+        ) : view === 'bosses' ? (
+          <Bosses snap={snap} now={now} onBack={() => setView('pedia')} onReplay={setFightShown} />
+        ) : view === 'arena' && arenaWeek && arenaCtx && arena ? (
+          <Arena snap={snap} person={person} monsters={monsters} now={now} week={arenaWeek} ctx={arenaCtx} s={arena} jokers={jokers.balance} onBack={() => setView('home')} onFight={onArenaFight} onBrew={onBrew} onReplay={(f) => setArenaShown({ fight: f })} />
+        ) : view === 'leaders' ? (
+          <ArenaLeaders snap={snap} onBack={() => setView('pedia')} />
+        ) : view === 'pedia' ? (
+          <Pedia
+            snap={snap}
+            monsters={monsters}
+            konto={konto}
+            stampsNew={snap.stamps.filter((e) => e.earned_at > stampsOpened).length}
+            onHatch={onHatch}
+            onBack={() => setView('home')}
+            onReplay={(m, stage) => setEvo(evolution(m, stage))}
+            onWeeks={() => setView('weeks')}
+            onStamps={onStamps}
+            onBosses={() => setView('bosses')}
+            onArena={() => setView('leaders')}
+          />
+        ) : view === 'expeditions' ? (
+          <Expeditions snap={snap} monsters={monsters} now={now} onBack={() => setView('home')} onStart={onStartExpedition} onRecall={onRecall} onFeed={onFeed} />
+        ) : view === 'stamps' ? (
+          <Stamps snap={snap} facts={facts!} onBack={() => setView('pedia')} />
+        ) : view === 'weeks' ? (
+          <WeekReview tasks={snap.tasks} week={week} archive expeditions={snap.expeditions} feedings={snap.feedings} onDone={() => setView('pedia')} />
+        ) : (
+          <Home
+            snap={snap}
+            person={person}
+            monsters={monsters}
+            now={now}
+            points={bank}
+            live={live}
+            onToggle={onToggle}
+            onStanding={onStanding}
+            onAttackEnd={onAttackEnd}
+            onIntervals={() => setView('intervals')}
+            onPedia={() => setView('pedia')}
+            onOneOffs={() => setView('oneoffs')}
+            onExpeditions={() => setView('expeditions')}
+            homecomings={homecomings.length}
+            boss={boss}
+            onBoss={() => setView('boss')}
+            arena={arena ? { leader: arena.leader, fight: myArenaFight } : null}
+            onArena={() => setView('arena')}
+            jokers={jokers.balance}
+            onJoker={onJoker}
+          />
+        )}
+      </div>
       {error && (
         <button className="toast" onClick={() => setError(null)}>
           {error}
