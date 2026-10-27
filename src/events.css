@@ -20,7 +20,7 @@
 [data-event] .logo::after { display: none; }
 [data-event] .water, [data-event] .wave path { background: var(--ev-water); fill: var(--ev-water); }
 [data-event] .panel::after { content: ''; position: absolute; top: -2px; left: -2px; width: 46px; height: 46px; pointer-events: none; background: var(--ev-corner) no-repeat; }
-[data-event] .pedia-banner { background: var(--ev-banner); }
+[data-event] .tile-pedia { background: var(--ev-banner); }
 [data-event] .section-title::after { content: ''; display: inline-block; width: 24px; height: 22px; margin-left: 8px; vertical-align: -2px; background: var(--ev-icon) no-repeat center / contain; }
 [data-event] .row.is-done { background: #0E0A1C; }
 @keyframes ev-sky { to { translate: -48% 6px; } }

@@ -1,20 +1,25 @@
-// Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Pedia-Band, dann die Aufgabenliste mit den ständigen Aufgaben oben.
+// Startbildschirm: flache Leiste mit Fortschritt und euren Monstern, Kacheln für Arena und Pedia, dann die Aufgabenliste mit den
+// ständigen Aufgaben oben. Rechts neben „Heute“ das Joker-Konto: Antippen erklärt es und startet die Auswahl.
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
+import { MAX_JOKERS, anchorOf, canJoker, jokered, leaderImg, type ArenaFight, type Leader } from './arena'
+import { Joker } from './ArenaIcons'
+import { leaderColors } from './Arena'
 import { FLOOR, bossImg, canFight, hitsCount, shortDay, type BossState } from './bosses'
 import { bossHit } from './fx'
 import { ElementIcon } from './ElementIcon'
 import { Compass } from './Expeditions'
 import { EVENT_LABEL, eventBonus, eventEnd, eventFor } from './events'
 import { ELEMENTS, MAX_LEVEL, PEOPLE, STANDING, STANDING_EFFORT, TEAM_BONUS, backdrop, dayString, daysUntilDue, dueLabel, elementsOf, intervalLabel, levelFor, monsterById, stageFor, weekStart, xpForLevel, xpOf, type Element, type Monster, type Person, type Standing } from './game'
-import { PEDIA_ORDER, dexTotal, discoveredCount, isDiscovered } from './pedia'
+import { dexTotal, discoveredCount, isDiscovered } from './pedia'
 import { openOneOffs, type Completion, type Snapshot, type Task } from './db'
 import { STREAK_START, addDays, current, longest, weekDays } from './streak'
 
 const SOON_DAYS = 7
 
-type Row = { task: Task; days: number; done?: Completion }
+// jokered: Ein Joker schiebt die laufende Fälligkeit schon um einen Tag (in days enthalten).
+type Row = { task: Task; days: number; done?: Completion; jokered: boolean }
 
 type Props = {
   snap: Snapshot
@@ -37,17 +42,27 @@ type Props = {
   // Laufender Boss oder null.
   boss: BossState | null
   onBoss: () => void
+  // Arena der Woche (Leiter und dein Kampf), null vor dem Start oder solange noch nicht ausgelost.
+  arena: { leader: Leader; fight: ArenaFight | undefined } | null
+  onArena: () => void
+  jokers: number
+  onJoker: (task: Task) => void
 }
 
 export type { Row }
 
-export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings, boss, onBoss }: Props) {
+export function Home({ snap, person, monsters, now, points, live, onToggle, onStanding, onAttackEnd, onIntervals, onPedia, onOneOffs, onExpeditions, homecomings, boss, onBoss, arena, onArena, jokers, onJoker }: Props) {
   const { myBadge, strike } = useStrike(snap, person, onAttackEnd)
-  const rows: Row[] = snap.tasks.map((task) => ({
-    task,
-    days: daysUntilDue(snap.lastDone[task.id] ?? null, task.interval_days, now, task.first_due),
-    done: snap.today.findLast((c) => c.task_id === task.id),
-  }))
+  const rows: Row[] = snap.tasks.map((task) => {
+    const last = snap.lastDone[task.id] ?? null
+    const joker = jokered(snap.jokers, task.id, anchorOf(last, task.first_due))
+    return { task, days: daysUntilDue(last, task.interval_days, now, task.first_due) + (joker ? 1 : 0), done: snap.today.findLast((c) => c.task_id === task.id), jokered: joker }
+  })
+  // Joker: Info-Blase, dann Auswahlmodus, dann Bestätigung für die gewählte Aufgabe.
+  const [jokerInfo, setJokerInfo] = useState(false)
+  const [picking, setPicking] = useState(false)
+  const [confirm, setConfirm] = useState<Row | null>(null)
+  const pickable = (r: Row) => picking && !r.done && canJoker(r.days, r.jokered)
   const today = rows.filter((r) => r.done || r.days <= 0).sort((a, b) => Number(!!a.done) - Number(!!b.done) || a.days - b.days)
   const soon = rows.filter((r) => !r.done && r.days > 0 && r.days <= SOON_DAYS).sort((a, b) => a.days - b.days)
   const doneCount = today.filter((r) => r.done).length
@@ -69,7 +84,7 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
     if (damage > 0) bossHit(dot, bossPic.current, element, damage)
   }
   const toggle = (row: Row, dot: HTMLElement) =>
-    strike(!!row.done, row.task, dot, () => {
+    picking ? pickable(row) && setConfirm(row) : strike(!!row.done, row.task, dot, () => {
       onToggle(row)
       if (!row.done) hitBoss(row.task.element, xpFor(row.task), dot)
     })
@@ -145,12 +160,85 @@ export function Home({ snap, person, monsters, now, points, live, onToggle, onSt
 
       {boss && <BossBar s={boss} now={now} imgRef={bossPic} onClick={onBoss} />}
 
-      <PediaBanner snap={snap} monsters={monsters} onClick={onPedia} />
+      <div className="split2">
+        <ArenaTile arena={arena} onClick={onArena} />
+        <PediaTile snap={snap} monsters={monsters} onClick={onPedia} />
+      </div>
 
-      <TaskSection title="Heute" badge={<EventBadge now={now} />} rows={today} person={person} xp={xpFor} bonus={bonus} onToggle={toggle}>
-        <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />
+      {picking && (
+        <div className="mode-bar">
+          <Joker size={28} />
+          <span>
+            <b>Welche Aufgabe verschieben?</b>
+            <small>{jokers === 1 ? '1 Joker' : `${jokers} Joker`} auf dem Konto</small>
+          </span>
+          <button className="btn" onClick={() => setPicking(false)}>
+            Fertig
+          </button>
+        </div>
+      )}
+
+      <TaskSection
+        title="Heute"
+        badge={
+          <>
+            <EventBadge now={now} />
+            <button className="joker big" onClick={() => setJokerInfo(!jokerInfo)} aria-label={`${jokers} Joker auf eurem Konto`}>
+              <Joker size={20} />
+              {jokers} Joker
+            </button>
+            {jokerInfo && (
+              <JokerInfo
+                jokers={jokers}
+                onClose={() => setJokerInfo(false)}
+                onUse={() => {
+                  setJokerInfo(false)
+                  setPicking(true)
+                }}
+              />
+            )}
+          </>
+        }
+        rows={today}
+        person={person}
+        xp={xpFor}
+        bonus={bonus}
+        pickable={picking ? pickable : undefined}
+        onToggle={toggle}
+      >
+        {!picking && <StandingStrip today={snap.today} person={person} onToggle={toggleStanding} />}
       </TaskSection>
-      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} onToggle={toggle} />}
+      {soon.length > 0 && <TaskSection title="Demnächst" rows={soon} person={person} xp={xpFor} bonus={bonus} pickable={picking ? pickable : undefined} onToggle={toggle} />}
+
+      {confirm && (
+        <div className="sheet-wrap" onClick={() => setConfirm(null)}>
+          <div className="sheet joker-confirm" onClick={(e) => e.stopPropagation()}>
+            <span className="grab" />
+            <h3>
+              <Joker size={26} />
+              Joker einsetzen?
+            </h3>
+            <p>
+              <b>{confirm.task.name}</b> ist dann {confirm.days === 0 ? 'erst morgen statt heute' : 'erst übermorgen statt morgen'} fällig. Das lässt sich nicht zurücknehmen.
+            </p>
+            <div className="jc-btns">
+              <button className="btn" onClick={() => setConfirm(null)}>
+                Abbrechen
+              </button>
+              <button
+                className="btn yes"
+                onClick={() => {
+                  onJoker(confirm.task)
+                  setConfirm(null)
+                  if (jokers <= 1) setPicking(false)
+                }}
+              >
+                Einsetzen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="live">
         <span className={`live-dot ${live ? 'on' : ''}`} />
@@ -166,7 +254,7 @@ function StreakBadge({ snap, now, points }: { snap: Snapshot; now: Date; points:
   const [open, setOpen] = useState(false)
   const today = dayString(now)
   const todayIndex = (now.getDay() + 6) % 7
-  const days = weekDays(weekStart(now), today, snap.tasks, snap.done)
+  const days = weekDays(weekStart(now), today, snap.tasks, snap.done, snap.jokers)
   const streak = current(days, todayIndex)
   // Hüpfer, wenn die Zahl steigt (heute geschafft), nicht beim Öffnen der App.
   const [hop, setHop] = useState(0)
@@ -305,28 +393,76 @@ export function MonsterBadge({ person, snap, imgRef }: { person: Person; snap: S
   )
 }
 
-// Schmales Pedia-Band über den Aufgaben: eure zwei stärksten Monster und eine Silhouette als Lockruf.
-function PediaBanner({ snap, monsters, onClick }: { snap: Snapshot; monsters: Monster[]; onClick: () => void }) {
+// Pedia-Kachel neben der Arena: Zahl der entdeckten Stufen und eure zwei stärksten Monster, die oben herausragen.
+function PediaTile({ snap, monsters, onClick }: { snap: Snapshot; monsters: Monster[]; onClick: () => void }) {
   const xp = (id: string) => snap.monsterXp[id] ?? 0
   const top = [...monsters].sort((a, b) => xp(b.id) - xp(a.id)).slice(0, 2)
   const shown = (m: Monster) => m.stages.findLastIndex((_, s) => isDiscovered(snap.seen, m.id, s))
-  const hidden = PEDIA_ORDER.filter((m) => monsters.includes(m)).flatMap((m) => m.levels.map((_, i) => i + 1).filter((s) => !isDiscovered(snap.seen, m.id, s)).map((s) => m.files[s]))[0]
   return (
-    <button className="pedia-banner" onClick={onClick} aria-label={`Putzy-Pedia, ${discoveredCount(snap.seen, monsters)} von ${dexTotal(monsters)} entdeckt`}>
-      <span className="pb-title">Putzy-Pedia</span>
-      <span className="pb-sub">
-        {discoveredCount(snap.seen, monsters)}/{dexTotal(monsters)}
+    <button className="tile tile-pedia" onClick={onClick} aria-label={`Putzy-Pedia, ${discoveredCount(snap.seen, monsters)} von ${dexTotal(monsters)} entdeckt`}>
+      <span className="tt">
+        <span className="pb-title">Pedia</span>
+        <span className="ts">
+          {discoveredCount(snap.seen, monsters)}/{dexTotal(monsters)}
+        </span>
       </span>
-      <span className="pb-mons" aria-hidden="true">
-        {top.map((m) => (
-          <img key={m.id} src={m.files[shown(m)]} alt="" />
-        ))}
-        {hidden && <img className="sil" src={hidden} alt="" />}
-      </span>
-      <span className="pb-go" aria-hidden="true">
-        ›
-      </span>
+      {top.map((m, i) => (
+        <img key={m.id} className={`m${i + 1}`} src={m.files[shown(m)]} alt="" />
+      ))}
     </button>
+  )
+}
+
+// Arena-Kachel: Leiter der Woche ragt oben heraus, roter Punkt, solange dein Kampf offen ist.
+function ArenaTile({ arena, onClick }: { arena: Props['arena']; onClick: () => void }) {
+  if (!arena)
+    return (
+      <button className="tile tile-arena soon" disabled aria-label="Arena, ab Montag">
+        <span className="tt">
+          <span className="pb-title">Arena</span>
+          <span className="ts">ab Montag</span>
+        </span>
+      </button>
+    )
+  const [a, b] = leaderColors(arena.leader.elements)
+  const sub = arena.fight ? (arena.fight.won ? 'Sieg ✓' : 'verloren') : arena.leader.name
+  return (
+    <button className="tile tile-arena" style={{ ['--a' as string]: a, ['--b' as string]: b }} onClick={onClick} aria-label={`Arena: ${arena.leader.name}, ${arena.fight ? sub : 'dein Kampf ist offen'}`}>
+      <img className="fig" src={leaderImg(arena.leader)} alt="" />
+      <span className="tt">
+        <span className="pb-title">Arena</span>
+        <span className="ts">{sub}</span>
+      </span>
+      {!arena.fight && <span className="red-dot" />}
+    </button>
+  )
+}
+
+// Joker-Konto antippen: fünf Plätze, kurze Erklärung und „Joker einsetzen“.
+function JokerInfo({ jokers, onClose, onUse }: { jokers: number; onClose: () => void; onUse: () => void }) {
+  return (
+    <div className="streak-info joker-info" onClick={onClose}>
+      <span className="streak-info-head">
+        <b>{jokers === 1 ? '1 Joker' : `${jokers} Joker`} auf eurem Konto</b>
+      </span>
+      <span className="jk-slots">
+        {Array.from({ length: MAX_JOKERS }, (_, i) => (
+          <Joker key={i} size={30} empty={i >= jokers} />
+        ))}
+      </span>
+      <span>Ein Joker schiebt eine Aufgabe, die heute oder morgen fällig ist, um einen Tag. Die Streak läuft weiter. Joker gewinnt ihr in der Arena, höchstens {MAX_JOKERS} liegen auf dem Konto.</span>
+      {jokers > 0 && (
+        <button
+          className="btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onUse()
+          }}
+        >
+          Joker einsetzen
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -364,7 +500,8 @@ function StandingStrip({ today, person, onToggle }: { today: Completion[]; perso
 }
 
 // Erledigte Zeilen lassen sich nur von der Person zurücknehmen, die sie abgehakt hat.
-function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
+// pickable: im Joker-Modus, welche Zeilen sich verschieben lassen (die anderen sind blass).
+function TaskSection({ title, badge, rows, person, xp, bonus, pickable, onToggle, children }: { title: string; badge?: ReactNode; rows: Row[]; person: Person; xp: (t: Task) => number; bonus: Element | null; pickable?: (r: Row) => boolean; onToggle: (r: Row, dot: HTMLElement) => void; children?: ReactNode }) {
   return (
     <section className="section">
       <div className="section-head">
@@ -380,9 +517,9 @@ function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0, transition: { type: 'spring', bounce: 0.45, delay: Math.min(i, 8) * 0.04 } }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`row ${r.done ? 'is-done' : ''}`}
+            className={`row ${r.done ? 'is-done' : ''}${pickable ? (pickable(r) ? ' pickable' : ' muted') : ''}`}
             aria-pressed={!!r.done}
-            disabled={!!r.done && r.done.person !== person}
+            disabled={pickable ? !pickable(r) : !!r.done && r.done.person !== person}
             onClick={(e) => onToggle(r, e.currentTarget.querySelector('.dot')!)}
           >
             <span className="dot" style={{ background: ELEMENTS[r.task.element].soft }}>
@@ -394,10 +531,24 @@ function TaskSection({ title, badge, rows, person, xp, bonus, onToggle, children
                 {r.task.room} · {intervalLabel(r.task.interval_days)}
               </span>
             </span>
-            <span className="row-side">
-              <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
-              <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
-            </span>
+            {pickable?.(r) ? (
+              <span className="plus-day">
+                <Joker size={16} />
+                +1 Tag
+              </span>
+            ) : (
+              <span className="row-side">
+                {!r.done && r.jokered ? (
+                  <span className="jk-row">
+                    <Joker size={12} />
+                    {dueLabel(r.days)}
+                  </span>
+                ) : (
+                  <span className={`row-due ${!r.done && r.days < 0 ? 'late' : ''}`}>{r.done ? `${PEOPLE[r.done.person]} ✓` : dueLabel(r.days)}</span>
+                )}
+                <span className={`row-xp${!r.done && r.task.element === bonus ? ' bonus' : ''}`}>{r.done ? r.done.xp : xp(r.task)} XP</span>
+              </span>
+            )}
           </motion.button>
         ))}
       </AnimatePresence>

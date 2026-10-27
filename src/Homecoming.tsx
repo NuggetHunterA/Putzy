@@ -2,6 +2,8 @@
 // die Beutekiste (Klein Holz, Gut mit Strahlen, Super Gold mit Konfetti). Danach, falls gewürfelt, die Shiny-Enthüllung.
 // Antippen überspringt bis zur Beute. Aufbruch: kurz, der Trupp zieht los.
 import { useEffect, useRef, useState } from 'react'
+import type { Ingredient as Ing } from './arena'
+import { Ingredient } from './ArenaIcons'
 import { useBack } from './back'
 import { fruitImg } from './Expeditions'
 import { FRUITS, areaById, beatsArea, shinyFilter, type Expedition, type Fruit, type Loot } from './expeditions'
@@ -17,7 +19,8 @@ const mid = (el: Element | null) => {
   return [r.left + r.width / 2, r.top + r.height / 2] as const
 }
 
-export function Homecoming({ exp, person, monsterXp, onDone }: { exp: Expedition; person: Person; monsterXp: Record<string, number>; onDone: () => void }) {
+// ingredient: Zutat für den Wochen-Trank der Arena, die dieser Trupp mitgebracht hat.
+export function Homecoming({ exp, person, monsterXp, ingredient, onDone }: { exp: Expedition; person: Person; monsterXp: Record<string, number>; ingredient?: Ing; onDone: () => void }) {
   useBack(onDone)
   const area = areaById(exp.area)
   const trupp = exp.monsters.map(monsterById)
@@ -87,6 +90,7 @@ export function Homecoming({ exp, person, monsterXp, onDone }: { exp: Expedition
     ...Object.entries(counts).map(([f, n]) => `+${n} ${n === 1 ? FRUITS[f as Fruit].name : PLURAL[f as Fruit]}`),
     ...(loot.streak ? ['+1 Streak-Punkt'] : []),
     ...(loot.egg ? ['ein Ei fürs Nest'] : []),
+    ...(ingredient ? [`${ingredient.name} (Trank)`] : []),
   ].join(' · ')
   const shinyMonster = loot.shiny && monsterById(loot.shiny.monster)
 
@@ -170,6 +174,11 @@ export function Homecoming({ exp, person, monsterXp, onDone }: { exp: Expedition
                 {loot.streak > 0 && (
                   <span className="hk-item hk-point" style={{ animationDelay: `${0.25 + loot.fruits.length * 0.22}s` }}>
                     +1
+                  </span>
+                )}
+                {ingredient && (
+                  <span className="hk-item" style={{ animationDelay: `${0.47 + loot.fruits.length * 0.22}s` }}>
+                    <Ingredient element={ingredient.element} size={56} />
                   </span>
                 )}
               </div>

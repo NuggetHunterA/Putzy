@@ -32,7 +32,7 @@ export function Stamps({ snap, facts, onBack }: { snap: Snapshot; facts: Facts; 
   const all = stamps(snap.tasks, snap.stamps)
   const earned = (s: Stamp) => snap.stamps.find((e) => e.id === s.id)
   const groups = [...new Set(all.map((s) => s.group))]
-  const isTask = (g: string) => g !== 'Meilensteine' && g !== 'Elemente' && g !== 'Bosse'
+  const isTask = (g: string) => g !== 'Meilensteine' && g !== 'Elemente' && g !== 'Bosse' && g !== 'Arena'
 
   return (
     <main className="screen">

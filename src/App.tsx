@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Arena } from './Arena'
+import { ArenaLeaders } from './ArenaLeaders'
+import { ArenaFightScene, ArenaHints, BrewScene } from './ArenaScenes'
+import './arena.css'
+import { ARENA_START, anchorOf, homecomingFinds, hintsFor, jokerAccount, leaderById, rollWeek, simulate, weekState, fighterOf, type ArenaFight, type Ctx, type Hint, type Ingredient } from './arena'
 import { Celebration, type Cel } from './Celebration'
 import { TeamBar, type Team } from './TeamBar'
 import { Evolution } from './Evolution'
@@ -11,12 +16,12 @@ import { Legend } from './Legend'
 import { eventBonus, eventFor, eventStart } from './events'
 import { EventIntro } from './EventIntro'
 import './events.css'
-import { complete, connect, markBossFightSeen, startBossFight, deleteOneOff, deleteTask, feed, findEgg, hatchEgg, load, markHomecomingSeen, markNews, markSeen, markStampSeen, pickMonster, recallExpedition, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, startExpedition, subscribe, undo, unlock, type Completion, type OneOff, type Snapshot, type Task } from './db'
+import { brewPotion, complete, connect, markArenaSeen, saveArenaWeek, startArenaFight, spendJoker, markBossFightSeen, startBossFight, deleteOneOff, deleteTask, feed, findEgg, hatchEgg, load, markHomecomingSeen, markNews, markSeen, markStampSeen, pickMonster, recallExpedition, saveOneOff, saveStamps, saveTask, saveWeeks, setInterval as saveInterval, startExpedition, subscribe, undo, unlock, type Completion, type Done, type OneOff, type Snapshot, type Task, openOneOffs } from './db'
 import { account, dueEventEgg, EVENT_EGGS, nextEggScene, rollEgg, type Egg } from './eggs'
 import { EggScene, type Scene } from './EggScene'
 import { Expeditions } from './Expeditions'
 import './expeditions.css'
-import { FRUITS, areaById, awayMonsters, eggsToFile, expeditionPoints, rollLoot, unseenHomecomings, type Area, type Expedition, type Fruit } from './expeditions'
+import { FRUITS, areaById, awayMonsters, isHome, eggsToFile, expeditionPoints, rollLoot, unseenHomecomings, type Area, type Expedition, type Fruit } from './expeditions'
 import { Departure, Homecoming } from './Homecoming'
 import { Home, type Row } from './Home'
 import { Intervals } from './Intervals'
@@ -33,7 +38,7 @@ import { StampScene } from './StampScene'
 import { Stamps } from './Stamps'
 import { WeekReview } from './WeekReview'
 import { newUnlocks, unrevealed, visibleMonsters } from './secret'
-import { MAX_LEVEL, PEOPLE, STANDING_EFFORT, TEAM_BONUS, dayString, elementsOf, levelFor, monsterById, stageFor, teamFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
+import { MAX_LEVEL, PEOPLE, STANDING_EFFORT, TEAM_BONUS, dayString, daysUntilDue, elementsOf, levelFor, monsterById, stageFor, teamFor, weekStart, xpOf, type Monster, type MonsterElement, type Person, type Standing, type Work } from './game'
 import { weekPoints } from './streak'
 
 const PERSON_STORAGE = 'putzy.person'
@@ -64,7 +69,7 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [live, setLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks' | 'stamps' | 'expeditions' | 'boss' | 'bosses'>('home')
+  const [view, setView] = useState<'home' | 'intervals' | 'pedia' | 'oneoffs' | 'weeks' | 'stamps' | 'expeditions' | 'boss' | 'bosses' | 'arena' | 'leaders'>('home')
   const [cel, setCel] = useState<Cel | null>(null)
   const closeCel = useCallback(() => setCel(null), [])
   // Vollbild gibt es nur bei Level-Up; es startet, wenn der Angriff des Monsters vorbei ist.
@@ -93,6 +98,11 @@ export default function App() {
   // Boss-Endkampf, der gerade gezeigt wird (eigener Start oder von der anderen Person).
   const [fightShown, setFightShown] = useState<Fight | null>(null)
   const closeFight = useCallback(() => setFightShown(null), [])
+  // Arena-Kampf oder Brauen, das gerade gezeigt wird (eigenes oder von der anderen Person), und Hinweise beim Abhaken.
+  const [arenaShown, setArenaShown] = useState<{ fight: ArenaFight } | { brew: string } | null>(null)
+  const closeArena = useCallback(() => setArenaShown(null), [])
+  const [hints, setHints] = useState<Hint[] | null>(null)
+  const closeHints = useCallback(() => setHints(null), [])
   // Team-Bonus im Event: Leiste unten mit den Monstern, die gerade +5 bekommen haben.
   const [team, setTeam] = useState<Team | null>(null)
   const closeTeam = useCallback(() => setTeam(null), [])
@@ -170,33 +180,64 @@ export default function App() {
   // Ab dem Tag danach: Freischaltung zeigen (vor Entwicklungen) und sofort als gesehen merken (Stufe 0).
   const reveal = snap && person ? unrevealed(snap.seen, person, snap.unlocks, today)[0] : undefined
   useEffect(() => {
-    if (!reveal || !person || intro || secret || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!reveal || !person || intro || secret || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: reveal.id, stage: 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setSecret(reveal)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [reveal, person, intro, secret, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [reveal, person, intro, secret, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Heimkehr: nur auf der Expeditions-Seite, älteste zuerst, sofort als gesehen merken. Gebiets-Eier aus einer
   // Heimkehr, die diese Person noch nicht gesehen hat, warten mit ihrer Ei-Szene bis danach.
   const homecomings = snap && person ? unseenHomecomings(snap.expeditions, snap.expeditionsSeen, person, now) : []
   const homeNext = view === 'expeditions' && !reveal ? homecomings[0] : undefined
   useEffect(() => {
-    if (!homeNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!homeNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     setSnap((s) => s && { ...s, expeditionsSeen: [...s.expeditionsSeen, { person, expedition: homeNext.id }] })
     setHomeShown(homeNext)
     markHomecomingSeen(person, homeNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [homeNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [homeNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
   const pendingEggs = new Set(homecomings.map((e) => e.loot.egg))
 
   // Boss-Endkampf der anderen Person: auf der Startseite nachspielen, ältester zuerst, sofort als gesehen merken.
   const fightNext = snap && person && view === 'home' && !reveal ? unseenFights(snap.bossFights, snap.bossFightsSeen, person)[0] : undefined
   useEffect(() => {
-    if (!fightNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!fightNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     setSnap((s) => s && { ...s, bossFightsSeen: [...s.bossFightsSeen, { person, fight: fightNext.id }] })
     setFightShown(fightNext)
     markBossFightSeen(person, fightNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [fightNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [fightNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
+
+  // Arena: Leiter, Team, Trainingszeiten und Rezept beim ersten Öffnen der Woche auslosen und speichern. Ein Versuch je Woche.
+  const arenaDue = snap && today >= ARENA_START && !snap.arenaWeeks.some((w) => w.week_start === week) ? week : null
+  const arenaTried = useRef<string | null>(null)
+  useEffect(() => {
+    if (!arenaDue || !snap || arenaTried.current === arenaDue) return
+    arenaTried.current = arenaDue
+    const left = 6 - ((now.getDay() + 6) % 7)
+    const setup = {
+      monsters: visibleMonsters(snap.unlocks, today, snap.eggs),
+      monsterXp: snap.monsterXp,
+      tasks: snap.tasks,
+      dueThisWeek: snap.tasks.filter((t) => daysUntilDue(snap.lastDone[t.id] ?? null, t.interval_days, now, t.first_due) <= left),
+      openOneOffs: openOneOffs(snap).length,
+      now,
+    }
+    saveArenaWeek(rollWeek(arenaDue, snap.arenaWeeks, setup)).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [arenaDue, snap, today, now, refresh])
+
+  // Arena-Kampf oder Brauen der anderen Person: auf der Startseite nachspielen, sofort als gesehen merken.
+  // Kämpfe älterer Wochen und fremde Tränke älterer Wochen kommen nicht mehr.
+  const arenaSeen = (ref: string) => !!snap && snap.arenaSeen.some((x) => x.person === person && x.ref === ref)
+  const arenaBrewNext = snap && person && view === 'home' && !reveal ? snap.arenaBrews.find((x) => x.week_start === week && x.person !== person && !arenaSeen(`brew:${x.week_start}`)) : undefined
+  const arenaFightNext = snap && person && view === 'home' && !reveal && !arenaBrewNext ? snap.arenaFights.find((f) => f.week_start === week && !arenaSeen(f.id)) : undefined
+  const arenaNext = arenaBrewNext ? `brew:${arenaBrewNext.week_start}` : arenaFightNext?.id
+  useEffect(() => {
+    if (!arenaNext || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
+    setSnap((s) => s && { ...s, arenaSeen: [...s.arenaSeen, { person, ref: arenaNext }] })
+    setArenaShown(arenaFightNext ? { fight: arenaFightNext } : { brew: arenaBrewNext!.week_start })
+    markArenaSeen(person, arenaNext).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
+  }, [arenaNext, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Gebiets-Eier heimgekehrter Trupps ins Nest legen. Ein Versuch je Ei und Start.
   const toFile = snap ? eggsToFile(snap.expeditions, snap.eggs, now) : []
@@ -215,26 +256,26 @@ export default function App() {
   // Eier: Fund (Stufe -1) und Schlüpfen (Stufe 0) zeigen, nach geheimen Reihen und vor Entwicklungen.
   const eggScene = snap && person && !reveal && !homeShown ? nextEggScene(snap.eggs.filter((e) => !pendingEggs.has(e.monster)), snap.seen, person) : undefined
   useEffect(() => {
-    if (!eggScene || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!eggScene || !person || intro || secret || eggShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: eggScene.monster.id, stage: eggScene.kind === 'found' ? -1 : 0 }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEggShown(eggScene)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [eggScene, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [eggScene, person, intro, secret, eggShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Streak-Punkte abgeschlossener Wochen, die noch nicht gespeichert sind, festhalten. Einmal pro Woche je Start.
-  const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done) : []
+  const points = snap ? weekPoints(week, snap.streakWeeks, snap.tasks, snap.done, snap.jokers) : []
   const weeksSaved = useRef<string | null>(null)
   useEffect(() => {
     if (!snap || weeksSaved.current === week) return
-    const unsaved = weekPoints(week, snap.streakWeeks, snap.tasks, snap.done).filter((w) => !snap.streakWeeks.some((s) => s.week_start === w.week_start))
+    const unsaved = weekPoints(week, snap.streakWeeks, snap.tasks, snap.done, snap.jokers).filter((w) => !snap.streakWeeks.some((s) => s.week_start === w.week_start))
     if (unsaved.length === 0) return
     weeksSaved.current = week
     saveWeeks(unsaved).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
   }, [snap, week, refresh])
 
   // Stempel: Ist eine Bedingung erfüllt, wird der Stempel samt Bonus gespeichert. Pro Stempel nur ein Versuch je Start.
-  const facts: Facts | null = snap && { done: snap.done, tasks: snap.tasks, monsterXp: snap.monsterXp, unlocks: snap.unlocks, eggs: snap.eggs, streakWeeks: snap.streakWeeks, bossFights: snap.bossFights, today, week }
+  const facts: Facts | null = snap && { done: snap.done, tasks: snap.tasks, monsterXp: snap.monsterXp, unlocks: snap.unlocks, eggs: snap.eggs, streakWeeks: snap.streakWeeks, bossFights: snap.bossFights, arenaWeeks: snap.arenaWeeks, arenaFights: snap.arenaFights, jokers: snap.jokers, today, week }
   const earnable = facts && snap ? newStamps(facts, snap.stamps) : []
   const earnableKey = earnable.map((e) => e.id).join()
   const stampTried = useRef(new Set<string>())
@@ -251,31 +292,31 @@ export default function App() {
   // noch nicht gesehener Stempel ausgelöst hat, warten bis nach seiner Animation.
   const next = snap && person ? unseen(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!next || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: next.monster.id, stage: next.stage }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setEvo(evolution(next.monster, next.stage))
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [next, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Legenden nach den Entwicklungen zeigen und sofort als gesehen merken.
   const legendNext = snap && person && !next ? unseenLegends(snap.seen, person, xpBeforeUnseen(snap.monsterXp, snap.stamps, stampsSeen))[0] : undefined
   useEffect(() => {
-    if (!legendNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!legendNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     const seen = { person, monster: legendNext.id, stage: LEGEND_STAGE }
     setSnap((s) => s && { ...s, seen: [...s.seen, seen] })
     setLegend(legendNext)
     markSeen(seen).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [legendNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [legendNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Stempel nach den Entwicklungen und Legenden zeigen, ältester zuerst, und sofort als gesehen merken.
   const stampNext = snap && person && !next && !legendNext ? unseenStamps(snap.stamps, stampsSeen)[0] : undefined
   useEffect(() => {
-    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown) return
+    if (!stampNext || !person || intro || reveal || secret || eggScene || eggShown || stampShown || evo || legend || cel || attacking || homeShown || departure || fightShown || arenaShown) return
     setSnap((s) => s && { ...s, stampsSeen: [...s.stampsSeen, { person, stamp: stampNext.id }] })
     setStampShown(stampNext)
     markStampSeen(person, stampNext.id).catch(() => setError('Das hat nicht geklappt. Ich lade neu.')).finally(refresh)
-  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, refresh])
+  }, [stampNext, person, intro, reveal, secret, eggScene, eggShown, stampShown, evo, legend, cel, attacking, homeShown, departure, fightShown, arenaShown, refresh])
 
   // Was ist neu: Wer noch keinen Stand hat, startet still beim aktuellen, sonst gäbe es alles als neu.
   const seeNews = useCallback(
@@ -337,11 +378,19 @@ export default function App() {
   const bank = konto.total
   const boss = bossState(now, snap.done, snap.bossFights)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
-  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking && !homeShown && !departure && !fightNext && !fightShown ? unread(newsSeen) : []
+  const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking && !homeShown && !departure && !fightNext && !fightShown && !arenaNext && !arenaShown ? unread(newsSeen) : []
+
+  // Arena der Woche: Stand aus Erledigungen, Expeditionen und Früchten. Joker-Konto aus Siegen und Einsätzen.
+  const arenaWeek = today >= ARENA_START ? snap.arenaWeeks.find((w) => w.week_start === week) : undefined
+  const arenaCtx: Ctx | undefined = arenaWeek && { week: arenaWeek, now, tasks: snap.tasks, done: snap.done, jokers: snap.jokers, expeditions: snap.expeditions, feedings: snap.feedings, monsterXp: snap.monsterXp }
+  const arena = arenaCtx && weekState(arenaCtx, snap.arenaBrews)
+  const jokers = jokerAccount(snap.arenaFights, snap.jokers)
+  const myArenaFight = arenaWeek && snap.arenaFights.find((f) => f.week_start === week && f.person === person)
 
   // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster, XP und Team-Bonus).
   // find: Wurf für ein Ei (Schlüssel, Element der Aufgabe, ihr Name), gespeichert nach der Erledigung.
-  const award = (work: Work, save: (c: { monster: string; xp: number; team: string[]; team_xp: number }) => Promise<void>, find: { key: string; element: MonsterElement; task: string }) => {
+  // ref: was abgehakt wird, für die Hinweise der Arena.
+  const award = (work: Work, save: (c: { monster: string; xp: number; team: string[]; team_xp: number }) => Promise<void>, find: { key: string; element: MonsterElement; task: string }, ref: Pick<Done, 'task_id' | 'standing' | 'oneoff'>) => {
     const monster = monsterById(myPick!.monster)
     const before = snap.monsterXp[monster.id] ?? 0
     const elements = elementsOf(monster, before)
@@ -362,6 +411,8 @@ export default function App() {
         bonus: !!work && elements.includes(work.element),
       }
     }
+    const found = arenaCtx ? hintsFor(arenaCtx, snap.arenaBrews, { ...ref, monster: monster.id, person, xp, done_at: new Date().toISOString() }) : []
+    if (found.length > 0) setHints(found)
     const egg = rollEgg(find.key, find.element, snap.eggs)
     run(
       save({ monster: monster.id, xp, team: crew.map((m) => m.id), team_xp: crew.length > 0 ? TEAM_BONUS : 0 }).then(() => egg ? findEgg({ monster: egg, found_by: person, found_task: find.task }) : undefined, (e) => {
@@ -375,7 +426,7 @@ export default function App() {
 
   const onToggle = (row: Row) => {
     if (row.done) return run(undo(row.done.id))
-    award(row.task, (c) => complete({ task_id: row.task.id, person, ...c }), { key: `${today}|${row.task.id}`, element: row.task.element, task: row.task.name })
+    award(row.task, (c) => complete({ task_id: row.task.id, person, ...c }), { key: `${today}|${row.task.id}`, element: row.task.element, task: row.task.name }, { task_id: row.task.id, standing: null, oneoff: null })
   }
 
   // Ständige Aufgabe: done ist der eigene Haken von heute, nur der lässt sich zurücknehmen.
@@ -385,13 +436,13 @@ export default function App() {
       key: `${today}|${s.id}|${person}`,
       element: s.element,
       task: s.name,
-    })
+    }, { task_id: null, standing: s.id, oneoff: null })
   }
 
   // Einmalige Aufgabe: done ist ihre Erledigung, rückgängig nur die eigene am selben Tag (siehe OneOffs).
   const onOneOff = (o: OneOff, done?: Completion) => {
     if (done) return run(undo(done.id))
-    award(null, (c) => complete({ task_id: null, oneoff: o.id, person, ...c }), { key: o.id, element: 'ohne', task: o.name })
+    award(null, (c) => complete({ task_id: null, oneoff: o.id, person, ...c }), { key: o.id, element: 'ohne', task: o.name }, { task_id: null, standing: null, oneoff: o.id })
   }
 
   const onAddOneOff = (name: string) => {
@@ -480,6 +531,59 @@ export default function App() {
     )
   }
 
+  // Arena-Kampf: Teams, Trank und Ergebnis jetzt festhalten. Hat dieses Handy schon gekämpft, gilt der erste Kampf.
+  const onArenaFight = (team: Monster[]) => {
+    if (!arenaWeek || !arena) return
+    const id = crypto.randomUUID()
+    const fighters = team.map((m) => fighterOf(m, snap.monsterXp))
+    const potion = arena.brew ? arenaWeek.recipe.potion : null
+    const master = !!arena.brew?.master
+    const f: ArenaFight = { id, week_start: week, person, team: fighters, foes: arena.foes, potion, master, won: simulate(id, fighters, arena.foes, potion, master).won, started_at: new Date().toISOString() }
+    setSnap({ ...snap, arenaFights: [...snap.arenaFights, f], arenaSeen: [...snap.arenaSeen, { person, ref: id }] })
+    setArenaShown({ fight: f })
+    run(
+      startArenaFight(f).then(
+        () => markArenaSeen(person, id),
+        (e) => {
+          setArenaShown(null)
+          if (e?.code === '23505') return setError('Du hast diese Woche schon gekämpft.')
+          throw e
+        },
+      ),
+    )
+  }
+
+  // Brauen: mit Meisterzutat, wenn sie gefunden ist.
+  const onBrew = () => {
+    if (!arena) return
+    const b = { week_start: week, person, master: arena.masterGot }
+    setSnap({ ...snap, arenaBrews: [...snap.arenaBrews, { ...b, brewed_at: new Date().toISOString() }], arenaSeen: [...snap.arenaSeen, { person, ref: `brew:${week}` }] })
+    setArenaShown({ brew: week })
+    run(
+      brewPotion(b).then(
+        () => markArenaSeen(person, `brew:${week}`),
+        (e) => {
+          setArenaShown(null)
+          if (e?.code === '23505') return setError('Der Trank ist schon gebraut.')
+          throw e
+        },
+      ),
+    )
+  }
+
+  const onJoker = (task: Task) => {
+    const j = { task_id: task.id, anchor: anchorOf(snap.lastDone[task.id] ?? null, task.first_due), person }
+    setSnap({ ...snap, jokers: [...snap.jokers, { ...j, id: crypto.randomUUID(), used_at: new Date().toISOString() }] })
+    run(spendJoker(j).catch((e) => (e?.code === '23505' ? setError('Diese Aufgabe ist schon verschoben.') : Promise.reject(e))))
+  }
+
+  // Zutat aus einer Heimkehr: nur bei der ersten Heimkehr der Woche, die sie gebracht hat.
+  const ingredientOf = (e: Expedition): Ingredient | undefined => {
+    if (!arenaWeek) return undefined
+    const homes = snap.expeditions.filter((x) => isHome(x, now) && dayString(new Date(x.ends_at)) >= arenaWeek.week_start).sort((a, b) => a.ends_at.localeCompare(b.ends_at))
+    return [...arenaWeek.recipe.ingredients, arenaWeek.recipe.master].find((i) => homes.find((x) => homecomingFinds(i.spot, x, arenaWeek.week_start))?.id === e.id)
+  }
+
   const stampShownDef = stampShown && stamps(snap.tasks, snap.stamps).find((s) => s.id === stampShown.id)
   const stampsOpened = localStorage.getItem(STAMPS_STORAGE) ?? ''
   const onStamps = () => {
@@ -532,6 +636,7 @@ export default function App() {
           now={now}
           onPick={(m) => run(pickMonster({ week_start: week, person, monster: m }))}
           onRecall={onRecall}
+          arena={arenaWeek && { leader: leaderById(arenaWeek.leader), level: Math.max(...arenaWeek.foes.map((f) => f.level)) }}
         />
       ) : view === 'intervals' ? (
         <Intervals tasks={snap.tasks} onChange={onInterval} onSave={onSaveTask} onDelete={onDeleteTask} onBack={() => setView('home')} />
@@ -551,6 +656,10 @@ export default function App() {
         <Boss s={boss} snap={snap} person={person} monsters={monsters} now={now} onBack={() => setView('home')} onFight={onFight} onReplay={setFightShown} />
       ) : view === 'bosses' ? (
         <Bosses snap={snap} now={now} onBack={() => setView('pedia')} onReplay={setFightShown} />
+      ) : view === 'arena' && arenaWeek && arenaCtx && arena ? (
+        <Arena snap={snap} person={person} monsters={monsters} now={now} week={arenaWeek} ctx={arenaCtx} s={arena} jokers={jokers.balance} onBack={() => setView('home')} onFight={onArenaFight} onBrew={onBrew} onReplay={(f) => setArenaShown({ fight: f })} />
+      ) : view === 'leaders' ? (
+        <ArenaLeaders snap={snap} onBack={() => setView('pedia')} />
       ) : view === 'pedia' ? (
         <Pedia
           snap={snap}
@@ -563,6 +672,7 @@ export default function App() {
           onWeeks={() => setView('weeks')}
           onStamps={onStamps}
           onBosses={() => setView('bosses')}
+          onArena={() => setView('leaders')}
         />
       ) : view === 'expeditions' ? (
         <Expeditions snap={snap} monsters={monsters} now={now} onBack={() => setView('home')} onStart={onStartExpedition} onRecall={onRecall} onFeed={onFeed} />
@@ -588,6 +698,10 @@ export default function App() {
           homecomings={homecomings.length}
           boss={boss}
           onBoss={() => setView('boss')}
+          arena={arena ? { leader: arena.leader, fight: myArenaFight } : null}
+          onArena={() => setView('arena')}
+          jokers={jokers.balance}
+          onJoker={onJoker}
         />
       )}
       {error && (
@@ -611,9 +725,22 @@ export default function App() {
         />
       )}
       {intro && <EventIntro event={intro} now={now} egg={introEgg} boss={boss} onDone={closeIntro} />}
-      {homeShown && <Homecoming exp={homeShown} person={person} monsterXp={snap.monsterXp} onDone={closeHome} />}
+      {homeShown && <Homecoming exp={homeShown} person={person} monsterXp={snap.monsterXp} ingredient={ingredientOf(homeShown)} onDone={closeHome} />}
       {departure && <Departure exp={departure} monsterXp={snap.monsterXp} onDone={closeDeparture} />}
       {fightShown && <BossFight fight={fightShown} monsterXp={snap.monsterXp} bank={bank} onDone={closeFight} />}
+      {arenaShown && 'fight' in arenaShown && (
+        <ArenaFightScene
+          fight={arenaShown.fight}
+          leader={leaderById(snap.arenaWeeks.find((w) => w.week_start === arenaShown.fight.week_start)!.leader)}
+          bank={jokerAccount(snap.arenaFights.filter((f) => f.started_at <= arenaShown.fight.started_at), snap.jokers.filter((j) => j.used_at <= arenaShown.fight.started_at)).balance}
+          lost={jokers.lost.includes(arenaShown.fight.id)}
+          onDone={closeArena}
+        />
+      )}
+      {arenaShown && 'brew' in arenaShown && (
+        <BrewScene recipe={snap.arenaWeeks.find((w) => w.week_start === arenaShown.brew)!.recipe} master={!!snap.arenaBrews.find((x) => x.week_start === arenaShown.brew)?.master} onDone={closeArena} />
+      )}
+      {hints && <ArenaHints hints={hints} onDone={closeHints} />}
       {eggShown && <EggScene scene={eggShown} person={person} canPick={!myPick} onDone={closeEgg} />}
     </>
   )

@@ -1,5 +1,5 @@
 -- Putzy: setzt ALLES zurück. Nur für den ersten echten Tag gedacht.
--- Löscht alle Erledigungen (und damit alle XP), Monsterwahlen, gesehenen Entwicklungen, freigeschalteten Reihen, Eier, Streak-Punkte, Stempel, Expeditionen und Boss-Kämpfe und verteilt die erste
+-- Löscht alle Erledigungen (und damit alle XP), Monsterwahlen, gesehenen Entwicklungen, freigeschalteten Reihen, Eier, Streak-Punkte, Stempel, Expeditionen, Boss-Kämpfe, Arena-Wochen und Joker und verteilt die erste
 -- Fälligkeit jeder Aufgabe zufällig auf die Tage ihres Intervalls, damit nicht alles am ersten Tag ansteht.
 delete from completions;
 delete from picks;
@@ -12,5 +12,8 @@ delete from stamps_seen;
 delete from expeditions;
 delete from feedings;
 delete from boss_fights;
+delete from arena_weeks;
+delete from arena_seen;
+delete from jokers;
 insert into eggs (monster) values ('19');
 update tasks set first_due = current_date + floor(random() * interval_days)::int;
