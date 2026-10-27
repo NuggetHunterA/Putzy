@@ -142,12 +142,17 @@ export function foeLevel(l: Leader, size: number, monsters: Monster[], monsterXp
   return Math.round(avg * 1.25 + 1) + (l.special ? 2 : 0)
 }
 
+// Spezial-Leiter sind offen, wenn jeder normale Leiter, der gerade kommen kann, einmal da war.
+// Grau (ohne Element) zählt also erst mit, wenn ihr 2 Reihen ohne Element habt.
+export const specialsOpen = (seen: Set<string>, monsters: Monster[]) =>
+  LEADERS.filter((l) => !l.special && rowsFor(l, monsters).length >= 2).every((l) => seen.has(l.id))
+
 // Leiter der Woche: nicht in den letzten 3 Wochen, mindestens 2 sichtbare Reihen in seinen Elementen,
-// Spezial-Leiter erst, wenn jeder normale einmal da war. Findet sich keiner, fällt die 4-Wochen-Regel weg.
+// Spezial-Leiter erst nach specialsOpen. Findet sich keiner, fällt die 4-Wochen-Regel weg.
 export function drawLeader(week: string, history: ArenaWeek[], monsters: Monster[]) {
   const recent = history.filter((h) => h.week_start < week && h.week_start >= addDays(week, -21)).map((h) => h.leader)
   const seen = new Set(history.filter((h) => h.week_start < week).map((h) => h.leader))
-  const allNormal = LEADERS.filter((l) => !l.special).every((l) => seen.has(l.id))
+  const allNormal = specialsOpen(seen, monsters)
   const fits = LEADERS.filter((l) => rowsFor(l, monsters).length >= 2 && (!l.special || allNormal))
   const fresh = fits.filter((l) => !recent.includes(l.id))
   return pickOne(fresh.length ? fresh : fits, chance(`arena:${week}:leiter`))

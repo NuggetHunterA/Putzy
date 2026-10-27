@@ -1,17 +1,18 @@
-// Arenaleiter im Pedia: alle 12 Leiter, besiegte mit Stempel, Spezial-Leiter erst nach allen normalen.
+// Arenaleiter im Pedia: alle 12 Leiter, besiegte mit Stempel, Spezial-Leiter erst nach allen normalen, die kommen können.
 // Darunter die Unique-Monster der Spezial-Leiter, sichtbar nach dem ersten Sieg (sie lassen sich nicht wählen).
-import { LEADERS, leaderImg, leadersSeen, leadersWon } from './arena'
+import { LEADERS, leaderImg, leadersSeen, leadersWon, specialsOpen } from './arena'
 import { leaderColors } from './Arena'
 import { useBack } from './back'
 import type { Snapshot } from './db'
+import type { Monster } from './game'
 import { Dot } from './Boss'
 import { Lock } from './Expeditions'
 
-export function ArenaLeaders({ snap, onBack }: { snap: Snapshot; onBack: () => void }) {
+export function ArenaLeaders({ snap, monsters, onBack }: { snap: Snapshot; monsters: Monster[]; onBack: () => void }) {
   useBack(onBack)
   const seen = leadersSeen(snap.arenaWeeks)
   const won = leadersWon(snap.arenaWeeks, snap.arenaFights)
-  const allNormal = LEADERS.filter((l) => !l.special).every((l) => seen.has(l.id))
+  const allNormal = specialsOpen(seen, monsters)
   const wins = (id: string) => snap.arenaFights.filter((f) => f.won && snap.arenaWeeks.find((w) => w.week_start === f.week_start)?.leader === id).length
   return (
     <main className="screen">
@@ -22,7 +23,7 @@ export function ArenaLeaders({ snap, onBack }: { snap: Snapshot; onBack: () => v
         <h1 className="bar-title">Arenaleiter</h1>
       </div>
       <span className="fine left">
-        {won.size} von {LEADERS.length} besiegt. Spezial-Leiter kommen, wenn ihr alle 9 normalen gesehen habt.
+        {won.size} von {LEADERS.length} besiegt. Spezial-Leiter kommen, wenn ihr alle normalen gesehen habt, die gerade kommen können.
       </span>
       <div className="lead-grid">
         {LEADERS.map((l) => {
@@ -33,7 +34,7 @@ export function ArenaLeaders({ snap, onBack }: { snap: Snapshot; onBack: () => v
                   <Lock size={26} />
                 </span>
                 <b>Spezial</b>
-                <small>nach allen 9</small>
+                <small>nach allen normalen</small>
               </div>
             )
           const [a, b] = leaderColors(l.elements)
