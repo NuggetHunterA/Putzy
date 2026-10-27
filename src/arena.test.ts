@@ -64,6 +64,12 @@ describe('Arena: Auslosung', () => {
     const all = history(LEADERS.filter((l) => !l.special).map((l) => l.id))
     const specials = new Set(Array.from({ length: 60 }, (_, i) => drawLeader(`2027-03-01:${i}`, all, [...base, ...ohne]).special))
     expect(specials.has(true)).toBe(true)
+    // Ohne 2 Reihen ohne Element kann Grau nicht kommen und hält die Spezial-Leiter nicht auf.
+    const withoutGrau = history(LEADERS.filter((l) => !l.special && l.id !== 'grau').map((l) => l.id))
+    const open = new Set(Array.from({ length: 60 }, (_, i) => drawLeader(`2027-03-01:${i}`, withoutGrau, base).special))
+    expect(open.has(true)).toBe(true)
+    const missingOne = history(LEADERS.filter((l) => !l.special && l.id !== 'grau' && l.id !== 'glut').map((l) => l.id))
+    expect(Array.from({ length: 60 }, (_, i) => drawLeader(`2027-03-01:${i}`, missingOne, base).special).some(Boolean)).toBe(false)
   })
 
   it('wählt die Teamgröße nach Reihen mit Level 10 und das Level aus euren stärksten Monstern', () => {

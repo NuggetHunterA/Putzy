@@ -680,7 +680,7 @@ export default function App() {
         ) : view === 'arena' && arenaWeek && arenaCtx && arena ? (
           <Arena snap={snap} person={person} monsters={monsters} now={now} week={arenaWeek} ctx={arenaCtx} s={arena} jokers={jokers.balance} onBack={() => setView('home')} onFight={onArenaFight} onBrew={onBrew} onReplay={(f) => setArenaShown({ fight: f })} />
         ) : view === 'leaders' ? (
-          <ArenaLeaders snap={snap} onBack={() => setView('pedia')} />
+          <ArenaLeaders snap={snap} monsters={monsters} onBack={() => setView('pedia')} />
         ) : view === 'pedia' ? (
           <Pedia
             snap={snap}
