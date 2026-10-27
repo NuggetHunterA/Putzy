@@ -1,0 +1,15 @@
+# Hält das Supabase-Projekt wach: Free-Projekte werden nach 7 Tagen ohne Zugriff pausiert (z. B. im Urlaub).
+# Braucht die Repository-Secrets SUPABASE_URL und SUPABASE_KEY (derselbe Schlüssel wie im Haushaltslink).
+name: Supabase wachhalten
+on:
+  schedule:
+    - cron: '17 6 * * 1,4'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl --fail --silent --show-error --output /dev/null "$SUPABASE_URL/rest/v1/tasks?select=id&limit=1" -H "apikey: $SUPABASE_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}

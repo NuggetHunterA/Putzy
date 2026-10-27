@@ -103,36 +103,35 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('monster_xp').select('*'),
     db().from('completions').select('*').gte('done_at', todayStart.toISOString()).order('done_at'),
     db().from('picks').select('*').eq('week_start', week),
-    db().from('seen').select('person, monster, stage'),
+    all<Seen>((a, b) => db().from('seen').select('person, monster, stage').order('person').order('monster').order('stage').range(a, b)),
     db().from('monster_stats').select('*'),
     db().from('news_seen').select('*'),
-    db().from('oneoffs').select('*').order('created_at'),
-    db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }),
-    db().from('unlocks').select('*'),
-    db().from('eggs').select('*'),
-    db().from('streak_weeks').select('*'),
-    db().from('stamps').select('*'),
-    db().from('stamps_seen').select('person, stamp'),
-    db().from('expeditions').select('*').order('started_at'),
-    db().from('expeditions_seen').select('person, expedition'),
-    db().from('feedings').select('*').order('fed_at'),
-    db().from('boss_fights').select('*').order('started_at'),
-    db().from('boss_fights_seen').select('person, fight'),
-    db().from('arena_weeks').select('week_start, leader, foes, windows, recipe').order('week_start'),
-    db().from('arena_fights').select('*').order('started_at'),
-    db().from('arena_brews').select('*'),
-    db().from('arena_seen').select('person, ref'),
-    db().from('jokers').select('*').order('used_at'),
-    loadDone(),
+    all<OneOff>((a, b) => db().from('oneoffs').select('*').order('created_at').order('id').range(a, b)),
+    all<Completion>((a, b) => db().from('completions').select('*').not('oneoff', 'is', null).order('done_at', { ascending: false }).order('id').range(a, b)),
+    all<{ monster: string; unlocked_on: string }>((a, b) => db().from('unlocks').select('*').order('monster').range(a, b)),
+    all<Egg>((a, b) => db().from('eggs').select('*').order('monster').range(a, b)),
+    all<StreakWeek>((a, b) => db().from('streak_weeks').select('*').order('week_start').range(a, b)),
+    all<Earned>((a, b) => db().from('stamps').select('*').order('id').range(a, b)),
+    all<{ person: Person; stamp: string }>((a, b) => db().from('stamps_seen').select('person, stamp').order('person').order('stamp').range(a, b)),
+    all<Expedition>((a, b) => db().from('expeditions').select('*').order('started_at').order('id').range(a, b)),
+    all<{ person: Person; expedition: string }>((a, b) => db().from('expeditions_seen').select('person, expedition').order('person').order('expedition').range(a, b)),
+    all<Feeding>((a, b) => db().from('feedings').select('*').order('fed_at').order('id').range(a, b)),
+    all<Fight>((a, b) => db().from('boss_fights').select('*').order('started_at').order('id').range(a, b)),
+    all<{ person: Person; fight: string }>((a, b) => db().from('boss_fights_seen').select('person, fight').order('person').order('fight').range(a, b)),
+    all<ArenaWeek>((a, b) => db().from('arena_weeks').select('week_start, leader, foes, windows, recipe').order('week_start').range(a, b)),
+    all<ArenaFight>((a, b) => db().from('arena_fights').select('*').order('started_at').order('id').range(a, b)),
+    all<Brew>((a, b) => db().from('arena_brews').select('*').order('week_start').range(a, b)),
+    all<{ person: Person; ref: string }>((a, b) => db().from('arena_seen').select('person, ref').order('person').order('ref').range(a, b)),
+    all<JokerUse>((a, b) => db().from('jokers').select('*').order('used_at').order('id').range(a, b)),
+    all<Done>((a, b) => db().from('completions').select('monster, task_id, standing, oneoff, person, xp, done_at').order('done_at').order('id').range(a, b)),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
   for (const r of check<{ monster: string; person: Person; tasks: number }[]>(stats)) {
     tasksDone[r.monster] = { ...tasksDone[r.monster], [r.person]: r.tasks }
   }
   const cleanXp: Record<string, number> = Object.fromEntries(check<{ monster: string; xp: number }[]>(xp).map((r) => [r.monster, r.xp]))
-  const fed = check<Feeding[]>(feedings)
   const monsterXp = { ...cleanXp }
-  for (const [m, n] of Object.entries(fruitXp(fed))) monsterXp[m] = (monsterXp[m] ?? 0) + n
+  for (const [m, n] of Object.entries(fruitXp(feedings))) monsterXp[m] = (monsterXp[m] ?? 0) + n
   return {
     tasks: check(tasks),
     lastDone: Object.fromEntries(check<{ task_id: string; last_done_at: string }[]>(last).map((r) => [r.task_id, new Date(r.last_done_at)])),
@@ -140,51 +139,49 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     cleanXp,
     today: check(today),
     picks: check(picks),
-    seen: check(seen),
+    seen,
     newsSeen: Object.fromEntries(check<{ person: Person; last_id: number }[]>(news).map((r) => [r.person, r.last_id])),
     tasksDone,
-    oneoffs: check(oneoffs),
-    oneoffsDone: check(oneoffsDone),
+    oneoffs,
+    oneoffsDone,
     done,
-    unlocks: Object.fromEntries(check<{ monster: string; unlocked_on: string }[]>(unlocks).map((r) => [r.monster, r.unlocked_on])),
-    eggs: check(eggs),
-    streakWeeks: check(streakWeeks),
-    stamps: check(stamps),
-    stampsSeen: check(stampsSeen),
-    expeditions: check(expeditions),
-    expeditionsSeen: check(expeditionsSeen),
-    feedings: fed,
-    bossFights: check(bossFights),
-    bossFightsSeen: check(bossFightsSeen),
-    arenaWeeks: check(arenaWeeks),
-    arenaFights: check(arenaFights),
-    arenaBrews: check(arenaBrews),
-    arenaSeen: check(arenaSeen),
-    jokers: check(jokers),
+    unlocks: Object.fromEntries(unlocks.map((r) => [r.monster, r.unlocked_on])),
+    eggs,
+    streakWeeks,
+    stamps,
+    stampsSeen,
+    expeditions,
+    expeditionsSeen,
+    feedings,
+    bossFights,
+    bossFightsSeen,
+    arenaWeeks,
+    arenaFights,
+    arenaBrews,
+    arenaSeen,
+    jokers,
   }
 }
 
-// Wochenrückblick: alle Monsterwahlen, Erledigungen und Stempel. Supabase liefert höchstens 1000 Zeilen pro Abfrage,
-// deshalb werden die Erledigungen seitenweise geholt.
+// Supabase liefert höchstens 1000 Zeilen pro Abfrage, deshalb holen wachsende Tabellen seitenweise.
+// Die Sortierung muss eindeutig sein, sonst rutschen Zeilen zwischen zwei Seiten hin und her.
+async function all<T>(query: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
+  const rows: T[] = []
+  for (let from = 0; ; from += 1000) {
+    const page = check<T[]>(await query(from, from + 999))
+    rows.push(...page)
+    if (page.length < 1000) return rows
+  }
+}
+
+// Wochenrückblick: alle Monsterwahlen, Erledigungen und Stempel.
 export async function loadHistory() {
-  const picks = check<Pick[]>(await db().from('picks').select('*'))
-  const stamps = check<Earned[]>(await db().from('stamps').select('*'))
-  const completions: Completion[] = []
-  for (let from = 0; ; from += 1000) {
-    const page = check<Completion[]>(await db().from('completions').select('*').order('done_at').order('id').range(from, from + 999))
-    completions.push(...page)
-    if (page.length < 1000) return { picks, completions, stamps }
-  }
-}
-
-// Eure Werte im Pedia: alle Erledigungen in kurz, seitenweise wie beim Wochenrückblick.
-async function loadDone() {
-  const done: Done[] = []
-  for (let from = 0; ; from += 1000) {
-    const page = check<Done[]>(await db().from('completions').select('monster, task_id, standing, oneoff, person, xp, done_at').order('done_at').order('id').range(from, from + 999))
-    done.push(...page)
-    if (page.length < 1000) return done
-  }
+  const [picks, completions, stamps] = await Promise.all([
+    all<Pick>((a, b) => db().from('picks').select('*').order('week_start').order('person').range(a, b)),
+    all<Completion>((a, b) => db().from('completions').select('*').order('done_at').order('id').range(a, b)),
+    all<Earned>((a, b) => db().from('stamps').select('*').order('id').range(a, b)),
+  ])
+  return { picks, completions, stamps }
 }
 
 // standing nur bei ständigen, oneoff nur bei einmaligen Aufgaben mitschicken, normale Erledigungen bleiben wie bisher.
@@ -311,27 +308,64 @@ export async function deleteOneOff(id: string) {
   check(await db().from('oneoffs').delete().eq('id', id))
 }
 
-// Jede Änderung auf einem der beiden Handys löst ein Neuladen aus. Die Datenmenge ist klein.
+// Zuletzt geladener Stand, damit die App beim Öffnen sofort etwas zeigt. Gilt nur für denselben Programmstand,
+// nach einem Update fehlen im alten Stand sonst neue Felder.
+const CACHE_STORAGE = 'putzy.snapshot'
+const BUILD = import.meta.url
+
+export function saveCache(snap: Snapshot) {
+  try {
+    localStorage.setItem(CACHE_STORAGE, JSON.stringify({ build: BUILD, snap }))
+  } catch {
+    // Speicher voll oder gesperrt: Dann startet die App wie bisher ohne gemerkten Stand.
+  }
+}
+
+// Erledigungen von gestern und Monsterwahlen der Vorwoche gehören nicht mehr zu heute.
+export function readCache(todayStart: Date, week: string): Snapshot | null {
+  try {
+    const cache = JSON.parse(localStorage.getItem(CACHE_STORAGE) ?? 'null')
+    if (cache?.build !== BUILD) return null
+    const s: Snapshot = cache.snap
+    return {
+      ...s,
+      lastDone: Object.fromEntries(Object.entries(s.lastDone).map(([id, d]) => [id, new Date(d)])),
+      today: s.today.filter((c) => new Date(c.done_at) >= todayStart),
+      picks: s.picks.filter((p) => p.week_start === week),
+    }
+  } catch {
+    return null
+  }
+}
+
+// Jede Änderung auf einem der beiden Handys löst ein Neuladen aus. Mehrere Änderungen kurz hintereinander
+// (z. B. Erledigung und Stempel) ergeben nur eines.
 export function subscribe(onChange: () => void, onStatus: (live: boolean) => void) {
+  let timer = 0
+  const changed = () => {
+    clearTimeout(timer)
+    timer = window.setTimeout(onChange, 300)
+  }
   const channel = db()
     .channel('household')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'picks' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'oneoffs' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'seen' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'unlocks' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'eggs' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'stamps' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'expeditions' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'feedings' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'boss_fights' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_weeks' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_fights' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_brews' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'jokers' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'picks' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'oneoffs' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'seen' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'unlocks' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'eggs' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'stamps' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expeditions' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'feedings' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'boss_fights' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_weeks' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_fights' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_brews' }, changed)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'jokers' }, changed)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
+    clearTimeout(timer)
     db().removeChannel(channel)
   }
 }

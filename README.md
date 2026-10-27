@@ -24,6 +24,7 @@ Putzy - the personal household helper. Eine PWA für Adrian und Ulrike: feste Ha
 1. **Supabase:** neues Projekt anlegen, im SQL-Editor `supabase/schema.sql` und danach `supabase/tasks.sql` ausführen. `schema.sql` enthält alle Tabellen; `geheime-monster.sql`, `streak-eier.sql`, `stempelheft.sql`, `team-bonus.sql`, `expeditionen.sql` und `bosse.sql` braucht nur eine Datenbank, die vor diesen Features angelegt wurde. Am ersten echten Tag `supabase/reset-alles.sql` ausführen: Es löscht alle Testdaten samt XP und verteilt die ersten Fälligkeiten.
 2. **Vercel:** Repository importieren und die Umgebungsvariable `VITE_SUPABASE_URL` setzen (Project Settings > API in Supabase).
 3. **Haushaltslink:** `https://<eure-vercel-domain>/#k=<publishable- bzw. anon-key>`. Diesen Link einmal auf jedem Handy öffnen, Namen wählen und in Chrome „Zum Startbildschirm hinzufügen“. Der Schlüssel steht nur im Link, nicht im Code. Wer den Link kennt, kommt in die App, also nicht weitergeben.
+4. **Wachhalten:** In GitHub unter Settings > Secrets and variables > Actions die Secrets `SUPABASE_URL` und `SUPABASE_KEY` (Schlüssel aus dem Haushaltslink) anlegen. Dann fragt `.github/workflows/supabase-wachhalten.yml` zweimal pro Woche kurz die Datenbank ab, damit Supabase das Projekt nicht nach 7 Tagen ohne Zugriff pausiert.
 
 Die Aufgaben pflegt ihr in der App (Zahnrad auf der Startseite). `supabase/tasks.sql` dient nur zum ersten Befüllen.
 
