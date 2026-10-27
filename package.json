@@ -11,7 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.118.0",
+    "@supabase/postgrest-js": "^2.118.0",
+    "@supabase/realtime-js": "^2.118.0",
     "motion": "^14.3.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

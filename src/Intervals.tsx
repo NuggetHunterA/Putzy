@@ -74,6 +74,7 @@ export function Intervals({ tasks, onChange, onSave, onDelete, onBack }: Props) 
             ))}
         </section>
       ))}
+      <p className="version">Version {__VERSION__}</p>
     </main>
   )
 }
