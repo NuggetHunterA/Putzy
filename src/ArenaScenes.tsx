@@ -1,8 +1,9 @@
 // Szenen der Arena: der Kampf (läuft von allein, aus der Kampf-id nachgespielt), das Brauen des Wochen-Tranks und die
 // kurzen Hinweise beim Abhaken. Antippen springt in Kampf und Brauen ans Ende.
 import { useEffect, useRef, useState } from 'react'
-import { POTIONS, ROUNDS, fighterImg, fighterMove, fighterName, leaderImg, simulate, type ArenaFight, type Hint, type Leader, type Recipe, type Side } from './arena'
+import { FULL_WIN_POINTS, POTIONS, ROUNDS, fighterImg, fighterMove, fighterName, leaderImg, simulate, type ArenaFight, type Hint, type Leader, type Recipe, type Side } from './arena'
 import { Bottle, Ingredient, Joker, Kettle } from './ArenaIcons'
+import { Sponge } from './Sponge'
 import { leaderColors } from './Arena'
 import { useBack } from './back'
 import { burst, confetti } from './fx'
@@ -188,7 +189,7 @@ export function ArenaFightScene({ fight, leader, bank, lost, onDone }: FightProp
     }
   }, [])
 
-  // Ende: Bei einem Sieg fliegt die Joker-Karte aufs Konto.
+  // Ende: Bei einem Sieg fliegt die Joker-Karte aufs Konto. Ist es voll, erscheint stattdessen die Karte mit den Streak-Punkten.
   useEffect(() => {
     if (!end) return
     show(lpAfter(sim.hits.length))
@@ -196,13 +197,14 @@ export function ArenaFightScene({ fight, leader, bank, lost, onDone }: FightProp
     const [x, y] = mid(stage.current!)
     confetti(x, y * 0.8)
     navigator.vibrate?.([80, 40, 160])
-    if (lost || reduced()) return setPoints(bank)
+    if (reduced()) return setPoints(bank)
     const j = joker.current
     const k = konto.current
-    if (!j || !k) return
+    if (!j || (!k && !lost)) return
     let alive = true
     ;(async () => {
       await j.animate([{ opacity: 0, transform: 'rotate(-30deg) scale(.2)' }, { opacity: 1, transform: 'rotate(-6deg) scale(1)' }], { duration: 600, easing: ease, fill: 'both' }).finished
+      if (lost || !k) return
       await wait(600)
       if (!alive) return
       const kr = k.getBoundingClientRect()
@@ -278,15 +280,15 @@ export function ArenaFightScene({ fight, leader, bank, lost, onDone }: FightProp
             <div className="af-banner">
               <span className="af-big">{fight.won ? 'Sieg!' : 'Verloren'}</span>
               <span className="af-chip">{fight.won ? `${leader.name} besiegt!` : `${leader.name} war zu stark.`}</span>
-              {fight.won && lost && <span className="af-chip small">Konto voll: Der Joker verfällt, der Sieg zählt trotzdem.</span>}
+              {fight.won && lost && <span className="af-chip small">Joker-Konto voll, dafür gibt es {FULL_WIN_POINTS} Streak-Punkte.</span>}
             </div>
-            {fight.won && !lost && (
-              <div ref={joker} className="af-jcard">
-                <Joker size={56} />
-                <b>+1 Joker</b>
+            {fight.won && (
+              <div ref={joker} className={`af-jcard${lost ? ' pts' : ''}`}>
+                {lost ? <Sponge size={56} /> : <Joker size={56} />}
+                <b>{lost ? `+${FULL_WIN_POINTS} Streak-Punkte` : '+1 Joker'}</b>
               </div>
             )}
-            {fight.won && (
+            {fight.won && !lost && (
               <span ref={konto} className="af-konto">
                 <Joker size={26} />
                 {points}

@@ -3,7 +3,7 @@ import { Arena } from './Arena'
 import { ArenaLeaders } from './ArenaLeaders'
 import { ArenaFightScene, ArenaHints, BrewScene } from './ArenaScenes'
 import './arena.css'
-import { ARENA_START, anchorOf, homecomingFinds, hintsFor, jokerAccount, leaderById, rollWeek, simulate, weekState, fighterOf, type ArenaFight, type Ctx, type Hint, type Ingredient } from './arena'
+import { ARENA_START, FULL_WIN_POINTS, anchorOf, homecomingFinds, hintsFor, jokerAccount, leaderById, rollWeek, simulate, weekState, fighterOf, type ArenaFight, type Ctx, type Hint, type Ingredient } from './arena'
 import { Celebration, type Cel } from './Celebration'
 import { TeamBar, type Team } from './TeamBar'
 import { Evolution } from './Evolution'
@@ -374,17 +374,18 @@ export default function App() {
 
   const myPick = snap.picks.find((p) => p.person === person)
   const monsters = visibleMonsters(snap.unlocks, today, snap.eggs)
-  const konto = account(points, snap.eggs, expeditionPoints(snap.expeditions, now), bossPoints(snap.bossFights))
+  // Joker-Konto aus Siegen und Einsätzen; Siege bei vollem Konto zählen als Streak-Punkte.
+  const jokers = jokerAccount(snap.arenaFights, snap.jokers)
+  const konto = account(points, snap.eggs, expeditionPoints(snap.expeditions, now), bossPoints(snap.bossFights), jokers.lost.length * FULL_WIN_POINTS)
   const bank = konto.total
   const boss = bossState(now, snap.done, snap.bossFights)
   // Die Box kommt erst auf der Startseite, wenn Monsterwahl, Freischaltungen und Entwicklungen durch sind.
   const news = myPick && view === 'home' && !intro && !reveal && !secret && !eggScene && !eggShown && !next && !stampNext && !stampShown && !legendNext && !legend && !evo && !cel && !attacking && !homeShown && !departure && !fightNext && !fightShown && !arenaNext && !arenaShown ? unread(newsSeen) : []
 
-  // Arena der Woche: Stand aus Erledigungen, Expeditionen und Früchten. Joker-Konto aus Siegen und Einsätzen.
+  // Arena der Woche: Stand aus Erledigungen, Expeditionen und Früchten.
   const arenaWeek = today >= ARENA_START ? snap.arenaWeeks.find((w) => w.week_start === week) : undefined
   const arenaCtx: Ctx | undefined = arenaWeek && { week: arenaWeek, now, tasks: snap.tasks, done: snap.done, jokers: snap.jokers, expeditions: snap.expeditions, feedings: snap.feedings, monsterXp: snap.monsterXp }
   const arena = arenaCtx && weekState(arenaCtx, snap.arenaBrews)
-  const jokers = jokerAccount(snap.arenaFights, snap.jokers)
   const myArenaFight = arenaWeek && snap.arenaFights.find((f) => f.week_start === week && f.person === person)
 
   // Abhaken: XP mit Element- und Event-Bonus, Level-Up merken, dann speichern (save bekommt Monster, XP und Team-Bonus).

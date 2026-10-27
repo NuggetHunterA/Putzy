@@ -2,7 +2,7 @@
 // Trainingszeiten, Wochen-Trank mit Kessel, dann Team, Einschätzung und „Antreten!“. Erklärt alles, ohne das Konzept zu kennen.
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  MASTER_REVEAL, POTIONS, counters, factor, fighterImg, fighterName, fighterOf, leaderImg, progress, roomTasks, spotText, verdict, bestTeam,
+  FULL_WIN_POINTS, MASTER_REVEAL, MAX_JOKERS, POTIONS, counters, factor, fighterImg, fighterName, fighterOf, leaderImg, progress, roomTasks, spotText, verdict, bestTeam,
   type ArenaFight, type ArenaWeek, type Ctx, type Fighter, type Ingredient as Ing, type WeekState,
 } from './arena'
 import { Bottle, ElementCircle, Ingredient, Joker, Kettle, Trophy } from './ArenaIcons'
@@ -252,7 +252,7 @@ function How() {
   }
   const items: [ReactNode, string][] = [
     [<Trophy size={16} />, 'Jeden Montag kommt ein neuer Arenaleiter. Jeder von euch tritt einmal pro Woche gegen ihn an.'],
-    [<Joker size={18} />, 'Ein Sieg bringt einen Joker: Er schiebt eine Aufgabe, die heute oder morgen fällig ist, um einen Tag.'],
+    [<Joker size={18} />, `Ein Sieg bringt einen Joker: Er schiebt eine Aufgabe, die heute oder morgen fällig ist, um einen Tag. Liegen schon ${MAX_JOKERS} Joker auf dem Konto, gibt es stattdessen ${FULL_WIN_POINTS} Streak-Punkte.`],
     [<Dot e="wasser" size={22} />, 'Ohne Vorbereitung ist er zu stark. Stört seine Trainings, braut den Wochen-Trank und nehmt Monster mit, die sein Element schlagen.'],
     ['⚔', 'Der Kampf läuft von allein: Jedes Monster greift einmal pro Runde an und trifft das schwächste gegnerische. Wer nach 12 Runden mehr übrig hat, gewinnt.'],
   ]

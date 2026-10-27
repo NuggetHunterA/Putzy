@@ -44,15 +44,16 @@ export const eggName = (m: Monster) => (m.element === 'ohne' ? 'Ei ohne Element'
 export const waiting = (eggs: Egg[]) => eggs.filter((e) => !e.hatched_at)
 export const isHatched = (m: Monster, eggs: Egg[]) => eggs.some((e) => e.monster === m.id && e.hatched_at)
 
-// Konto: Punkte aller abgeschlossenen Wochen, aus Expeditionen und Boss-Siegen minus ausgebrütete Eier.
-export const account = (weeks: StreakWeek[], eggs: Egg[], expeditionPoints = 0, bossPoints = 0) => {
+// Konto: Punkte aller abgeschlossenen Wochen, aus Expeditionen, Boss- und Arena-Siegen minus ausgebrütete Eier.
+export const account = (weeks: StreakWeek[], eggs: Egg[], expeditionPoints = 0, bossPoints = 0, arenaPoints = 0) => {
   const parts = {
     weeks: weeks.reduce((n, w) => n + w.points, 0),
     expeditions: expeditionPoints,
     bosses: bossPoints,
+    arena: arenaPoints,
     eggs: -eggs.filter((e) => e.hatched_at).reduce((n, e) => n + eggCost(e.monster), 0),
   }
-  return { ...parts, total: parts.weeks + parts.expeditions + parts.bosses + parts.eggs }
+  return { ...parts, total: parts.weeks + parts.expeditions + parts.bosses + parts.arena + parts.eggs }
 }
 export type Account = ReturnType<typeof account>
 export const balance = (weeks: StreakWeek[], eggs: Egg[], expeditionPoints = 0, bossPoints = 0) => account(weeks, eggs, expeditionPoints, bossPoints).total

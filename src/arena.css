@@ -221,6 +221,8 @@ button.joker:active { transform: translate(2px, 2px); box-shadow: none; }
 .af-chip.small { font-size: 13px; }
 .af-jcard { left: 50%; top: 52%; z-index: 41; width: 118px; height: 156px; margin-left: -59px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 5px solid var(--ink); border-radius: 18px; background: linear-gradient(160deg, #FFF3B0, #FFD23F 60%, #F2A900); box-shadow: 6px 6px 0 var(--ink); opacity: 0; }
 .af-jcard b { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 28px; }
+.af-jcard.pts { top: 59%; }
+.af-jcard.pts b { font-size: 22px; line-height: .95; text-align: center; }
 .af-konto { right: 14px; bottom: 120px; z-index: 41; display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border: 3px solid var(--ink); border-radius: 99px; background: var(--paper); font-family: 'Bangers', sans-serif; font-size: 26px; box-shadow: 3px 3px 0 var(--ink); animation: fade-in .3s ease both; }
 .af-btn { left: 24px; right: 24px; bottom: max(40px, env(safe-area-inset-bottom)); z-index: 42; min-height: 54px; background: var(--sun) !important; font-size: 18px; animation: pop-in .4s .6s cubic-bezier(.3, 1.4, .5, 1) both; }
 
