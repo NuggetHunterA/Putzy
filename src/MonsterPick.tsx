@@ -1,6 +1,9 @@
 // Monsterwahl zum Wochenstart. Ein Monster, das die andere Person schon hat, ist gesperrt, eines auf Expedition auch;
 // dessen Trupp lässt sich ohne Beute zurückrufen.
 import { useState } from 'react'
+import { counters, leaderImg, type Leader } from './arena'
+import { leaderColors } from './Arena'
+import { Dot } from './Boss'
 import { ELEMENTS, PEOPLE, backdrop, levelFor, stageFor, type Monster, type Person } from './game'
 import type { Pick } from './db'
 import { Compass, left } from './Expeditions'
@@ -17,9 +20,11 @@ type Props = {
   now: Date
   onPick: (monsterId: string) => void
   onRecall: (e: Expedition) => void
+  // Arenaleiter der Woche mit dem Level seines Teams, sobald ausgelost.
+  arena?: { leader: Leader; level: number }
 }
 
-export function MonsterPick({ person, monsters, picks, monsterXp, expeditions, now, onPick, onRecall }: Props) {
+export function MonsterPick({ person, monsters, picks, monsterXp, expeditions, now, onPick, onRecall, arena }: Props) {
   const [recall, setRecall] = useState<Expedition | null>(null)
   return (
     <main className="screen">
@@ -32,6 +37,7 @@ export function MonsterPick({ person, monsters, picks, monsterXp, expeditions, n
         </h1>
         <p className="lead">{PEOPLE[person]}, mit wem putzt du diese Woche? Passende Aufgaben geben 125 % XP.</p>
       </header>
+      {arena && <LeaderMini leader={arena.leader} level={arena.level} />}
       <div className="pick-grid">
         {monsters.map((m, i) => {
           const takenBy = picks.find((p) => p.monster === m.id && p.person !== person)
@@ -83,5 +89,26 @@ export function MonsterPick({ person, monsters, picks, monsterXp, expeditions, n
         </div>
       )}
     </main>
+  )
+}
+
+// Arenaleiter der Woche als kleine Karte mit Tipp, welches Element hilft.
+function LeaderMini({ leader, level }: { leader: Leader; level: number }) {
+  const [a, b] = leaderColors(leader.elements)
+  const help = leader.elements.includes('ohne') ? [] : counters(leader)
+  return (
+    <div className="leader-mini" style={{ background: `linear-gradient(140deg, ${a}, ${b})` }}>
+      <img src={leaderImg(leader)} alt="" />
+      <span className="t">
+        <span className="k">ARENALEITER DER WOCHE</span>
+        <b>{leader.name}</b>
+        <span className="tip">
+          {help.map((e) => (
+            <Dot key={e} e={e} size={18} />
+          ))}
+          {help.length ? `${help.map((e) => ELEMENTS[e].name).join(' und ')} hilft` : 'ohne Element'} · Team Lv {level > 30 ? '30+' : level}
+        </span>
+      </span>
+    </div>
   )
 }

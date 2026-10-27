@@ -166,6 +166,51 @@ create table boss_fights_seen (
   primary key (person, fight)
 );
 
+-- Arena (src/arena.ts): Woche mit Leiter, Team, Trainingszeiten und Rezept, Kämpfe, gebrauter Trank, gesehene Szenen und Joker.
+create table arena_weeks (
+  week_start date primary key,
+  leader text not null,
+  foes jsonb not null,
+  windows jsonb not null,
+  recipe jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create table arena_fights (
+  id uuid primary key,
+  week_start date not null references arena_weeks (week_start) on delete cascade,
+  person text not null check (person in ('adrian', 'ulrike')),
+  team jsonb not null,
+  foes jsonb not null,
+  potion text check (potion in ('schild', 'kraft', 'leben', 'element')),
+  master boolean not null default false,
+  won boolean not null,
+  started_at timestamptz not null default now(),
+  unique (week_start, person)
+);
+
+create table arena_brews (
+  week_start date primary key references arena_weeks (week_start) on delete cascade,
+  person text not null check (person in ('adrian', 'ulrike')),
+  master boolean not null,
+  brewed_at timestamptz not null default now()
+);
+
+create table arena_seen (
+  person text not null check (person in ('adrian', 'ulrike')),
+  ref text not null,
+  primary key (person, ref)
+);
+
+create table jokers (
+  id uuid primary key default gen_random_uuid(),
+  task_id text not null,
+  anchor date not null,
+  person text not null check (person in ('adrian', 'ulrike')),
+  used_at timestamptz not null default now(),
+  unique (task_id, anchor)
+);
+
 -- XP aus Erledigungen, Team-Boni und Stempel-Boni.
 create view monster_xp with (security_invoker = true) as
   select monster, sum(xp)::int as xp from (
@@ -195,6 +240,11 @@ alter table expeditions_seen enable row level security;
 alter table feedings enable row level security;
 alter table boss_fights enable row level security;
 alter table boss_fights_seen enable row level security;
+alter table arena_weeks enable row level security;
+alter table arena_fights enable row level security;
+alter table arena_brews enable row level security;
+alter table arena_seen enable row level security;
+alter table jokers enable row level security;
 
 create policy household on tasks for all to anon using (true) with check (true);
 create policy household on completions for all to anon using (true) with check (true);
@@ -212,9 +262,14 @@ create policy household on expeditions_seen for all to anon using (true) with ch
 create policy household on feedings for all to anon using (true) with check (true);
 create policy household on boss_fights for all to anon using (true) with check (true);
 create policy household on boss_fights_seen for all to anon using (true) with check (true);
+create policy household on arena_weeks for all to anon using (true) with check (true);
+create policy household on arena_fights for all to anon using (true) with check (true);
+create policy household on arena_brews for all to anon using (true) with check (true);
+create policy household on arena_seen for all to anon using (true) with check (true);
+create policy household on jokers for all to anon using (true) with check (true);
 
 -- Neue Tabellen bekommen ab 30.10.2026 keinen API-Zugriff mehr automatisch, daher ausdrücklich.
-grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen, expeditions, expeditions_seen, feedings, boss_fights, boss_fights_seen to anon;
+grant select, insert, update, delete on tasks, completions, oneoffs, picks, seen, news_seen, unlocks, eggs, streak_weeks, stamps, stamps_seen, expeditions, expeditions_seen, feedings, boss_fights, boss_fights_seen, arena_weeks, arena_fights, arena_brews, arena_seen, jokers to anon;
 grant select on task_last_done, monster_xp, monster_stats to anon;
 
-alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps, expeditions, feedings, boss_fights;
+alter publication supabase_realtime add table tasks, completions, oneoffs, picks, seen, unlocks, eggs, stamps, expeditions, feedings, boss_fights, arena_weeks, arena_fights, arena_brews, jokers;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { ArenaFight, ArenaWeek } from './arena'
 import type { Done, Task } from './db'
 import type { Egg } from './eggs'
 import { xpForLevel } from './game'
@@ -8,15 +9,15 @@ const task = { id: 'katzenklo', room: 'Ganzes Haus', name: 'Katzenklo leeren', e
 const done = (over: Partial<Done> = {}, day = 1): Done => ({
   monster: '5', task_id: null, standing: null, oneoff: null, person: 'adrian', xp: 10, done_at: `2026-10-${String(day).padStart(2, '0')}T18:00:00`, ...over,
 })
-const facts = (over: Partial<Facts> = {}): Facts => ({ done: [], tasks: [task], monsterXp: {}, unlocks: {}, eggs: [], streakWeeks: [], bossFights: [], today: '2026-10-18', week: '2026-10-12', ...over })
+const facts = (over: Partial<Facts> = {}): Facts => ({ done: [], tasks: [task], monsterXp: {}, unlocks: {}, eggs: [], streakWeeks: [], bossFights: [], arenaWeeks: [], arenaFights: [], jokers: [], today: '2026-10-18', week: '2026-10-12', ...over })
 const ids = (f: Facts, earned: Earned[] = []) => newStamps(f, earned).map((s) => s.id)
 const stamp = (id: string) => FIXED.find((s) => s.id === id)!
 const egg = (monster: string, over: Partial<Egg> = {}): Egg => ({ monster, found_at: '2026-10-01T10:00:00Z', found_by: null, found_task: null, hatched_at: null, hatched_by: null, ...over })
 
 describe('Stempelheft', () => {
   it('hat 29 feste Stempel und je einen pro ständiger und normaler Aufgabe', () => {
-    expect(FIXED).toHaveLength(39)
-    expect(stamps([task], [])).toHaveLength(39 + 5 + 1)
+    expect(FIXED).toHaveLength(52)
+    expect(stamps([task], [])).toHaveLength(52 + 5 + 1)
   })
 
   it('stempelt eine Aufgabe beim 25. Mal, egal wer, mit 15 XP für alle sichtbaren Licht-Monster', () => {
@@ -93,5 +94,18 @@ describe('Stempelheft', () => {
     expect(ids(facts({ bossFights: [{ ...fight(false), monsters: ['1'] }] }))).not.toContain('boss-halloween')
     const s = newStamps(facts({ bossFights: [{ ...fight(true), monsters: ['1'] }] }), []).find((e) => e.id === 'boss-halloween')!
     expect(s).toMatchObject({ person: 'ulrike', xp: 0, monsters: [] })
+  })
+})
+
+describe('Arena-Stempel', () => {
+  it('gibt den Stempel für den ersten Sieg gegen einen Leiter und verrät Spezial-Leiter erst, wenn sie da waren', () => {
+    const week = { week_start: '2026-11-02', leader: 'glut', foes: [], windows: [], recipe: {} } as unknown as ArenaWeek
+    const fight = (won: boolean) => ({ id: 'f', week_start: '2026-11-02', person: 'ulrike', team: [], foes: [], potion: null, master: false, won, started_at: '2026-11-03T10:00:00Z' }) as ArenaFight
+    expect(ids(facts({ arenaWeeks: [week], arenaFights: [fight(false)] }))).not.toContain('arena-glut')
+    const s = newStamps(facts({ arenaWeeks: [week], arenaFights: [fight(true)] }), []).find((e) => e.id === 'arena-glut')!
+    expect(s).toMatchObject({ person: 'ulrike', xp: 0 })
+    const all = stamps([task], [])
+    expect(hidden(all.find((x) => x.id === 'arena-glut')!, facts())).toBe(false)
+    expect(hidden(all.find((x) => x.id === 'arena-nebelfrau')!, facts())).toBe(true)
   })
 })

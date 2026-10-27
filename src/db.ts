@@ -1,5 +1,6 @@
 // Datenzugriff auf Supabase. Der Schlüssel kommt aus dem Haushaltslink (#k=…), nicht aus dem Build.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { ArenaFight, ArenaWeek, Brew, JokerUse } from './arena'
 import type { Fight } from './bosses'
 import type { Egg } from './eggs'
 import { fruitXp, type Expedition, type Feeding, type Fruit } from './expeditions'
@@ -57,6 +58,12 @@ export type Snapshot = {
   // Boss-Endkämpfe, älteste zuerst, und wer welche Kampf-Szene gesehen hat.
   bossFights: Fight[]
   bossFightsSeen: { person: Person; fight: string }[]
+  // Arena (src/arena.ts): ausgeloste Wochen, Kämpfe, gebraute Tränke, gesehene Szenen und eingesetzte Joker.
+  arenaWeeks: ArenaWeek[]
+  arenaFights: ArenaFight[]
+  arenaBrews: Brew[]
+  arenaSeen: { person: Person; ref: string }[]
+  jokers: JokerUse[]
 }
 
 // Einmalige Aufgaben ohne Erledigung.
@@ -90,7 +97,7 @@ function check<T>({ data, error }: { data: T | null; error: unknown }) {
 }
 
 export async function load(todayStart: Date, week: string): Promise<Snapshot> {
-  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, bossFights, bossFightsSeen, done] = await Promise.all([
+  const [tasks, last, xp, today, picks, seen, stats, news, oneoffs, oneoffsDone, unlocks, eggs, streakWeeks, stamps, stampsSeen, expeditions, expeditionsSeen, feedings, bossFights, bossFightsSeen, arenaWeeks, arenaFights, arenaBrews, arenaSeen, jokers, done] = await Promise.all([
     db().from('tasks').select('*').order('sort'),
     db().from('task_last_done').select('*'),
     db().from('monster_xp').select('*'),
@@ -111,6 +118,11 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     db().from('feedings').select('*').order('fed_at'),
     db().from('boss_fights').select('*').order('started_at'),
     db().from('boss_fights_seen').select('person, fight'),
+    db().from('arena_weeks').select('week_start, leader, foes, windows, recipe').order('week_start'),
+    db().from('arena_fights').select('*').order('started_at'),
+    db().from('arena_brews').select('*'),
+    db().from('arena_seen').select('person, ref'),
+    db().from('jokers').select('*').order('used_at'),
     loadDone(),
   ])
   const tasksDone: Snapshot['tasksDone'] = {}
@@ -144,6 +156,11 @@ export async function load(todayStart: Date, week: string): Promise<Snapshot> {
     feedings: fed,
     bossFights: check(bossFights),
     bossFightsSeen: check(bossFightsSeen),
+    arenaWeeks: check(arenaWeeks),
+    arenaFights: check(arenaFights),
+    arenaBrews: check(arenaBrews),
+    arenaSeen: check(arenaSeen),
+    jokers: check(jokers),
   }
 }
 
@@ -243,6 +260,30 @@ export async function markBossFightSeen(person: Person, fight: string) {
   check(await db().from('boss_fights_seen').upsert({ person, fight }, { ignoreDuplicates: true }))
 }
 
+// Bleibt die erste Auslosung: Lost das andere Handy gleichzeitig, gilt die zuerst gespeicherte.
+export async function saveArenaWeek(w: ArenaWeek) {
+  check(await db().from('arena_weeks').upsert(w, { ignoreDuplicates: true }))
+}
+
+// Ein Kampf je Person und Woche: Ein zweiter Start (anderes Handy) schlägt fehl (23505).
+export async function startArenaFight(f: ArenaFight) {
+  check(await db().from('arena_fights').insert(f))
+}
+
+// Ein Trank je Woche: Braut die andere Person gleichzeitig, schlägt das zweite Speichern fehl (23505).
+export async function brewPotion(b: Omit<Brew, 'brewed_at'>) {
+  check(await db().from('arena_brews').insert(b))
+}
+
+export async function markArenaSeen(person: Person, ref: string) {
+  check(await db().from('arena_seen').upsert({ person, ref }, { ignoreDuplicates: true }))
+}
+
+// Ein Joker je Aufgabe und Intervall (23505, wenn die andere Person schneller war).
+export async function spendJoker(j: Omit<JokerUse, 'id' | 'used_at'>) {
+  check(await db().from('jokers').insert(j))
+}
+
 export async function markNews(person: Person, lastId: number) {
   check(await db().from('news_seen').upsert({ person, last_id: lastId }))
 }
@@ -285,6 +326,10 @@ export function subscribe(onChange: () => void, onStatus: (live: boolean) => voi
     .on('postgres_changes', { event: '*', schema: 'public', table: 'expeditions' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'feedings' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'boss_fights' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_weeks' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_fights' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'arena_brews' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'jokers' }, onChange)
     .subscribe((status) => onStatus(status === 'SUBSCRIBED'))
   return () => {
     db().removeChannel(channel)

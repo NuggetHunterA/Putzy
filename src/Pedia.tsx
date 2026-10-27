@@ -1,5 +1,7 @@
 // Putzy-Pedia: Übersicht aller Reihen und Detailseite mit Infos, die alle 5 Level freigeschaltet werden.
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { LEADERS, leadersWon } from './arena'
+import { Trophy } from './ArenaIcons'
 import { useBack } from './back'
 import { BOSSES, bossesWon } from './bosses'
 import type { Snapshot } from './db'
@@ -28,6 +30,7 @@ type Props = {
   stampsNew: number
   onStamps: () => void
   onBosses: () => void
+  onArena: () => void
 }
 
 // Stufen als Spalten: Slot, Pfeil, Slot … für 2 bis 4 Stufen.
@@ -38,7 +41,7 @@ const fmt = (n: number) => n.toLocaleString('de-DE')
 const VIEW_STORAGE = 'putzy.pediaView'
 const FILTERS: DexFilter[] = ['alle', 'wasser', 'feuer', 'natur', 'luft', 'licht', 'ohne']
 
-export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps, onBosses }: Props) {
+export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps, onBosses, onArena }: Props) {
   useBack(onBack)
   const points = konto.total
   const [showKonto, setShowKonto] = useState(false)
@@ -72,7 +75,7 @@ export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeek
         </button>
       </div>
       {showKonto && <Konto k={konto} />}
-      <div className="pd-pair pd-trio">
+      <div className="pd-pair pd-quad">
       <button className="wr-entry" onClick={onWeeks}>
         <span className="wr-pair">
           {snap.picks.map((p) => {
@@ -105,6 +108,15 @@ export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeek
           <b>Bosse</b>
           <small>
             {bossesWon(snap.bossFights)} von {BOSSES.length}
+          </small>
+        </span>
+      </button>
+      <button className="wr-entry arena-entry" onClick={onArena}>
+        <Trophy size={34} />
+        <span>
+          <b>Arena</b>
+          <small>
+            {leadersWon(snap.arenaWeeks, snap.arenaFights).size} von {LEADERS.length}
           </small>
         </span>
       </button>

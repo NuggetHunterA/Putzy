@@ -2,6 +2,7 @@
 // Ein Stempel wird gespeichert, sobald seine Bedingung erfüllt ist, und bleibt dann (auch wenn ein Haken zurückgenommen wird).
 // Bonus-XP gehen an alle Monster, die in dem Moment sichtbar sind (bei Element-Stempeln nur an dieses Element),
 // und zählen über die Tabelle stamps in die Monster-XP (supabase/stempelheft.sql).
+import { LEADERS, leaderById, leadersSeen, leadersWon } from './arena'
 import { BOSSES } from './bosses'
 import type { Done, Snapshot, Task } from './db'
 import type { Egg } from './eggs'
@@ -15,9 +16,9 @@ import { longest, weekDays, weekPoints } from './streak'
 export type Earned = { id: string; earned_at: string; person: Person | null; xp: number; monsters: string[]; label: string | null }
 
 // Alles, was die Bedingungen brauchen.
-export type Facts = Pick<Snapshot, 'done' | 'tasks' | 'monsterXp' | 'unlocks' | 'eggs' | 'streakWeeks' | 'bossFights'> & { today: string; week: string }
+export type Facts = Pick<Snapshot, 'done' | 'tasks' | 'monsterXp' | 'unlocks' | 'eggs' | 'streakWeeks' | 'bossFights' | 'arenaWeeks' | 'arenaFights' | 'jokers'> & { today: string; week: string }
 
-export type Icon = 'pfeil' | 'geheim' | 'topf' | 'haus' | 'schwamm' | 'ei' | 'nest' | 'klemmbrett' | 'krone' | 'schwert' | MonsterElement
+export type Icon = 'pfeil' | 'geheim' | 'topf' | 'haus' | 'schwamm' | 'ei' | 'nest' | 'klemmbrett' | 'krone' | 'schwert' | 'pokal' | MonsterElement
 
 export type Stamp = {
   id: string
@@ -38,7 +39,7 @@ export type Stamp = {
 }
 
 export const TASK_GOAL = 25
-const COLOR = { boss: '#2A1846', evo: '#D6284A', geheim: '#6A52B0', standing: '#FF5A3C', streak: '#00B39B', ei: '#C78A4A', grau: '#8C82A8', summe: '#1B1530', level: '#9B7BFF', gold: '#E0B000' }
+const COLOR = { arena: '#B8321E', boss: '#2A1846', evo: '#D6284A', geheim: '#6A52B0', standing: '#FF5A3C', streak: '#00B39B', ei: '#C78A4A', grau: '#8C82A8', summe: '#1B1530', level: '#9B7BFF', gold: '#E0B000' }
 // Licht ist als Tinte auf Weiß zu blass, deshalb dunkler.
 export const ink = (e: MonsterElement) => (e === 'licht' ? COLOR.gold : ELEMENTS[e].strong)
 
@@ -65,8 +66,8 @@ function standingDays(done: Done[]) {
 
 // Wochen mit 7 Punkten: abgeschlossene und die laufende, sobald sie sieben geschaffte Tage hat.
 function perfectWeeks(f: Facts) {
-  const past = weekPoints(f.week, f.streakWeeks, f.tasks, f.done).filter((w) => w.points === 7).length
-  return past + (longest(weekDays(f.week, f.today, f.tasks, f.done)) === 7 ? 1 : 0)
+  const past = weekPoints(f.week, f.streakWeeks, f.tasks, f.done, f.jokers).filter((w) => w.points === 7).length
+  return past + (longest(weekDays(f.week, f.today, f.tasks, f.done, f.jokers)) === 7 ? 1 : 0)
 }
 
 const milestone = (s: Omit<Stamp, 'group'>): Stamp => ({ ...s, group: 'Meilensteine' })
@@ -126,6 +127,13 @@ export const FIXED: Stamp[] = [
     id: `boss-${b.event}`, group: 'Bosse', name: b.name, text: `${b.name} besiegt (${EVENT_LABEL[b.event].replace(/^\S+ /, '')})`, arc: b.name, icon: 'schwert' as const,
     color: COLOR.boss, goal: 1, reward: null, count: (f: Facts) => f.bossFights.filter((x) => x.event === b.event && x.won).length,
   })),
+  // Ein Stempel je Arenaleiter für den ersten Sieg und einer für alle 12, ohne XP.
+  ...LEADERS.map((l) => ({
+    id: `arena-${l.id}`, group: 'Arena', name: l.name, text: `${l.name} in der Arena besiegt`, arc: l.name, icon: 'pokal' as const,
+    color: COLOR.arena, goal: 1, reward: null, count: (f: Facts) => Number(leadersWon(f.arenaWeeks, f.arenaFights).has(l.id)),
+  })),
+  { id: 'arena-champion', group: 'Arena', name: 'Arena-Champion', text: `Alle ${LEADERS.length} Arenaleiter besiegt`, arc: 'Champion', icon: 'pokal', color: COLOR.gold, goal: LEADERS.length, reward: null,
+    count: (f) => leadersWon(f.arenaWeeks, f.arenaFights).size },
 ]
 
 const taskStamp = (id: string, name: string, group: string, element: MonsterElement, count: Stamp['count']): Stamp => ({
@@ -147,6 +155,7 @@ export function stamps(tasks: Task[], earned: Earned[]): Stamp[] {
 export function hidden(s: Stamp, f: Facts) {
   if (s.id.startsWith('geheim-')) return s.count(f) === 0
   if (s.id.startsWith('boss-')) return !f.bossFights.some((x) => `boss-${x.event}` === s.id)
+  if (s.id.startsWith('arena-') && s.id !== 'arena-champion') return !!leaderById(s.id.slice(6)).special && !leadersSeen(f.arenaWeeks).has(s.id.slice(6))
   if (s.id === 'meister-ohne') return !visibleMonsters(f.unlocks, f.today, f.eggs).some((m) => m.element === 'ohne')
   return false
 }
@@ -159,6 +168,10 @@ function earnedBy(s: Stamp, f: Facts): Person | null {
   if (s.id.startsWith('ei-')) return first(f.eggs.filter((e) => e.hatched_at), (e) => e.hatched_at!).hatched_by
   if (s.id.startsWith('woche-') || s.id === 'haus-voll') return null
   if (s.id.startsWith('boss-')) return f.bossFights.find((x) => `boss-${x.event}` === s.id && x.won)!.started_by
+  if (s.id.startsWith('arena-')) {
+    const leaderOf = (week: string) => f.arenaWeeks.find((w) => w.week_start === week)?.leader
+    return f.arenaFights.filter((x) => x.won && (s.id === 'arena-champion' || `arena-${leaderOf(x.week_start)}` === s.id)).at(-1)?.person ?? null
+  }
   return f.done.reduce<Done | null>((last, c) => (!last || c.done_at >= last.done_at ? c : last), null)?.person ?? null
 }
 

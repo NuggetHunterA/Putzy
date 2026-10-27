@@ -1,7 +1,9 @@
 // Streak: Ein Tag zählt, wenn an seinem Ende keine normale Aufgabe mehr fällig oder überfällig ist.
 // Ständige und einmalige Aufgaben zählen nicht. Die Tage werden aus den Erledigungen nachgerechnet, damit auch
 // ein Tag ohne fällige Aufgabe zählt, an dem niemand die App öffnet. Montags beginnt die Streak wieder bei 0,
-// die längste Streak der Vorwoche gibt Punkte (0 bis 7) für das gemeinsame Konto.
+// die längste Streak der Vorwoche gibt Punkte (0 bis 7) für das gemeinsame Konto. Ein Joker (arena.ts) schiebt
+// die Fälligkeit einer Aufgabe um einen Tag.
+import type { JokerUse } from './arena'
 import type { Done, Task } from './db'
 import { dayString, daysUntilDue } from './game'
 
@@ -30,14 +32,15 @@ function doneDays(done: Done[]) {
 }
 
 // Für jeden Tag der Woche (Mo bis So): geschafft oder nicht. Tage nach heute und vor dem Start zählen nicht.
-export function weekDays(week: string, today: string, tasks: Task[], done: Done[]) {
+export function weekDays(week: string, today: string, tasks: Task[], done: Done[], jokers: JokerUse[] = []) {
   const days = doneDays(done)
   return [0, 1, 2, 3, 4, 5, 6].map((i) => {
     const day = addDays(week, i)
     if (day < STREAK_START || day > today) return false
     return tasks.every((t) => {
       const last = days.get(t.id)?.findLast((d) => d <= day)
-      return daysUntilDue(last ? date(last) : null, t.interval_days, date(day), t.first_due) > 0
+      const joker = jokers.some((j) => j.task_id === t.id && j.anchor === (last ?? t.first_due)) ? 1 : 0
+      return daysUntilDue(last ? date(last) : null, t.interval_days, date(day), t.first_due) + joker > 0
     })
   })
 }
@@ -60,6 +63,6 @@ export function pastWeeks(week: string) {
 }
 
 // Punkte aller abgeschlossenen Wochen: gespeichert oder, falls noch nicht gespeichert, nachgerechnet.
-export function weekPoints(week: string, saved: StreakWeek[], tasks: Task[], done: Done[]) {
-  return pastWeeks(week).map((w) => saved.find((s) => s.week_start === w) ?? { week_start: w, points: longest(weekDays(w, addDays(w, 6), tasks, done)) })
+export function weekPoints(week: string, saved: StreakWeek[], tasks: Task[], done: Done[], jokers: JokerUse[] = []) {
+  return pastWeeks(week).map((w) => saved.find((s) => s.week_start === w) ?? { week_start: w, points: longest(weekDays(w, addDays(w, 6), tasks, done, jokers)) })
 }
