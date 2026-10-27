@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balance, dueEventEgg, eggCost, eggName, nextEggScene, rollEgg, type Egg } from './eggs'
+import { account, balance, dueEventEgg, eggCost, eggName, nextEggScene, rollEgg, type Egg } from './eggs'
 import { monsterById } from './game'
 
 const egg = (monster: string, more: Partial<Egg> = {}): Egg => ({ monster, found_at: '2026-10-19T10:00:00Z', found_by: null, found_task: null, hatched_at: null, hatched_by: null, ...more })
@@ -31,6 +31,7 @@ describe('Eier', () => {
     expect(balance(weeks, [egg('19')])).toBe(107)
     expect(balance(weeks, [egg('19', { hatched_at: 'x' }), egg('20', { hatched_at: 'x' })])).toBe(12)
     expect(balance(weeks, [egg('19', { hatched_at: 'x' }), egg('29', { hatched_at: 'x' })], 3)).toBe(65)
+    expect(account(weeks, [], 0, 6, 4)).toMatchObject({ bosses: 6, arena: 4, total: 117 })
   })
 
   it('heißt nur nach dem Element', () => {

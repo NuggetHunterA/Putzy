@@ -11,6 +11,7 @@ import { addDays, weekDays } from './streak'
 // Erster Montag mit Leiter.
 export const ARENA_START = '2026-11-02'
 export const MAX_JOKERS = 5
+export const FULL_WIN_POINTS = 2
 export const ROUNDS = 12
 
 export type Unique = { id: string; name: string; elements: MonsterElement[]; move: string }
@@ -522,7 +523,7 @@ export function bestTeam(monsters: Monster[], monsterXp: Record<string, number>,
 
 // ---------- Joker ----------
 
-// Kontostand: Siege und Einsätze der Reihe nach, höchstens 5. Siege bei vollem Konto verfallen.
+// Kontostand: Siege und Einsätze der Reihe nach, höchstens 5. Siege bei vollem Konto (lost) bringen stattdessen FULL_WIN_POINTS Streak-Punkte.
 export function jokerAccount(fights: ArenaFight[], uses: JokerUse[]) {
   const events = [...fights.filter((f) => f.won).map((f) => ({ at: f.started_at, fight: f.id })), ...uses.map((u) => ({ at: u.used_at, fight: null }))].sort((a, b) => a.at.localeCompare(b.at))
   let balance = 0

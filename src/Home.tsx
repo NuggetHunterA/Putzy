@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useStrike } from './strike'
-import { MAX_JOKERS, anchorOf, canJoker, jokered, leaderImg, type ArenaFight, type Leader } from './arena'
+import { FULL_WIN_POINTS, MAX_JOKERS, anchorOf, canJoker, jokered, leaderImg, type ArenaFight, type Leader } from './arena'
 import { Joker } from './ArenaIcons'
 import { leaderColors } from './Arena'
 import { FLOOR, bossImg, canFight, hitsCount, shortDay, type BossState } from './bosses'
@@ -450,7 +450,7 @@ function JokerInfo({ jokers, onClose, onUse }: { jokers: number; onClose: () => 
           <Joker key={i} size={30} empty={i >= jokers} />
         ))}
       </span>
-      <span>Ein Joker schiebt eine Aufgabe, die heute oder morgen fällig ist, um einen Tag. Die Streak läuft weiter. Joker gewinnt ihr in der Arena, höchstens {MAX_JOKERS} liegen auf dem Konto.</span>
+      <span>Ein Joker schiebt eine Aufgabe, die heute oder morgen fällig ist, um einen Tag. Die Streak läuft weiter. Joker gewinnt ihr in der Arena, höchstens {MAX_JOKERS} liegen auf dem Konto. Ist es voll, bringt ein Sieg {FULL_WIN_POINTS} Streak-Punkte.</span>
       {jokers > 0 && (
         <button
           className="btn"

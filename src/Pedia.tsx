@@ -244,6 +244,8 @@ function Konto({ k }: { k: Account }) {
         <b>{sign(k.expeditions)}</b>
         <span>Bosse</span>
         <b>{sign(k.bosses)}</b>
+        <span>Arena</span>
+        <b>{sign(k.arena)}</b>
         <span>Ausgebrütete Eier</span>
         <b>{k.eggs === 0 ? '0' : sign(k.eggs)}</b>
         <span className="sum">Kontostand</span>
