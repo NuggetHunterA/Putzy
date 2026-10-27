@@ -31,6 +31,7 @@ export const NEWS: News[] = [
   { id: 26, title: 'Lieblingsaufgabe mit Raum', text: 'Im Steckbrief steht bei der Lieblingsaufgabe jetzt auch der Raum, also zum Beispiel „Küche · 12-mal erledigt“. Gleichnamige Aufgaben in verschiedenen Räumen werden dafür getrennt gezählt.' },
   { id: 27, title: 'Die Arena ist offen', text: 'Jeden Montag fordert euch ein Arenaleiter heraus. Stört seine Trainings, braut den Wochen-Trank und gewinnt Joker, die eine Aufgabe um einen Tag schieben.' },
   { id: 28, title: 'Versionsnummer', text: 'Ganz unten auf der Aufgaben-Seite (Zahnrad) steht jetzt, welche Version von Putzy ihr gerade habt.' },
+  { id: 29, title: 'Lesbarere Stempel', text: 'Der Name eines Stempels steht jetzt gerade auf einem farbigen Band statt klein im Bogen, so könnt ihr „Aufgaben“ oder „Level-Ups“ auch im Stempelheft gut lesen.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

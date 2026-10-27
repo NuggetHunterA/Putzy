@@ -26,7 +26,7 @@ export type Stamp = {
   name: string
   // Bedingung als Satz, z. B. „25× Katzenklo leeren“.
   text: string
-  // Schrift im Bogen oben, in der Mitte ein Symbol oder eine kurze Zahl.
+  // Schrift auf der Banderole, darüber ein Symbol oder eine kurze Zahl.
   arc: string
   icon?: Icon
   big?: string
