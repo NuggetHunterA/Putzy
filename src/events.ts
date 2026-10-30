@@ -109,3 +109,13 @@ const edge = (date: Date, step: 1 | -1) => {
 }
 export const eventStart = (date: Date) => edge(date, -1)
 export const eventEnd = (date: Date) => edge(date, 1)
+
+// Erstes Event, das in der Woche ab monday (Montag) läuft, mit seinem ersten Tag in dieser Woche.
+export function weekEvent(monday: Date) {
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)
+    const event = eventFor(day)
+    if (event) return { event, bonus: eventBonus(day)!, day, end: eventEnd(day) }
+  }
+  return null
+}

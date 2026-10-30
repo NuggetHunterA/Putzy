@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { counters, leaderImg, type Leader } from './arena'
 import { leaderColors } from './Arena'
 import { Dot } from './Boss'
+import { EVENT_LABEL, weekEvent } from './events'
 import { ELEMENTS, PEOPLE, backdrop, levelFor, stageFor, type Monster, type Person } from './game'
 import type { Pick } from './db'
 import { Compass, left } from './Expeditions'
@@ -29,7 +30,10 @@ export function MonsterPick({ person, monsters, picks, monsterXp, expeditions, n
   return (
     <main className="screen">
       <header className="pick-head">
-        <span className="kicker">Neue Woche</span>
+        <span className="pick-kick">
+          <span className="kicker">Neue Woche</span>
+          <WeekEvent now={now} />
+        </span>
         <h1 className="title">
           Wähle dein
           <br />
@@ -110,5 +114,21 @@ function LeaderMini({ leader, level }: { leader: Leader; level: number }) {
         </span>
       </span>
     </div>
+  )
+}
+
+// Event dieser Woche als Plakette neben „Neue Woche“: Name, ab wann bzw. bis wann, Bonus-Element.
+function WeekEvent({ now }: { now: Date }) {
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7))
+  const w = weekEvent(monday)
+  if (!w) return null
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const weekday = (d: Date) => d.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '')
+  const when = w.day <= today ? `bis ${weekday(w.end)}` : `ab ${weekday(w.day)}`
+  return (
+    <span className="week-event" aria-label={`${EVENT_LABEL[w.event]} ${when}: ${ELEMENTS[w.bonus].name} +50 % XP`}>
+      {EVENT_LABEL[w.event]} {when} · <Dot e={w.bonus} size={18} />
+      +50 %
+    </span>
   )
 }
