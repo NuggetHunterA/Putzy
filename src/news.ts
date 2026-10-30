@@ -32,6 +32,7 @@ export const NEWS: News[] = [
   { id: 27, title: 'Die Arena ist offen', text: 'Jeden Montag fordert euch ein Arenaleiter heraus. Stört seine Trainings, braut den Wochen-Trank und gewinnt Joker, die eine Aufgabe um einen Tag schieben.' },
   { id: 28, title: 'Versionsnummer', text: 'Ganz unten auf der Aufgaben-Seite (Zahnrad) steht jetzt, welche Version von Putzy ihr gerade habt.' },
   { id: 29, title: 'Lesbarere Stempel', text: 'Der Name eines Stempels steht jetzt gerade auf einem farbigen Band statt klein im Bogen, so könnt ihr „Aufgaben“ oder „Level-Ups“ auch im Stempelheft gut lesen.' },
+  { id: 30, title: 'Events in der Wochenvorschau', text: 'Steht in der neuen Woche ein Event an, zeigt die Monsterwahl es oben neben „Neue Woche“, mit dem Tag und dem Element, das +50 % XP bringt.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

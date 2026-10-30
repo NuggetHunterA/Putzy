@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { easter, eventBonus, eventEnd, eventFor, eventStart } from './events'
+import { easter, eventBonus, eventEnd, eventFor, eventStart, weekEvent } from './events'
 
 describe('Event-Designs', () => {
   const on = (d: string) => eventFor(new Date(`${d}T12:00:00`))
@@ -100,5 +100,16 @@ describe('Event-Designs', () => {
     expect(day(eventStart(new Date('2026-10-30T12:00:00')))).toBe(day(new Date(2026, 9, 28)))
     expect(day(eventEnd(new Date('2026-10-30T12:00:00')))).toBe(day(new Date(2026, 9, 31)))
     expect(day(eventStart(new Date('2027-01-01T12:00:00')))).toBe(day(new Date(2026, 11, 31)))
+  })
+
+  it('findet das erste Event einer Woche', () => {
+    const week = (d: string) => weekEvent(new Date(`${d}T00:00:00`))
+    expect(week('2026-11-02')).toBeNull()
+    const h = week('2026-10-26')!
+    expect([h.event, h.bonus, h.day.getDate(), h.end.getDate()]).toEqual(['halloween', 'licht', 28, 31])
+    // Läuft schon am Montag: Start ist der Montag, Ende das Event-Ende.
+    const x = week('2026-12-21')!
+    expect([x.event, x.day.getDate(), x.end.getDate()]).toEqual(['weihnachten', 21, 26])
+    expect(week('2026-11-23')!.event).toBe('advent')
   })
 })
