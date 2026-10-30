@@ -774,7 +774,8 @@ img { display: block; }
 .news-kicker { text-align: center; font-size: 12px; }
 .news-title { margin: 4px 0 14px; text-align: center; font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 42px; letter-spacing: .04em; line-height: .95; text-shadow: 3px 3px 0 var(--sun); }
 .news-list { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-.news-list li { display: flex; gap: 10px; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 16px; background: var(--ground); }
+/* Fester Lila-Ton statt --ground: Dunkle Event-Designs färben --ground, die Karte bleibt aber weiß. */
+.news-list li { display: flex; gap: 10px; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 16px; background: #EDE6FF; }
 .news-list b { display: block; font-size: 16px; font-weight: 800; }
 .news-list span { font-size: 14px; font-weight: 500; line-height: 1.3; }
 .news-dot { flex: none; width: 12px; height: 12px; margin-top: 5px; border: 2.5px solid var(--ink); border-radius: 50%; background: var(--accent); }
