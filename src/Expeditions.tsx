@@ -5,7 +5,7 @@ import { useBack } from './back'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
 import {
-  FRUITS, FRUIT_ORDER, UNLOCK_TIER, areaBusy, areaById, awayMonsters, basket, blocked, canFeed, canStart, fruitCap, isAway, isOpen, mapAreas, odds,
+  FRUITS, FRUIT_ORDER, UNLOCK_TIER, areaBusy, areaById, beatsArea, awayMonsters, basket, blocked, canFeed, canStart, fruitCap, isAway, isOpen, mapAreas, odds,
   truppSlots, type Area, type Expedition, type Fruit,
 } from './expeditions'
 import { burst, flyTo } from './fx'
@@ -36,6 +36,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
   const [picking, setPicking] = useState<Area | null>(null)
   const [feeding, setFeeding] = useState(false)
   const [recall, setRecall] = useState<Expedition | null>(null)
+  const [info, setInfo] = useState<Expedition | null>(null)
   const xp = snap.monsterXp
   const away = snap.expeditions.filter((e) => isAway(e, now))
   const slots = truppSlots(monsters, xp)
@@ -53,7 +54,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
     const trupp = away.find((e) => e.area === a.id)
     const found = a.egg && snap.eggs.some((e) => e.monster === a.egg)
     return (
-      <button key={a.id} className={`room ${cls} ${open ? '' : 'locked'} ${trupp ? 'busy' : ''}`} onClick={() => (trupp ? undefined : open ? setPicking(a) : setSheet(a))}>
+      <button key={a.id} className={`room ${cls} ${open ? '' : 'locked'} ${trupp ? 'busy' : ''}`} onClick={() => (trupp ? setInfo(trupp) : open ? setPicking(a) : setSheet(a))}>
         <span className="room-bg" style={{ backgroundImage: `url(/expedition/kulisse-${a.id}.webp)` }} />
         {trupp && <img className="peek" src={`/expedition/gegner-${a.id}.webp`} alt="" />}
         <b>{a.name}</b>
@@ -125,7 +126,7 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
         Trupps <small>{away.length} von {slots} unterwegs</small>
       </h2>
       {away.map((e) => (
-        <div key={e.id} className="trupp">
+        <div key={e.id} className="trupp" onClick={() => setInfo(e)}>
           <Faces ids={e.monsters} xp={xp} big />
           <span className="trupp-text">
             <b>{areaById(e.area).name}</b>
@@ -136,7 +137,10 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
               <span style={{ width: `${progress(e, now)}%` }} />
             </span>
           </span>
-          <button className="recall" onClick={() => setRecall(e)}>
+          <button className="recall" onClick={(ev) => {
+            ev.stopPropagation()
+            setRecall(e)
+          }}>
             Zurückrufen
           </button>
         </div>
@@ -174,12 +178,22 @@ export function Expeditions({ snap, monsters, now, onBack, onStart, onRecall, on
       )}
 
       {sheet && <LockedSheet area={sheet} snap={snap} monsters={monsters} now={now} onClose={() => setSheet(null)} />}
+      {info && !recall && (
+        <TruppInfo
+          e={info}
+          snap={snap}
+          now={now}
+          onRecall={() => setRecall(info)}
+          onClose={() => setInfo(null)}
+        />
+      )}
       {recall && (
         <RecallConfirm
           e={recall}
           onYes={() => {
             onRecall(recall)
             setRecall(null)
+            setInfo(null)
           }}
           onNo={() => setRecall(null)}
         />
@@ -366,6 +380,63 @@ function LockedSheet({ area, snap, monsters, now, onClose }: { area: Area; snap:
           </div>
         )}
         <Facts area={area} snap={snap} />
+        <button className="btn" onClick={onClose}>
+          Schließen
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Laufender Trupp: wohin, wer, seit wann, bis wann und mit welchen Chancen. Die Beute bleibt geheim.
+function TruppInfo({ e, snap, now, onRecall, onClose }: { e: Expedition; snap: Snapshot; now: Date; onRecall: () => void; onClose: () => void }) {
+  useBack(onClose)
+  const area = areaById(e.area)
+  const xp = snap.monsterXp
+  const trupp = e.monsters.map(monsterById)
+  const o = odds(area, trupp, xp)
+  return (
+    <div className="sheet-wrap" onClick={onClose}>
+      <div className="sheet" onClick={(ev) => ev.stopPropagation()}>
+        <span className="grab" />
+        <div className="area-head scene small-scene" style={{ backgroundImage: `url(/expedition/kulisse-${area.id}.webp)` }}>
+          <img className="area-enemy" src={`/expedition/gegner-${area.id}.webp`} alt="" />
+          {area.enemies.length ? <Dot e={area.enemies[0]} size={34} /> : <Dot e="ohne" size={34} />}
+          <span className="col">
+            <b>{area.name}</b>
+            <span className="small">
+              {PEOPLE[e.started_by]}s Trupp · los um {clock(new Date(e.started_at))}
+            </span>
+          </span>
+        </div>
+        <div className="req">
+          <b>
+            Zurück um {clock(new Date(e.ends_at))} · noch {left(new Date(e.ends_at), now)}
+          </b>
+          <span className="mini-bar">
+            <span style={{ width: `${progress(e, now)}%` }} />
+          </span>
+        </div>
+        <div className="req">
+          {trupp.map((m) => {
+            const lv = levelFor(xp[m.id] ?? 0)
+            return (
+              <span key={m.id} className="progrow">
+                <img src={imgOf(m, xp[m.id] ?? 0)} alt="" style={{ background: backdrop(m.element) }} />
+                {m.stages[stageFor(m, lv)]} · Lv {lv}
+                {beatsArea(m, area, xp) && <span className="rq ok">Vorteil</span>}
+              </span>
+            )
+          })}
+        </div>
+        <div className="chances">
+          <Chance name="Gut" p={o.gut} max={0.7} color="#5BC44A" why="" />
+          <Chance name="Super" p={o.super} max={0.1} color="#FF8A6B" why="" />
+          <Chance name="Shiny" p={o.shiny} max={0.1} color="#B9A3F5" why="" />
+        </div>
+        <button className="news-btn red" onClick={onRecall}>
+          Zurückrufen
+        </button>
         <button className="btn" onClick={onClose}>
           Schließen
         </button>
