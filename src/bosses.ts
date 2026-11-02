@@ -107,12 +107,6 @@ export function winChance(boss: Boss, damage: number, lp: number, trupp: Monster
   return { weak, avg, level, adv, total: Math.min(85, Math.max(5, 5 + weak + level + 5 * adv)) }
 }
 
-// Vorschlag für den Trupp: die drei Monster mit dem größten eigenen Beitrag (Level und Element).
-export function bestTrupp(boss: Boss, monsters: Monster[], monsterXp: Record<string, number>) {
-  const score = (m: Monster) => (levelFor(monsterXp[m.id] ?? 0) / 30) * 20 / 3 + 5 * advantageAgainst([boss.element], [m], monsterXp)
-  return [...monsters].sort((a, b) => score(b) - score(a)).slice(0, 3)
-}
-
 // Wurf aus der zufälligen Kampf-id: Er steht erst beim Start fest und wird mit dem Kampf gespeichert.
 export const rollWin = (id: string, percent: number) => chance(`boss:${id}`) < percent / 100
 
