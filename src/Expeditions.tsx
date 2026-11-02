@@ -519,7 +519,7 @@ function TruppPick({ area, snap, monsters, now, free, onBack, onStart }: { area:
       </div>
       {o && (
         <div className="chances">
-          <Chance name="Gut" p={o.gut} max={0.7} color="#5BC44A" why={`Grund 20 · ${Math.round(o.over)} Level über · Vorteil ${o.adv >= 0 ? '+' : ''}${o.adv * 5}${o.bonus ? ' · Bonus +15' : ''}`} />
+          <Chance name="Gut" p={o.gut} max={0.7} color="#5BC44A" why={`Grund 20 · ${o.over} Level über${o.adv ? ` · Vorteil +${o.adv * 5}` : ''}${o.team ? ` · Team +${Math.round(o.team)}` : ''}${o.bonus ? ' · Bonus +15' : ''}`} />
           <Chance name="Super" p={o.super} max={0.1} color="#FF8A6B" why="höchstens 10 %" />
           <Chance name="Shiny" p={o.shiny} max={0.1} color="#B9A3F5" why={o.bonus ? 'mit Bonus doppelt' : 'mit Bonus doppelt so oft'} />
         </div>

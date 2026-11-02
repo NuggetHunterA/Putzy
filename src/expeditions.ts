@@ -148,22 +148,36 @@ export function advantageAgainst(enemies: Element[], trupp: Monster[], monsterXp
   return n
 }
 
-export type Odds = { gut: number; super: number; shiny: number; over: number; adv: number; bonus: boolean }
+export type Odds = { gut: number; super: number; shiny: number; over: number; adv: number; team: number; bonus: boolean }
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x))
 
-// Chancen als Anteile zwischen 0 und 1.
+// Das stärkste Monster zählt voll: Level über dem Mindestlevel (höchstens 10) und Element-Vorteil.
+// Jedes weitere Monster zählt mit (Level ÷ Level des stärksten)², so hilft es immer, aber nur auf ähnlichem Level spürbar.
+// Element-Nachteile ziehen nichts ab, damit ein weiteres Monster nie schadet.
 export function odds(area: Area, trupp: Monster[], monsterXp: Record<string, number>): Odds {
-  const avg = trupp.reduce((n, m) => n + levelFor(monsterXp[m.id] ?? 0), 0) / trupp.length
-  const over = clamp(avg - area.minLevel, 0, 10)
-  const adv = advantage(area, trupp, monsterXp)
+  const each = trupp.map((m) => {
+    const lv = levelFor(monsterXp[m.id] ?? 0)
+    const adv = Math.max(0, advantage(area, [m], monsterXp))
+    return { lv, adv, over: clamp(lv - area.minLevel, 0, 10) }
+  })
+  const lead = each.reduce((a, b) => (b.over + 5 * b.adv > a.over + 5 * a.adv ? b : a))
+  let team = 0
+  let teamSuper = 0
+  for (const m of each) {
+    if (m === lead) continue
+    const share = Math.min(1, (m.lv / lead.lv) ** 2)
+    team += share * (5 + 5 * m.adv)
+    teamSuper += share * (1 + 0.5 * m.adv)
+  }
   const bonus = meets(area.bonus, trupp, monsterXp)
   return {
-    gut: clamp(20 + over + 5 * adv + (bonus ? 15 : 0), 5, 70) / 100,
-    super: clamp(2 + 0.2 * over + 0.5 * adv + (bonus ? 3 : 0), 0, 10) / 100,
-    shiny: ((0.2 + 0.02 * over) * (bonus ? 2 : 1)) / 100,
-    over,
-    adv,
+    gut: clamp(20 + lead.over + 5 * lead.adv + team + (bonus ? 15 : 0), 5, 70) / 100,
+    super: clamp(2 + 0.2 * lead.over + 0.5 * lead.adv + teamSuper + (bonus ? 3 : 0), 0, 10) / 100,
+    shiny: ((0.2 + 0.02 * lead.over) * (bonus ? 2 : 1)) / 100,
+    over: lead.over,
+    adv: lead.adv,
+    team,
     bonus,
   }
 }
