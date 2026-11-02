@@ -76,18 +76,35 @@ describe('Expeditionen', () => {
     expect(advantage(areaById('flur'), team('1', '5'), {})).toBe(0)
   })
 
-  it('rechnet die Chancen wie im Beispiel des Konzepts', () => {
+  it('rechnet die Chancen: stärkstes Monster voll, weitere mit (Level ÷ Level des stärksten)²', () => {
     const o = odds(areaById('lagune'), team('1', '8'), lv({ 1: 14, 8: 14 }))
-    expect(o.gut).toBeCloseTo(0.54)
-    expect(o.super).toBeCloseTo(0.078)
-    expect(o.shiny).toBeCloseTo(0.0038)
-    // „Über“ ist bei 10 gedeckelt: 20 + 10 + 15 + 15 = 60 %, 2 + 2 + 1,5 + 3 = 8,5 %.
+    // 20 + 9 Level über + 5 Vorteil + 15 Bonus + 10 für das zweite Monster (gleiches Level, mit Vorteil).
+    expect(o.gut).toBeCloseTo(0.59, 5)
+    expect(o.super).toBeCloseTo(0.088, 5)
+    expect(o.shiny).toBeCloseTo(0.0076, 5)
     const strong = odds(areaById('lagune'), team('1', '8', '14'), lv({ 1: 30, 8: 30, 14: 30 }))
-    expect(strong.over).toBe(10)
-    expect(strong.gut).toBeCloseTo(0.6)
-    expect(strong.super).toBeCloseTo(0.085)
-    // Schwache Trupps fallen nicht unter 5 %.
-    expect(odds(areaById('lagune'), team('5', '9', '15'), lv({ 5: 5, 9: 5, 15: 5 })).gut).toBeCloseTo(0.05)
+    expect(strong.gut).toBe(0.7)
+    expect(strong.super).toBe(0.1)
+    // Ein Monster auf halbem Level zählt nur zu einem Viertel.
+    expect(odds(areaById('flur'), team('1', '5'), lv({ 1: 20, 5: 10 })).gut).toBeCloseTo(0.3 + 0.0125 + 0.15, 5) // Bonus: zwei verschiedene Elemente
+  })
+
+  it('macht einen Trupp mit jedem weiteren Monster etwas besser, nie schlechter', () => {
+    const lagune = areaById('lagune')
+    // Licht Lv 14 mit Vorteil, Feuer Lv 8 mit Nachteil, Natur Lv 20.
+    const xp = lv({ 1: 14, 5: 8, 6: 20 })
+    const a = odds(lagune, team('1'), xp)
+    const ab = odds(lagune, team('1', '5'), xp)
+    const abc = odds(lagune, team('1', '5', '6'), xp)
+    expect(a.gut).toBeCloseTo(0.34, 5)
+    expect(ab.gut).toBeGreaterThan(a.gut)
+    expect(ab.gut).toBeLessThan(a.gut + 0.02)
+    expect(abc.gut).toBeGreaterThan(ab.gut)
+    expect(ab.super).toBeGreaterThan(a.super)
+    expect(abc.super).toBeGreaterThan(ab.super)
+    // Ein stärkeres Monster ohne Vorteil verdrängt das schwächere mit Vorteil nicht zum Schaden des Trupps.
+    const flip = lv({ 1: 20, 3: 30 })
+    expect(odds(lagune, team('1', '3'), flip).gut).toBeGreaterThan(odds(lagune, team('1'), flip).gut)
   })
 
   it('würfelt die Beute fest pro id, Klein immer, Super bringt das fehlende Gebiets-Ei', () => {
