@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOSSES, bestTrupp, bossDays, bossFor, bossPoints, bossState, canFight, capped, currentBoss, damageBy, lpFor, nextVisit, weakness, winChance, type Fight } from './bosses'
+import { BOSSES, bossDays, bossFor, bossPoints, bossState, canFight, capped, currentBoss, damageBy, lpFor, nextVisit, weakness, winChance, type Fight } from './bosses'
 import type { Done } from './db'
 import { eventBonus } from './events'
 import { monsterById, xpForLevel } from './game'
@@ -71,11 +71,6 @@ describe('Bosse', () => {
     expect(winChance(weihnachten, 2000, 840, ['6', '12', '7'].map(monsterById), { 6: xp(30), 12: xp(30), 7: xp(30) }).total).toBe(80)
     // Nie unter 5 %: ungeschwächt, Level 1, drei Feuer-Monster gegen Wasser.
     expect(winChance(halloween, 0, 480, ['5', '9', '15'].map(monsterById), {}).total).toBe(5)
-  })
-
-  it('schlägt Monster mit Element-Vorteil vor', () => {
-    const t = bestTrupp(bossFor('halloween')!, ['1', '2', '5', '8', '6'].map(monsterById), {})
-    expect(t.map((m) => m.id).sort()).toEqual(['1', '8', '2'].sort())
   })
 
   it('öffnet den Kampf ab dem letzten Tag und zeigt danach das Ergebnis', () => {

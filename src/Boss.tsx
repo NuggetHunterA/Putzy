@@ -2,7 +2,7 @@
 // Event-Tag der Knopf zum Endkampf. Nach dem Kampf steht das Ergebnis darin und lässt sich nochmal ansehen.
 import { useState } from 'react'
 import { useBack } from './back'
-import { FLOOR, bestTrupp, bossImg, canFight, shortDay, weakness, winChance, type BossState, type Fight } from './bosses'
+import { FLOOR, bossImg, canFight, shortDay, weakness, winChance, type BossState, type Fight } from './bosses'
 import type { Snapshot } from './db'
 import { ElementIcon } from './ElementIcon'
 import { EVENT_LABEL } from './events'
@@ -37,12 +37,15 @@ export function Boss({ s, snap, person, monsters, now, onBack, onFight, onReplay
   const xp = snap.monsterXp
   const away = awayMonsters(snap.expeditions, now)
   const free = monsters.filter((m) => !away.has(m.id))
-  const [ids, setIds] = useState(() => bestTrupp(s.boss, free, xp).map((m) => m.id))
+  const [ids, setIds] = useState<string[]>([])
   const [picking, setPicking] = useState(false)
   const trupp = ids.map(monsterById)
+  // Voll ist der Trupp mit drei Monstern, oder mit allen, die gerade zu Hause sind.
+  const missing = Math.min(3, free.length) - trupp.length
   const weak = weakness(s.boss)
   const left = s.lp - s.damage
   const ready = canFight(s, now)
+  const go = ready && missing <= 0 && trupp.length > 0
   const odds = winChance(s.boss, s.damage, s.lp, trupp, xp)
   const weakPct = Math.round((s.damage / s.lp) * 100)
   const when = s.fight ? (s.fight.won ? 'Besiegt!' : 'Entkommen') : ready ? (dayString(now) === s.lastDay ? 'letzter Event-Tag' : `Kampf bis ${shortDay(s.open)}`) : `Kampf ab ${shortDay(s.lastDay)}`
@@ -112,8 +115,8 @@ export function Boss({ s, snap, person, monsters, now, onBack, onFight, onReplay
               Ein Kampf für euch beide, {PEOPLE[person === 'adrian' ? 'ulrike' : 'adrian']} sieht ihn danach auch.
             </span>
           )}
-          <button className={`go-btn${ready ? '' : ' off'}`} disabled={!ready || trupp.length === 0} onClick={() => onFight(trupp)}>
-            {ready ? 'Zum Kampf!' : `Kampf ab ${shortDay(s.lastDay)}`}
+          <button className={`go-btn${go ? '' : ' off'}`} disabled={!go} onClick={() => onFight(trupp)}>
+            {!ready ? `Kampf ab ${shortDay(s.lastDay)}` : missing > 0 ? `Noch ${missing} Monster wählen` : trupp.length === 0 ? 'Alle Monster unterwegs' : 'Zum Kampf!'}
           </button>
         </>
       )}
@@ -208,7 +211,7 @@ function Result({ f, event, xp, onReplay }: { f: Fight; event: string; xp: Recor
 // unterwegs und nicht wählbar. Die Siegchance rechnet live mit.
 function TruppSheet({ s, monsters, away, xp, ids: start, onDone }: { s: BossState; monsters: Monster[]; away: Set<string>; xp: Record<string, number>; ids: string[]; onDone: (ids: string[]) => void }) {
   const [ids, setIds] = useState(start)
-  const close = () => onDone(ids.length > 0 ? ids : start)
+  const close = () => onDone(ids)
   useBack(close)
   const adv = (m: Monster) => advantageAgainst([s.boss.element], [m], xp)
   const list = [...monsters].sort((a, b) => Number(away.has(a.id)) - Number(away.has(b.id)) || adv(b) - adv(a) || (xp[b.id] ?? 0) - (xp[a.id] ?? 0))
@@ -252,7 +255,7 @@ function TruppSheet({ s, monsters, away, xp, ids: start, onDone }: { s: BossStat
             <br />
             sobald ihr tauscht
           </span>
-          <button className="btn" disabled={ids.length === 0} onClick={close}>
+          <button className="btn" onClick={close}>
             Fertig
           </button>
         </div>
