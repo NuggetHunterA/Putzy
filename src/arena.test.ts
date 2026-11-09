@@ -98,6 +98,15 @@ describe('Arena: Auslosung', () => {
     expect(special).toHaveLength(5)
   })
 
+  it('gibt Duo-Leitern aus jedem ihrer Elemente mindestens ein Monster', () => {
+    const luftLastig = [...base, ...MONSTERS.filter((m) => ['16', '23', '30'].includes(m.id))]
+    for (let i = 0; i < 40; i++) {
+      const foes = rollFoes(addDays('2026-11-09', 7 * i), leaderById('polarlicht'), luftLastig, {})
+      const els = new Set(foes.map((f) => monsterById(f.id).element))
+      expect(els).toEqual(new Set(['luft', 'licht']))
+    }
+  })
+
   it('legt drei Trainingsfenster auf verschiedene Tage, eines am Wochenende', () => {
     for (const w of ['2026-11-02', '2026-11-09', '2026-11-16', '2026-11-23']) {
       const ws = rollWindows(w)
