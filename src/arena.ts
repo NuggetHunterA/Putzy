@@ -160,11 +160,14 @@ export function drawLeader(week: string, history: ArenaWeek[], monsters: Monster
 
 // Gegner-Team: Reihen aus euren sichtbaren in den Elementen des Leiters, auf der Stufe, die ihr erreicht habt.
 // Zu wenige Reihen: Dieselbe Reihe darf mehrmals vorkommen. Spezial-Leiter bringen ihre zwei Unique-Monster mit.
+// Leiter mit zwei Elementen haben aus jedem Element, in dem ihr Reihen habt, mindestens ein Monster.
 export function rollFoes(week: string, l: Leader, monsters: Monster[], monsterXp: Record<string, number>): Fighter[] {
   const size = teamSize(l, monsters, monsterXp)
   const level = foeLevel(l, size, monsters, monsterXp)
   const uniques = (l.uniques ?? []).map((u) => ({ id: u.id, stage: 0, level, elements: u.elements }))
-  const rows = shuffle(rowsFor(l, monsters), dice(`arena:${week}:team`))
+  const shuffled = shuffle(rowsFor(l, monsters), dice(`arena:${week}:team`))
+  const firsts = l.elements.flatMap((e) => shuffled.find((m) => m.element === e) ?? [])
+  const rows = [...firsts, ...shuffled.filter((m) => !firsts.includes(m))]
   const picked = Array.from({ length: size - uniques.length }, (_, i) => rows[i % rows.length])
   return [...uniques, ...picked.map((m) => ({ ...fighterOf(m, monsterXp), level }))]
 }
