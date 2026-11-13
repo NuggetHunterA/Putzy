@@ -33,6 +33,7 @@ export const NEWS: News[] = [
   { id: 28, title: 'Versionsnummer', text: 'Ganz unten auf der Aufgaben-Seite (Zahnrad) steht jetzt, welche Version von Putzy ihr gerade habt.' },
   { id: 29, title: 'Lesbarere Stempel', text: 'Der Name eines Stempels steht jetzt gerade auf einem farbigen Band statt klein im Bogen, so könnt ihr „Aufgaben“ oder „Level-Ups“ auch im Stempelheft gut lesen.' },
   { id: 30, title: 'Events in der Wochenvorschau', text: 'Steht in der neuen Woche ein Event an, zeigt die Monsterwahl es oben neben „Neue Woche“, mit dem Tag und dem Element, das +50 % XP bringt.' },
+  { id: 31, title: 'Günstigere Eier', text: 'Normale Monster-Eier kosten im Pedia jetzt nur noch 48 statt 60 Streak-Punkte. Start-, Event- und Gebiets-Eier bleiben gleich.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))
