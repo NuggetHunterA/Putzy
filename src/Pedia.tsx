@@ -39,6 +39,11 @@ const stageGrid = (m: Monster) => ({ gridTemplateColumns: `repeat(${m.stages.len
 const fmt = (n: number) => n.toLocaleString('de-DE')
 // Welche Ansicht zuletzt offen war, „liste“ oder „reihen“.
 const VIEW_STORAGE = 'putzy.pediaView'
+// Anteil der XP auf dem Weg zum nächsten Level, 0 bis 1; auf dem Höchstlevel voll.
+const levelProgress = (xp: number) => {
+  const level = levelFor(xp)
+  return level === MAX_LEVEL ? 1 : (xp - xpForLevel(level)) / (xpForLevel(level + 1) - xpForLevel(level))
+}
 const FILTERS: DexFilter[] = ['alle', 'wasser', 'feuer', 'natur', 'luft', 'licht', 'ohne']
 
 export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeeks, stampsNew, onStamps, onBosses, onArena }: Props) {
@@ -172,13 +177,19 @@ export function Pedia({ snap, monsters, konto, onHatch, onBack, onReplay, onWeek
         <div className="dex-grid">
           {shown.map(({ m, stage, elements }) => {
             const known = isDiscovered(snap.seen, m.id, stage)
-            const gold = levelFor(snap.monsterXp[m.id] ?? 0) === MAX_LEVEL
+            const xp = snap.monsterXp[m.id] ?? 0
+            const level = levelFor(xp)
+            const gold = level === MAX_LEVEL
             const shiny = known && isShiny(shinies, m.id, stage)
             return (
               <button key={`${m.id}-${stage}`} className={`dex-tile ${gold ? 'gold' : ''} ${shiny ? 'sh' : ''}`} onClick={() => setOpen({ m, stage })}>
                 {shiny && <span className="shiny-badge">✦</span>}
-                <span className={`slot-img ${known ? '' : 'hidden'}`} style={known ? { background: backdrop(m.element) } : undefined}>
-                  <img src={m.files[stage]} alt="" style={shiny ? { filter: shinyFilter(m.id) } : undefined} />
+                {/* Entdeckte Stufen: Ring füllt sich mit den XP zum nächsten Level, darunter das Level der Reihe. */}
+                <span className="dex-ring" style={known ? { background: `conic-gradient(${gold ? 'var(--sun)' : ELEMENTS[m.element].strong} ${levelProgress(xp) * 360}deg, var(--ground) 0)` } : undefined}>
+                  <span className={`slot-img ${known ? '' : 'hidden'}`} style={known ? { background: backdrop(m.element) } : undefined}>
+                    <img src={m.files[stage]} alt="" style={shiny ? { filter: shinyFilter(m.id) } : undefined} />
+                  </span>
+                  {known && <span className="dex-lv">{gold ? 'Lv 30 ★' : `Lv ${level}`}</span>}
                 </span>
                 <span className="dex-tile-no">
                   #{dexNo(m, stage)}
@@ -354,7 +365,7 @@ function Detail({ m, start, snap, onBack, onReplay }: { m: Monster; start?: numb
   const xp = snap.monsterXp[m.id] ?? 0
   const level = levelFor(xp)
   const max = level === MAX_LEVEL
-  const progress = max ? 1 : (xp - xpForLevel(level)) / (xpForLevel(level + 1) - xpForLevel(level))
+  const progress = levelProgress(xp)
   const done = snap.tasksDone[m.id] ?? {}
   const people = Object.keys(PEOPLE) as Person[]
   const tasks = people.reduce((n, p) => n + (done[p] ?? 0), 0)
