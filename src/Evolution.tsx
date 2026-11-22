@@ -5,6 +5,7 @@ import { useBack } from './back'
 import type { Cel } from './Celebration'
 import { burst, confetti, pullIn } from './fx'
 import { ELEMENTS } from './game'
+import { HoldHint, useHold } from './Hold'
 
 const GAPS = [520, 460, 400, 340, 290, 240, 200, 165, 135, 110, 90, 75, 62, 52, 45, 40, 36, 33, 30, 30]
 const CLOSE_AFTER = 4000
@@ -19,6 +20,7 @@ export function Evolution({ cel, onDone }: { cel: Cel; onDone: () => void }) {
   const stage = useRef<HTMLDivElement>(null)
   const { monster } = cel
   const element = monster.element
+  const { holding, handlers } = useHold(onDone, banner)
 
   useEffect(() => {
     let alive = true
@@ -61,7 +63,7 @@ export function Evolution({ cel, onDone }: { cel: Cel; onDone: () => void }) {
 
   const silhouette = phase !== 'intro' && phase !== 'reveal'
   return (
-    <button className={`evo evo-${phase}`} style={{ ['--glow' as string]: ELEMENTS[element].soft }} onClick={onDone} aria-label="Schließen">
+    <button className={`evo evo-${phase}`} style={{ ['--glow' as string]: ELEMENTS[element].soft }} {...handlers} aria-label="Schließen">
       <div className="evo-rays" aria-hidden="true" />
       <div className="evo-text" aria-hidden={phase === 'reveal'}>
         Nanu? {monster.stages[cel.stageBefore]} verändert sich …
@@ -80,7 +82,7 @@ export function Evolution({ cel, onDone }: { cel: Cel; onDone: () => void }) {
         </span>
         {monster.second && cel.stageAfter === monster.levels.length && <span className="evo-sub">Neues Element: {ELEMENTS[monster.second].name}!</span>}
       </div>
-      <span className="evo-skip">Tippen zum Schließen</span>
+      <HoldHint done={banner} holding={holding} className="evo-skip" />
     </button>
   )
 }
