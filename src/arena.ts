@@ -135,12 +135,17 @@ export function teamSize(l: Leader, monsters: Monster[], monsterXp: Record<strin
   return strong >= 14 ? 5 : strong >= 8 ? 4 : 3
 }
 
-// Gegner-Level: Durchschnitt eurer stärksten Monster (so viele wie Plätze) × 1,25 + 1, Spezial-Leiter +2. Kann über 30 gehen.
+// Gegner-Level: Durchschnitt eurer stärksten Monster (so viele wie Plätze) × 1,05 + 2,6, Spezial-Leiter +2. Kann über 30 gehen.
+// Wächst langsamer als eure Monster, damit sich Leveln immer lohnt. Mit Nachkommastelle, rollFoes verteilt sie aufs Team.
 export function foeLevel(l: Leader, size: number, monsters: Monster[], monsterXp: Record<string, number>) {
   const top = monsters.map((m) => levelFor(monsterXp[m.id] ?? 0)).sort((a, b) => b - a).slice(0, size)
   const avg = top.reduce((n, x) => n + x, 0) / Math.max(1, top.length)
-  return Math.round(avg * 1.25 + 1) + (l.special ? 2 : 0)
+  return avg * 1.05 + 2.6 + (l.special ? 2 : 0)
 }
+
+// Level der einzelnen Gegner: 11,4 bei 3 Gegnern wird 12, 11, 11. So hebt ein einzelnes Level-Up nicht gleich alle an.
+export const foeLevels = (level: number, size: number) =>
+  Array.from({ length: size }, (_, i) => Math.floor(level) + (i < Math.round((level % 1) * size) ? 1 : 0))
 
 // Spezial-Leiter sind offen, wenn jeder normale Leiter, der gerade kommen kann, einmal da war.
 // Grau (ohne Element) zählt also erst mit, wenn ihr 2 Reihen ohne Element habt.
@@ -163,13 +168,13 @@ export function drawLeader(week: string, history: ArenaWeek[], monsters: Monster
 // Leiter mit zwei Elementen haben aus jedem Element, in dem ihr Reihen habt, mindestens ein Monster.
 export function rollFoes(week: string, l: Leader, monsters: Monster[], monsterXp: Record<string, number>): Fighter[] {
   const size = teamSize(l, monsters, monsterXp)
-  const level = foeLevel(l, size, monsters, monsterXp)
-  const uniques = (l.uniques ?? []).map((u) => ({ id: u.id, stage: 0, level, elements: u.elements }))
+  const levels = foeLevels(foeLevel(l, size, monsters, monsterXp), size)
+  const uniques = (l.uniques ?? []).map((u, i) => ({ id: u.id, stage: 0, level: levels[i], elements: u.elements }))
   const shuffled = shuffle(rowsFor(l, monsters), dice(`arena:${week}:team`))
   const firsts = l.elements.flatMap((e) => shuffled.find((m) => m.element === e) ?? [])
   const rows = [...firsts, ...shuffled.filter((m) => !firsts.includes(m))]
   const picked = Array.from({ length: size - uniques.length }, (_, i) => rows[i % rows.length])
-  return [...uniques, ...picked.map((m) => ({ ...fighterOf(m, monsterXp), level }))]
+  return [...uniques, ...picked.map((m, i) => ({ ...fighterOf(m, monsterXp), level: levels[uniques.length + i] }))]
 }
 
 // Trainingszeiten: 3 Fenster an verschiedenen Tagen, eines am Wochenende, je 2 oder 3 Stunden zwischen 7 und 22 Uhr.
