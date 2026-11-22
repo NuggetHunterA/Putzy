@@ -36,6 +36,7 @@ export const NEWS: News[] = [
   { id: 31, title: 'Günstigere Eier', text: 'Normale Monster-Eier kosten im Pedia jetzt nur noch 48 statt 60 Streak-Punkte. Start-, Event- und Gebiets-Eier bleiben gleich.' },
   { id: 32, title: 'Level in der Pedia-Liste', text: 'In der Listenansicht des Pedia steht jetzt bei jedem entdeckten Monster das Level. Der Ring ums Bild füllt sich mit den XP bis zum nächsten Level.' },
   { id: 33, title: 'Arena: Leveln lohnt sich immer', text: 'Die Arenaleiter wachsen jetzt langsamer mit euren stärksten Monstern mit als bisher. Jedes Level, das euer Team gewinnt, macht einen Sieg also wahrscheinlicher.' },
+  { id: 34, title: 'Entwicklung nicht mehr aus Versehen weg', text: 'Ein einfacher Tipp überspringt die Entwicklung und die Level-30-Szene nicht mehr. Zum Überspringen haltet ihr den Bildschirm eine Sekunde gedrückt, ist die Szene fertig, schließt wie bisher ein Tipp.' },
 ]
 
 export const LATEST_NEWS = Math.max(0, ...NEWS.map((n) => n.id))

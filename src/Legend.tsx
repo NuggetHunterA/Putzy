@@ -1,8 +1,9 @@
 // Level 30: Im Dunkeln füllt sich das Monster mit Gold, Blitz, dann steht es in Farbe auf Gold, springt, brüllt
-// und schwebt atmend vor einem Sternenring. Darunter die Legende aus dem Pedia. Bleibt, bis man tippt.
+// und schwebt atmend vor einem Sternenring. Darunter die Legende aus dem Pedia. Bleibt, bis man tippt (vorher nur Gedrückthalten, siehe Hold.tsx).
 import { useEffect, useRef, useState } from 'react'
 import { useBack } from './back'
 import { burst, confetti, pullIn } from './fx'
+import { HoldHint, useHold } from './Hold'
 import type { Monster } from './game'
 import { PEDIA } from './pedia'
 
@@ -11,6 +12,8 @@ const STARS = Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4)
 export function Legend({ monster, onDone }: { monster: Monster; onDone: () => void }) {
   useBack(onDone)
   const [gold, setGold] = useState(false)
+  const [done, setDone] = useState(false)
+  const { holding, handlers } = useHold(onDone, done)
   const stage = useRef<HTMLDivElement>(null)
   const last = monster.stages.length - 1
   const name = monster.stages[last]
@@ -38,6 +41,7 @@ export function Legend({ monster, onDone }: { monster: Monster; onDone: () => vo
       await wait(620)
       if (!alive) return
       burst(...center(), monster.element, 26, 200)
+      setDone(true)
       idle = setInterval(() => burst(...center(), monster.element, 6, 140), 2400)
     })()
     return () => {
@@ -48,7 +52,7 @@ export function Legend({ monster, onDone }: { monster: Monster; onDone: () => vo
   }, [monster])
 
   return (
-    <button className={`leg ${gold ? 'leg-gold' : ''}`} onClick={onDone} aria-label="Schließen">
+    <button className={`leg ${gold ? 'leg-gold' : ''}`} {...handlers} aria-label="Schließen">
       <div className="leg-rays" aria-hidden="true" />
       <div className="leg-text" aria-hidden="true">
         Nanu? {name} fängt an zu glänzen …
@@ -81,7 +85,7 @@ export function Legend({ monster, onDone }: { monster: Monster; onDone: () => vo
         </span>
         <span className="leg-legend">{PEDIA[monster.id].legend}</span>
       </div>
-      <span className="evo-skip leg-skip">Tippen zum Schließen</span>
+      <HoldHint done={done} holding={holding} className="evo-skip leg-skip" />
     </button>
   )
 }
