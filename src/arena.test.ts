@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  LEADERS, counters, drawLeader, factor, foeLevel, hintsFor, jokerAccount, leaderById, progress, rollFoes, rollRecipe, rollWindows, simulate, teamSize, trainingHits,
+  LEADERS, counters, drawLeader, factor, foeLevel, foeLevels, hintsFor, jokerAccount, leaderById, progress, rollFoes, rollRecipe, rollWindows, simulate, teamSize, trainingHits,
   verdict, weakened, type ArenaFight, type ArenaWeek, type Ctx, type Fighter, type Potion,
 } from './arena'
 import type { Done, Task } from './db'
@@ -78,10 +78,14 @@ describe('Arena: Auslosung', () => {
     expect(teamSize(leaderById('glut'), ms, ten(7))).toBe(3)
     expect(teamSize(leaderById('glut'), ms, ten(8))).toBe(4)
     expect(teamSize(leaderById('nebelfrau'), ms, {})).toBe(5)
-    // Stärkste drei: 14, 12, 10 → Ø 12 × 1,25 + 1 = 16; Spezial +2.
+    // Stärkste drei: 14, 12, 10 → Ø 12 × 1,05 + 2,6 = 15,2; Spezial +2.
     const xp = lv({ 1: 14, 2: 12, 3: 10, 4: 2 })
-    expect(foeLevel(leaderById('glut'), 3, ms, xp)).toBe(16)
-    expect(foeLevel(leaderById('nebelfrau'), 3, ms, xp)).toBe(18)
+    expect(foeLevel(leaderById('glut'), 3, ms, xp)).toBeCloseTo(15.2)
+    expect(foeLevel(leaderById('nebelfrau'), 3, ms, xp)).toBeCloseTo(17.2)
+    // Nachkommastelle wird aufs Team verteilt.
+    expect(foeLevels(11.4, 3)).toEqual([12, 11, 11])
+    expect(foeLevels(11.4, 5)).toEqual([12, 12, 11, 11, 11])
+    expect(foeLevels(15, 4)).toEqual([15, 15, 15, 15])
   })
 
   it('stellt das Gegner-Team aus euren Reihen auf eurer Stufe, Spezial-Leiter mit ihren Unique-Monstern', () => {
@@ -91,8 +95,8 @@ describe('Arena: Auslosung', () => {
     for (const f of foes) {
       expect(['5', '9']).toContain(f.id)
       expect(f.stage).toBe(f.id === '5' ? 1 : 0)
-      expect(f.level).toBe(foes[0].level)
     }
+    expect(foes.map((f) => f.level)).toEqual(foeLevels(foeLevel(leaderById('glut'), 3, base, xp), 3))
     const special = rollFoes(WEEK, leaderById('schmutzkoenig'), base, xp)
     expect(special.map((f) => f.id).slice(0, 2)).toEqual(['hydrapilz', 'qualmlilie'])
     expect(special).toHaveLength(5)
@@ -182,24 +186,26 @@ describe('Arena: Kampf und Joker', () => {
     expect(Math.max(...hits.map((h) => h.round))).toBeLessThanOrEqual(12)
   })
 
-  // Wie Konzept 7: 4 Monster, Gegner alle Wasser mit Level × 1,25 + 1, „Konter“ = 2 Licht-Monster.
-  it('ist ohne Vorbereitung kaum zu schaffen, mit Trank etwa jede zweite Woche, mit allem etwa 3 von 4', () => {
+  // Wie Konzept 7: 4 Monster, Gegner alle Wasser mit dem Level aus foeLevel, „Konter“ = 2 Licht-Monster.
+  // Ohne Vorbereitung kaum zu schaffen, mit Trank anfangs jede zweite Woche. Weil die Gegner langsamer wachsen als
+  // eure Monster, steigt die Chance mit jedem Level: Leveln lohnt sich immer.
+  it('ist ohne Vorbereitung kaum zu schaffen, mit Trank anfangs jede zweite Woche und mit jedem Level etwas leichter', () => {
     const rate = (team: Fighter[], foes: Fighter[], potion: Potion | null, master: boolean) => {
       let wins = 0
       for (let i = 0; i < 1000; i++) if (simulate(`balance:${i}`, team, foes, potion, master).won) wins++
       return wins / 1000
     }
-    for (const level of [6, 12, 20]) {
-      const foes = Array.from({ length: 4 }, () => fighter(Math.round(level * 1.25 + 1), 'wasser'))
+    let before = 0
+    for (const level of [6, 12, 20, 30]) {
+      const foes = foeLevels(level * 1.05 + 2.6, 4).map((l) => fighter(l, 'wasser'))
       const plain = Array.from({ length: 4 }, () => fighter(level, 'luft'))
       const konter = [...plain.slice(0, 2), fighter(level, 'licht'), fighter(level, 'licht')]
-      expect(rate(plain, foes, null, false)).toBeLessThan(0.05)
-      expect(rate(konter, weakened(foes, 3), 'kraft', false)).toBeGreaterThan(0.4)
-      expect(rate(konter, weakened(foes, 3), 'kraft', false)).toBeLessThan(0.7)
-      for (const p of ['schild', 'kraft', 'leben', 'element'] as Potion[]) {
-        expect(rate(konter, weakened(foes, 3), p, true)).toBeGreaterThan(0.6)
-        expect(rate(konter, weakened(foes, 3), p, true)).toBeLessThan(0.85)
-      }
+      const trank = rate(konter, weakened(foes, 3), 'kraft', false)
+      expect(rate(plain, foes, null, false)).toBeLessThan(0.15)
+      expect(trank).toBeGreaterThan(Math.max(0.45, before))
+      expect(trank).toBeLessThan(0.9)
+      for (const p of ['schild', 'kraft', 'leben', 'element'] as Potion[]) expect(rate(konter, weakened(foes, 3), p, true)).toBeGreaterThan(trank - 0.05)
+      before = trank
     }
     expect(verdict([fighter(6, 'luft')], [fighter(20, 'wasser')], null, false)).toBe('schwer')
   })

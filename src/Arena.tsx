@@ -254,6 +254,7 @@ function How() {
     [<Trophy size={16} />, 'Jeden Montag kommt ein neuer Arenaleiter. Jeder von euch tritt einmal pro Woche gegen ihn an.'],
     [<Joker size={18} />, `Ein Sieg bringt einen Joker: Er schiebt eine Aufgabe, die heute oder morgen fällig ist, um einen Tag. Liegen schon ${MAX_JOKERS} Joker auf dem Konto, gibt es stattdessen ${FULL_WIN_POINTS} Streak-Punkte.`],
     [<Dot e="wasser" size={22} />, 'Ohne Vorbereitung ist er zu stark. Stört seine Trainings, braut den Wochen-Trank und nehmt Monster mit, die sein Element schlagen.'],
+    ['▲', 'Sein Team wächst mit euren stärksten Monstern mit, aber langsamer als sie. Leveln lohnt sich also immer.'],
     ['⚔', 'Der Kampf läuft von allein: Jedes Monster greift einmal pro Runde an und trifft das schwächste gegnerische. Wer nach 12 Runden mehr übrig hat, gewinnt.'],
   ]
   return (
